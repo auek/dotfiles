@@ -28,7 +28,7 @@ return {
         pattern = { ".env", ".env.*", ".secrets", "*secret*", "*credential*", "*.pem", "*.key" },
         callback = function() vim.cmd("CodeiumEnable") end,
       })
-      vim.keymap.set("i", "<Tab>", function()
+      vim.keymap.set("i", "<C-J>", function()
         return vim.fn["codeium#Accept"]()
       end, { expr = true, silent = true })
     end,

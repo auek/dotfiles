@@ -54,7 +54,7 @@ fi
 if command -v tmux &> /dev/null; then
   function dev() {
     local detach=false
-    
+
     # Parse flags
     while [[ "$1" == "-d" || "$1" == "-h" ]]; do
       if [[ "$1" == "-d" ]]; then
@@ -67,10 +67,10 @@ if command -v tmux &> /dev/null; then
       fi
       shift
     done
-    
+
     local name=${1:?session name required}
     local dir=${2:?project path required}
-    
+
     if tmux has-session -t "$name" 2>/dev/null; then
       if [ "$detach" = false ]; then
         tmux attach -t "$name"
@@ -97,6 +97,25 @@ else
     echo "Error: tmux is not installed."
   }
 fi
+
+# llm commit messages
+function gsuggest() {
+  if ! command -v llm &>/dev/null; then
+    echo "llm not installed"
+    return 1
+  fi
+
+  local diff
+  diff=$(git diff --staged)
+  [[ -z "$diff" ]] && diff=$(git diff HEAD)
+
+  if [[ -z "$diff" ]]; then
+    echo "Nothing to commit"
+    return 1
+  fi
+   local prompt="Output ONLY the commit message(s), no explanations or commentary. Conventional commits. Lowercase type prefix (fix, feat, chore, refactor, docs, style, test). For small/simple changes: title line only. For larger changes or major new features: include a short body after a blank line explaining what and why. If changes cover clearly different concerns, output multiple messages numbered."
+   echo "$diff" | llm "$prompt" | tee /dev/tty | clip.exe
+}
 
 ### Aliases ###
 # General
@@ -159,8 +178,8 @@ if command -v fd &> /dev/null; then
       zle reset-prompt
     fi
   }
-  zle -N fzf-cd-home
-  bindkey "\eC" fzf-cd-home
+zle -N fzf-cd-home
+bindkey "\eC" fzf-cd-home
 
   # Check for bat to provide rich previews, otherwise fallback
   if command -v bat &> /dev/null; then

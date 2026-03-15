@@ -171,3 +171,6 @@ if command -v fd &> /dev/null; then
 
   source <(fzf --zsh)
 fi
+
+# opencode
+export PATH=/home/august/.opencode/bin:$PATH

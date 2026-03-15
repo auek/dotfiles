@@ -7,6 +7,7 @@ return {
         lua = { "stylua" },
         sh = { "shfmt" },
         bash = { "shfmt" },
+        python = { "black" },
       },
       format_on_save = {
         lsp_fallback = true,

@@ -29,6 +29,7 @@ return {
           "yamlls",
           "ansiblels",
           "astro",
+          "pyright"
         },
         handlers = {
           -- Default handler using new Nvim 0.11+ API

@@ -1,11 +1,11 @@
 ---
-- name: Install tldr using npm
+- name: Install tldr using pipx
   ansible.builtin.shell:
     cmd: |
-      source ~/.zprofile && npm list -g tldr || npm install -g tldr
+      source ~/.zprofile && pipx install tldr
     executable: /bin/zsh
   register: tldr_install
-  changed_when: "'+ tldr@' in tldr_install.stdout"
+  changed_when: "'installed package tldr' in tldr_install.stdout"
   become: false
 
 - name: Update tldr index

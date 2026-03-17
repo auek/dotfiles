@@ -1,9 +1,0 @@
----
-- name: Install ansibile-lint using pip
-  ansible.builtin.shell:
-    cmd: |
-      source ~/.zprofile && pipx install ansible-lint
-    executable: /bin/zsh
-  register: ansible_lint_install
-  changed_when: "'Successfully installed ansible-lint' in ansible_lint_install.stdout"
-  become: false

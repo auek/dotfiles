@@ -1,8 +1,0 @@
----
-- name: Include ohmyzsh tasks
-  ansible.builtin.include_tasks:
-    file: ohmyzsh.yml
-    apply:
-      tags:
-        - full
-        - slim

@@ -192,4 +192,4 @@ bindkey "\eC" fzf-cd-home
 fi
 
 # opencode
-export PATH=/home/august/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"

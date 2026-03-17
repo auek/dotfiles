@@ -10,6 +10,7 @@ set -euo pipefail
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
+USER="${USER:-$(whoami)}"
 PROFILE="slim"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
@@ -120,12 +121,12 @@ if [ "$SHELL" = "$ZSH_PATH" ]; then
   info "zsh is already the default shell"
 else
   if grep -qF "$ZSH_PATH" /etc/shells; then
-    chsh -s "$ZSH_PATH" "$USER"
+    sudo chsh -s "$ZSH_PATH" "$USER"
     success "Default shell set to $ZSH_PATH"
   else
     warning "zsh not found in /etc/shells — adding it"
     echo "$ZSH_PATH" | sudo tee -a /etc/shells
-    chsh -s "$ZSH_PATH" "$USER"
+    sudo chsh -s "$ZSH_PATH" "$USER"
     success "Default shell set to $ZSH_PATH"
   fi
 fi

@@ -59,14 +59,14 @@ case "$ID" in
   fedora)
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
-    PKG_COMMON="curl git make pipx python3 stow tmux unzip zsh"
+    PKG_COMMON="curl git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-clients"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
-    PKG_COMMON="curl git make pipx python3 stow tmux unzip zsh"
+    PKG_COMMON="curl git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-client"
     info "Detected: $PRETTY_NAME"
     ;;
@@ -134,6 +134,9 @@ fi
 # ─── Step 5: Symlink repo to ~/.dotfiles ──────────────────────────────────────
 
 step "5/10 — Symlinking repo to ~/.dotfiles"
+
+# Ensure required directories exist
+mkdir -p "$HOME/.ssh" "$HOME/.config"
 
 if [ -L "$DOTFILES_LINK" ] && [ "$(readlink "$DOTFILES_LINK")" = "$REPO_DIR" ]; then
   info "~/.dotfiles already points to $REPO_DIR"

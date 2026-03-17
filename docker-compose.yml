@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ubuntu
-    image: auek/dotfiles-ansible:ubuntu
+    image: auek/dotfiles:ubuntu
     container_name: dotfiles-ubuntu
     volumes:
-      - ./.dotfiles:/home/devuser/code/.dotfiles
+      - ./:/home/devuser/code/dotfiles
     # Keep container running
     tty: true
     stdin_open: true
@@ -14,10 +14,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.fedora
-    image: auek/dotfiles-ansible:fedora
+    image: auek/dotfiles:fedora
     container_name: dotfiles-fedora
     volumes:
-      - ./.dotfiles:/home/devuser/code/.dotfiles
+      - ./:/home/devuser/code/dotfiles
     # Keep container running
     tty: true
     stdin_open: true

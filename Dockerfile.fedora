@@ -1,3 +1,7 @@
+#
+# This Dockerfile is for quickly setting up a dev environment
+# where the dotfiles can be tested over and over again
+
 FROM fedora:42
 
 RUN dnf -y update && \

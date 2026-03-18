@@ -45,8 +45,13 @@ return {
       },
     },
     opts = function()
+      local pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook()
       return {
-        pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
+        pre_hook = function(ctx)
+          local ok, result = pcall(pre_hook, ctx)
+          if ok and result then return result end
+          return vim.bo.commentstring
+        end,
       }
     end,
   },

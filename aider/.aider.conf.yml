@@ -2,7 +2,7 @@ auto-accept-architect: false
 chat-language: english
 read:
   [
-    /home/august/.dotfiles/ARCHITECT.md,
+    /home/august/.dotfiles/docs/aider/ARCHITECT.md,
     /home/august/docs/projects.md,
     /home/august/docs/notes.md,
     /home/august/docs/scratch.md,

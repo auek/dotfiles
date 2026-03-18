@@ -21,15 +21,16 @@ dotfiles/
 ├── docs/                     # Project documentation and backlog
 │   ├── BACKLOG.md            # Planned features and ideas
 │   ├── plans/                # Detailed implementation plans
-│   └── SETUP_WSL.md          # WSL2-specific setup notes
+│   ├── SETUP_WSL.md          # WSL2-specific setup notes
+│   └── aider/                # Aider-specific documentation
+│       └── ARCHITECT.md      # Aider persona/context (not for general use)
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── aider/                    # Stow package: aider AI config
 │   ├── .aider.conf.yml
-│   ├── .aider.model.settings.yml
-│   └── ARCHITECT.md          # Aider-specific persona/context (not for general use)
+│   └── .aider.model.settings.yml
 └── scripts/                  # Repo-only utilities (not stowed)
     └── tmux-panes.sh
 ```

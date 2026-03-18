@@ -19,6 +19,9 @@ dotfiles/
 ├── Dockerfile.fedora
 ├── Dockerfile.ubuntu
 ├── SETUP_WSL.md              # WSL2-specific setup notes
+├── docs/                     # Project documentation and backlog
+│   ├── BACKLOG.md            # Planned features and ideas
+│   └── plans/                # Detailed implementation plans
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
@@ -61,6 +64,7 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `SETUP_WSL.md` and in the dotfiles themselves (they already have WSL guards).
 - Do not stow `scripts/` — it is intentionally a repo-only utility.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
+- Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
 
 ## Testing
 

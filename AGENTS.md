@@ -18,10 +18,10 @@ dotfiles/
 ├── docker-compose.yml        # Fedora 42 + Ubuntu 24.04 test containers
 ├── Dockerfile.fedora
 ├── Dockerfile.ubuntu
-├── SETUP_WSL.md              # WSL2-specific setup notes
 ├── docs/                     # Project documentation and backlog
 │   ├── BACKLOG.md            # Planned features and ideas
-│   └── plans/                # Detailed implementation plans
+│   ├── plans/                # Detailed implementation plans
+│   └── SETUP_WSL.md          # WSL2-specific setup notes
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
@@ -61,7 +61,7 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 
 - Do not put dotfiles outside of a stow package directory.
 - Do not reintroduce Ansible or any external orchestration tool.
-- Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `SETUP_WSL.md` and in the dotfiles themselves (they already have WSL guards).
+- Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `docs/SETUP_WSL.md` and in the dotfiles themselves (they already have WSL guards).
 - Do not stow `scripts/` — it is intentionally a repo-only utility.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
 - Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
@@ -75,4 +75,4 @@ bash docker-run.sh -d fedora   # drop into Fedora 42 container
 bash docker-run.sh -d ubuntu   # drop into Ubuntu 24.04 container
 ```
 
-Primary test target is **Fedora 42**. See `SETUP_WSL.md` for Podman setup on WSL2.
+Primary test target is **Fedora 42**. See `docs/SETUP_WSL.md` for Podman setup on WSL2.

@@ -85,4 +85,4 @@ docker rmi auek/dotfiles:fedora
 docker rmi auek/dotfiles:ubuntu
 ```
 
-See `SETUP_WSL.md` for notes on running Podman on Fedora 42 under WSL2.
+See `docs/SETUP_WSL.md` for notes on running Podman on Fedora 42 under WSL2.

@@ -50,6 +50,20 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
   open() { explorer.exe "${1:-.}"; }
 fi
 
+# Clipboard helper with graceful fallback
+_copy() {
+  if command -v clip.exe >/dev/null 2>&1; then
+    clip.exe
+  elif command -v wl-copy >/dev/null 2>&1; then
+    wl-copy
+  elif command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard
+  else
+    # Fallback: Just consume the input so the pipe doesn't break
+    cat > /dev/null
+  fi
+}
+
 # dev: nvim + aider
 if command -v tmux &> /dev/null; then
   function dev() {
@@ -105,6 +119,11 @@ function gsuggest() {
     return 1
   fi
 
+  local long_mode=0
+  if [[ "$1" == "-l" ]]; then
+    long_mode=1
+  fi
+
   local diff
   diff=$(git diff --staged)
   [[ -z "$diff" ]] && diff=$(git diff HEAD)
@@ -113,8 +132,16 @@ function gsuggest() {
     echo "Nothing to commit"
     return 1
   fi
-   local prompt="Output ONLY the commit message(s), no explanations or commentary. Conventional commits. Lowercase type prefix (fix, feat, chore, refactor, docs, style, test). For small/simple changes: title line only. For larger changes or major new features: include a short body after a blank line explaining what and why. If changes cover clearly different concerns, output multiple messages numbered."
-   echo "$diff" | llm "$prompt" | tee /dev/tty | clip.exe
+
+  local prompt
+  if (( long_mode )); then
+    prompt="Output a git commit message. Conventional commits: lowercase type(scope?): subject. Add a body (2-4 sentences) explaining what changed and why. No bullet points, no headers, no commentary outside the message. Multiple unrelated changes: number each message."
+  else
+    prompt="Output only a git commit message title. No body, no prose, no commentary. Conventional commits: lowercase type(scope?): subject. Max 72 chars. Multiple unrelated changes: number each title."
+  fi
+  
+  # Ensure secrets are loaded and use the robust clipboard helper
+  with_secrets llm -s "$prompt" "$diff" | tee /dev/tty | _copy
 }
 
 ### Aliases ###

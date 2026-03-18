@@ -64,45 +64,81 @@ _copy() {
   fi
 }
 
-# dev: nvim + aider
+# dev: nvim + aider OR opencode + terminal
 if command -v tmux &> /dev/null; then
   function dev() {
-    local detach=false
+    local attach=true
+    local tool="opencode"
 
-    # Parse flags
     while [[ "$1" == "-d" || "$1" == "-h" ]]; do
       if [[ "$1" == "-d" ]]; then
-        detach=true
+        attach=false
       elif [[ "$1" == "-h" ]]; then
-        echo "Usage: dev [-d] <session_name> <project_path>"
-        echo "  -d    Start session detached (do not attach)"
-        echo "  -h    Show this help message"
+        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
+        echo "  aider          Start session with nvim + aider (default: opencode)"
+        echo "  -d             Start session detached (do not attach)"
+        echo "  -h             Show this help message"
         return 0
       fi
       shift
     done
 
-    local name=${1:?session name required}
-    local dir=${2:?project path required}
+    if [[ "$1" == "aider" ]]; then
+      tool="aider"
+      shift
+    fi
+
+    if [[ "$#" -lt 1 ]]; then
+      echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
+      echo "  aider          Start session with nvim + aider (default: opencode)"
+      echo "  -d             Start session detached (do not attach)"
+      echo "  -h             Show this help message"
+      return 1
+    fi
+
+    local name=$1
+    local dir=$2
 
     if tmux has-session -t "$name" 2>/dev/null; then
-      if [ "$detach" = false ]; then
-        tmux attach -t "$name"
+      if [ "$attach" = true ]; then
+        if [ -n "$TMUX" ]; then
+          tmux switch-client -t "$name"
+        else
+          tmux attach -t "$name"
+        fi
       fi
     else
-      tmux new-session -d -s "$name" -c "$dir"
+      if [[ -z "$dir" ]]; then
+        echo "Error: project path required to create a new session"
+        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
+        return 1
+      fi
+      if [[ "$tool" == "aider" ]]; then
+        tmux new-session -d -s "$name" -c "$dir"
 
-      if command -v nvim &> /dev/null; then
-        tmux send-keys -t "$name" "nvim" Enter
+        if command -v nvim &> /dev/null; then
+          tmux send-keys -t "$name" "nvim" Enter
+        fi
+
+        if command -v aider &> /dev/null; then
+          tmux split-window -h -t "$name" -c "$dir"
+          tmux send-keys -t "$name" "with_secrets aider" Enter
+        fi
+      else
+        tmux new-session -d -s "$name" -c "$dir"
+        tmux send-keys -t "$name" "opencode" Enter
+        tmux new-window -t "$name" -c "$dir"
+        tmux split-window -h -t "$name:1"
+        tmux send-keys -t "$name:1.0" "nvim" Enter
+        tmux select-window -t "$name:0"
       fi
 
-      if command -v aider &> /dev/null; then
-        tmux split-window -h -t "$name" -c "$dir"
-        tmux send-keys -t "$name" "with_secrets aider" Enter
-      fi
-
-      if [ "$detach" = false ]; then
-        tmux attach -t "$name"
+      if [ "$attach" = true ]; then
+        if [ -n "$TMUX" ]; then
+          tmux switch-client -t "$name"
+        else
+          tmux attach -t "$name"
+        fi
       fi
     fi
   }

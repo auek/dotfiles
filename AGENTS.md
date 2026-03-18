@@ -66,6 +66,7 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not stow `scripts/` — it is intentionally a repo-only utility.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
 - Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
+- Do not run `make stow`, `make unstow`, `make restow`, `setup.sh`, or any command that modifies system state or symlinks without explicit user confirmation.
 
 ## Testing
 

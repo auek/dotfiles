@@ -22,7 +22,7 @@ alias:
 # MODELS
 # ------------------------------------------
 # CHINESE
-model: openai/MiniMaxAI/MiniMax-M2.5
+model: openrouter/minimax/minimax-m2.7
 # # model: deepseek/deepseek-reasoner
 # # model: deepseek/deepseek-chat
 # #
@@ -40,8 +40,8 @@ model: openai/MiniMaxAI/MiniMax-M2.5
 # editor-model: deepseek/deepseek-chat
 # editor-model: openai/deepseek-ai/DeepSeek-V3.2
 # weak-model: openai/deepseek-ai/DeepSeek-V3.2
-editor-model: openai/MiniMaxAI/MiniMax-M2.5
-weak-model: openai/MiniMaxAI/MiniMax-M2.5
+editor-model: openrouter/minimax/minimax-m2.7
+weak-model: openrouter/minimax/minimax-m2.7
 #
 # GEMINI
 # editor-model: gemini/gemini-2.5-flash

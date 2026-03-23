@@ -2,9 +2,23 @@
 
 Use `~/docs` as personal context when relevant.
 
-If the user mentions an idea that is unrelated to the active repository but worth saving for later, capture it with `/home/august/bin/note "<message>"`.
+Treat `~/docs/projects.md` and `~/docs/notes.md` as read-only context unless the user explicitly asks you to update them.
 
-Do not directly edit files in `~/docs` unless the user is explicitly working on that docs repository. Prefer capture first, curate later.
+Use `~/docs/scratch.md` for quick capture when the user mentions an idea, follow-up, or note that is worth saving but is outside the active repository.
+
+Prefer the custom commands `/note` for one-line notes and `/journal` for richer timestamped entries when the user is explicitly capturing something.
+
+For `/note` and `/journal`, prefer direct file read/edit tools for `~/docs/scratch.md` and avoid shell helpers like `bash`, `python`, `date`, or `git` unless the user explicitly asks for them.
+
+Never create or modify any `scratch.md` inside the current repository unless the user explicitly asks for that exact file.
+
+When adding to `~/docs/scratch.md`:
+- Append rather than rewrite existing notes.
+- Include the date in `YYYY-MM-DD` format for each new entry.
+- Keep entries short and scannable.
+- Prefer a format like `- 2026-03-23: note text` unless the user asks for something more structured.
+
+Ignore assistant-specific Aider docs and config by default. Do not use `aider/**` or `docs/aider/**` as context unless the user explicitly asks for cross-tool comparison.
 
 ## Markdown preferences
 

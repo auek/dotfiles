@@ -1,21 +1,33 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "watcher": {
-    "ignore": ["node_modules/**", "dist/**", "build/**", ".git/**", "target/**", ".cache/**"]
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "target/**",
+      ".cache/**",
+      "aider/**",
+      "docs/aider/**"
+    ]
   },
   "permission": {
     "external_directory": {
       "~/docs/**": "allow"
     },
     "read": {
-      "~/docs/**": "allow"
+      "~/docs/projects.md": "allow",
+      "~/docs/notes.md": "allow",
+      "~/docs/scratch.md": "allow"
     },
     "edit": {
-      "~/docs/**": "deny"
+      "~/docs/projects.md": "deny",
+      "~/docs/notes.md": "deny",
+      "~/docs/scratch.md": "allow"
     },
     "bash": {
-      "*": "ask",
-      "/home/august/bin/note *": "allow"
+      "*": "ask"
     }
   }
 }

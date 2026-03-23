@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "watcher": {
+    "ignore": ["node_modules/**", "dist/**", "build/**", ".git/**", "target/**", ".cache/**"]
+  },
+  "permission": {
+    "external_directory": {
+      "~/docs/**": "allow"
+    },
+    "read": {
+      "~/docs/**": "allow"
+    },
+    "edit": {
+      "~/docs/**": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "/home/august/bin/note *": "allow"
+    }
+  }
+}

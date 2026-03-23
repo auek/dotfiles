@@ -28,6 +28,9 @@ dotfiles/
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
+├── opencode/                 # Stow package: opencode AI config
+│   └── .config/opencode/
+│       └── opencode.jsonc
 ├── aider/                    # Stow package: aider AI config
 │   ├── .aider.conf.yml
 │   └── .aider.model.settings.yml
@@ -46,7 +49,7 @@ nvim/.config/nvim/    → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `aider`.
+`zshrc`, `zprofile`, `tmux`, `nvim`, `aider`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 
@@ -67,6 +70,13 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
 - Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
 - Do not run `make stow`, `make unstow`, `make restow`, `setup.sh`, or any command that modifies system state or symlinks without explicit user confirmation.
+
+## Maintenance
+
+- When adding or modifying a stow package, update:
+  - The `What's included` table in `README.md`
+  - The repo structure tree in `AGENTS.md`
+  - The stowed packages list in `AGENTS.md`
 
 ## Testing
 

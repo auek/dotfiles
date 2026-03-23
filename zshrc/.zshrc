@@ -128,7 +128,7 @@ if command -v tmux &> /dev/null; then
         tmux new-session -d -s "$name" -c "$dir"
         tmux send-keys -t "$name" "opencode" Enter
         tmux new-window -t "$name" -c "$dir"
-        tmux split-window -h -t "$name:1"
+        tmux split-window -h -t "$name:1" -c "$dir"
         tmux send-keys -t "$name:1.0" "nvim" Enter
         tmux select-window -t "$name:0"
       fi
@@ -171,7 +171,7 @@ function gsuggest() {
 
   local prompt
   if (( long_mode )); then
-    prompt="Output a git commit message. Conventional commits: lowercase type(scope?): subject. Add a body (2-4 sentences) explaining what changed and why. No bullet points, no headers, no commentary outside the message. Multiple unrelated changes: number each message."
+    prompt="Output a git commit message. Conventional commits: lowercase type(scope?): subject. Add a body (2-4 sentences) explaining what changed and why. No headers, no commentary outside the message. Multiple unrelated changes: number each message."
   else
     prompt="Output only a git commit message title. No body, no prose, no commentary. Conventional commits: lowercase type(scope?): subject. Max 72 chars. Multiple unrelated changes: number each title."
   fi

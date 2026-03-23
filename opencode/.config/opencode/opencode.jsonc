@@ -3,34 +3,19 @@
   "watcher": {
     "ignore": ["node_modules/**", "dist/**", "build/**", ".git/**", "target/**", ".cache/**"]
   },
-  "agent": {
-    "build": {
-      "mode": "primary",
-      "model": "deepseek/deepseek-chat",
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true
-      }
+  "permission": {
+    "external_directory": {
+      "~/docs/**": "allow"
     },
-    "plan": {
-      "mode": "primary",
-      "model": "anthropic/claude-sonnet-4-6",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false
-      }
+    "read": {
+      "~/docs/**": "allow"
     },
-    "code-reviewer": {
-      "description": "Reviews code for best practices and potential issues",
-      "mode": "subagent",
-      "model": "deepseek/deepseek-chat",
-      "prompt": "You are a code reviewer. Focus on security, performance, and maintainability.",
-      "tools": {
-        "write": false,
-        "edit": false
-      }
+    "edit": {
+      "~/docs/**": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "/home/august/bin/note *": "allow"
     }
   }
 }

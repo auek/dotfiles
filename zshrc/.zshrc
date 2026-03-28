@@ -256,3 +256,6 @@ fi
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# PIP, disallow installing without virtualenv
+export PIP_REQUIRE_VIRTUALENV=true

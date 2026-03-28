@@ -2,6 +2,8 @@
 
 Use `~/docs` as personal context when relevant.
 
+For normal coding work, prefer short-lived feature branches over long-lived shared branches. Treat `main`, `master`, and `develop` as protected branches for agent-authored commits.
+
 Treat `~/docs/projects.md` and `~/docs/notes.md` as read-only context unless the user explicitly asks you to update them.
 
 Use `~/docs/scratch.md` for quick capture when the user mentions an idea, follow-up, or note that is worth saving but is outside the active repository.
@@ -19,6 +21,14 @@ When adding to `~/docs/scratch.md`:
 - Prefer a format like `- 2026-03-23: note text` unless the user asks for something more structured.
 
 Ignore assistant-specific Aider docs and config by default. Do not use `aider/**` or `docs/aider/**` as context unless the user explicitly asks for cross-tool comparison.
+
+## Git workflow
+
+- When a coherent implementation milestone is complete, the agent may create a git commit without asking first.
+- A milestone commit must only happen after the agent has finished the scoped change, reviewed the diff, and run the relevant verification step for the repo (tests, lint, build, or `pre-commit` when appropriate).
+- Prefer a new commit over history rewriting. Do not use `git commit --amend`, force pushes, destructive resets, or branch deletion unless the user explicitly requests them.
+- Never create agent-authored commits on `main`, `master`, or `develop`. Use a feature branch and let the human squash or merge later after review.
+- Never push automatically. Human review and push remain explicit handoff steps.
 
 ## Markdown preferences
 

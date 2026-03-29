@@ -1,21 +1,72 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "watcher": {
-    "ignore": ["node_modules/**", "dist/**", "build/**", ".git/**", "target/**", ".cache/**"]
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "target/**",
+      ".cache/**",
+      "aider/**",
+      "docs/aider/**"
+    ]
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    }
   },
   "permission": {
     "external_directory": {
       "~/docs/**": "allow"
     },
     "read": {
-      "~/docs/**": "allow"
+      "~/docs/projects.md": "allow",
+      "~/docs/notes.md": "allow",
+      "~/docs/scratch.md": "allow"
     },
     "edit": {
-      "~/docs/**": "deny"
+      "~/docs/projects.md": "deny",
+      "~/docs/notes.md": "deny",
+      "~/docs/scratch.md": "allow"
     },
     "bash": {
-      "*": "ask",
-      "/home/august/bin/note *": "allow"
+      "*": "allow",
+      "rm *": "ask",
+      "sudo *": "ask",
+      "chmod *": "ask",
+      "chown *": "ask",
+      "git status": "allow",
+      "git status *": "allow",
+      "git diff": "allow",
+      "git diff *": "allow",
+      "git log": "allow",
+      "git log *": "allow",
+      "git add": "allow",
+      "git add *": "allow",
+      "git restore --staged *": "allow",
+      "git switch": "allow",
+      "git switch *": "allow",
+      "git checkout": "allow",
+      "git checkout *": "allow",
+      "git commit": "allow",
+      "git commit *": "allow",
+      "git rebase": "deny",
+      "git rebase *": "deny",
+      "git push": "deny",
+      "git push *": "deny",
+      "git reset --hard": "deny",
+      "git reset --hard *": "deny",
+      "git clean": "deny",
+      "git clean *": "deny",
+      "git checkout -- *": "deny",
+      "git restore --source *": "deny",
+      "git branch -d *": "deny",
+      "git branch -D *": "deny",
+      "git tag -d *": "deny"
     }
   }
 }

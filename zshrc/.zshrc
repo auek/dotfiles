@@ -233,6 +233,24 @@ if command -v fd &> /dev/null; then
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   export FZF_ALT_C_COMMAND="fd --type d $FZF_CMD_ARGS"
 
+  gbfz() {
+    local delim=$'\t'
+    local branch
+
+    branch=$(git for-each-ref refs/heads \
+      --sort=-committerdate \
+      --format='%(refname:short)	%(committerdate:relative)' |
+      fzf \
+      --with-nth=1,2 \
+      --delimiter="$delim" \
+      --preview 'git log -1 --format="%s%n%n%b" {1}' \
+      --preview-window='right:60%:wrap' |
+      cut -f1) || return
+
+    [[ -n "$branch" ]] || return
+    git switch "$branch"
+  }
+
   # Search directories from home directory (Alt + Shift + C)
   fzf-cd-home() {
     local dir=$(fd --type d --max-depth 5 ${=FZF_CMD_ARGS} . "$HOME" 2>/dev/null | fzf)
@@ -256,3 +274,6 @@ fi
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# PIP, disallow installing without virtualenv
+export PIP_REQUIRE_VIRTUALENV=true

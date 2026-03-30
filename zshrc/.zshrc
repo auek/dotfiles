@@ -34,13 +34,13 @@ bindkey "\e\e[C" forward-word
 ### Functions ###
 # Helper function to run commands with secrets loaded only in a subshell
 with_secrets() {
-  if [ -f ~/.secrets ]; then
+  if [ -f ~/.secrets/secrets_general ]; then
     (
-      source ~/.secrets
+      source ~/.secrets/secrets_general
       "$@"
     )
   else
-    echo "Error: ~/.secrets file not found."
+    echo "Error: ~/.secrets/secrets_general file not found."
     return 1
   fi
 }

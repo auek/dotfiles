@@ -32,15 +32,21 @@ bindkey "\e\e[D" backward-word
 bindkey "\e\e[C" forward-word
 
 ### Functions ###
-# Helper function to run commands with secrets loaded only in a subshell
 with_secrets() {
-  if [ -f ~/.secrets ]; then
+  local secrets_file=~/.secrets/secrets_general
+
+  if [ "$1" = "--opencode" ]; then
+    secrets_file=~/.secrets/secrets_opencode
+    shift
+  fi
+
+  if [ -f "$secrets_file" ]; then
     (
-      source ~/.secrets
+      source "$secrets_file"
       "$@"
     )
   else
-    echo "Error: ~/.secrets file not found."
+    echo "Error: $secrets_file file not found."
     return 1
   fi
 }
@@ -126,7 +132,7 @@ if command -v tmux &> /dev/null; then
         fi
       else
         tmux new-session -d -s "$name" -c "$dir"
-        tmux send-keys -t "$name" "opencode" Enter
+        tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
         tmux new-window -t "$name" -c "$dir"
         tmux split-window -h -t "$name:1" -c "$dir"
         tmux send-keys -t "$name:1.0" "nvim" Enter
@@ -217,6 +223,7 @@ alias gc-="git checkout -"
 # Secrets-wrapped commands
 alias aider='with_secrets aider'
 alias llm='with_secrets llm'
+alias opencode='with_secrets --opencode opencode'
 
 # SSH
 if [ -z "$SSH_AUTH_SOCK" ]; then

@@ -5,8 +5,8 @@ Quirks and fixes for running this dotfiles setup on Fedora 42+ under WSL2.
 This document covers WSL-specific exceptions only. Native Linux should not need
 these workarounds.
 
-On native Fedora Linux, `setup.sh` installs Podman plus Docker-compatible CLI
-support automatically. On WSL2, `setup.sh` intentionally skips container
+On native Fedora Linux, `setup.sh --full` installs Podman plus Docker-compatible
+CLI support automatically. On WSL2, `setup.sh` intentionally skips container
 tooling so the WSL-specific path stays explicit and opt-in.
 
 ---

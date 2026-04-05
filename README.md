@@ -7,7 +7,8 @@ is shared; WSL-specific quirks are handled only where needed via runtime guards
 in dotfiles and notes in `docs/SETUP_WSL.md`.
 
 On Fedora, container tooling is Podman-based. Native Fedora installs Podman plus
-Docker-compatible CLI support; WSL2 Fedora keeps container setup as a separate,
+Docker-compatible CLI support in the `--full` profile; WSL2 Fedora keeps
+container setup as a separate,
 WSL-specific path documented in `docs/SETUP_WSL.md`.
 
 ## What's included
@@ -50,8 +51,8 @@ Native Linux should not inherit WSL-only settings or workarounds.
 
 | Flag | What it installs |
 |---|---|
-| `--slim` | curl, git, gcc, make, stow, tmux, zsh, kitty + JetBrains Mono (non-WSL), Oh My Zsh, zsh-autosuggestions, dotfiles, Podman + Docker-compatible CLI on native Fedora |
-| `--full` | Everything in slim + exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
+| `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
+| `--full` | Everything in slim + kitty + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
 
 After installation, restart your shell:
 

@@ -98,10 +98,6 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
   info "Running under WSL2"
 fi
 
-if [ "$IS_WSL" -eq 0 ]; then
-  PKG_COMMON="$PKG_COMMON $PKG_KITTY $PKG_KITTY_FONT"
-fi
-
 # ─── Step 2: Install common packages ─────────────────────────────────────────
 
 step "2/11 — Installing common packages"
@@ -124,7 +120,9 @@ success "Common packages installed"
 step "3/11 — Installing Fedora container tooling"
 
 if [ "$PKG_MANAGER" = "dnf" ]; then
-  if [ "$IS_WSL" -eq 1 ]; then
+  if [ "$PROFILE" != "full" ]; then
+    info "Profile: slim — skipping Fedora container tooling"
+  elif [ "$IS_WSL" -eq 1 ]; then
     info "WSL2 detected — skipping Fedora container tooling in setup.sh"
     info "See docs/SETUP_WSL.md for the WSL-specific Podman setup"
   else
@@ -142,6 +140,15 @@ step "4/11 — Installing optional packages"
 
 if [ "$PROFILE" = "full" ]; then
   info "Profile: full — installing optional packages"
+
+  if [ "$IS_WSL" -eq 0 ]; then
+    for pkg in "$PKG_KITTY" "$PKG_KITTY_FONT"; do
+      $PKG_INSTALL "$pkg" || warning "Optional package '$pkg' failed to install — skipping"
+    done
+  else
+    info "WSL2 detected — skipping Kitty and JetBrains Mono"
+  fi
+
   for pkg in $PKG_OPTIONAL; do
     $PKG_INSTALL "$pkg" || warning "Optional package '$pkg' failed to install — skipping"
   done

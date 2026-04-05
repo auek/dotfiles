@@ -63,6 +63,7 @@ case "$ID" in
     PKG_COMMON="curl git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-clients"
     PKG_KITTY="kitty"
+    PKG_KITTY_FONT="jetbrains-mono-fonts"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
@@ -71,6 +72,7 @@ case "$ID" in
     PKG_COMMON="curl git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-client"
     PKG_KITTY="kitty"
+    PKG_KITTY_FONT="fonts-jetbrains-mono"
     info "Detected: $PRETTY_NAME"
     ;;
   *)
@@ -85,7 +87,7 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
 fi
 
 if [ "$IS_WSL" -eq 0 ]; then
-  PKG_COMMON="$PKG_COMMON $PKG_KITTY"
+  PKG_COMMON="$PKG_COMMON $PKG_KITTY $PKG_KITTY_FONT"
 fi
 
 # ─── Step 2: Install common packages ─────────────────────────────────────────

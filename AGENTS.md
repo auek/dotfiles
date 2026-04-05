@@ -22,8 +22,6 @@ dotfiles/
 │   ├── BACKLOG.md            # Planned features and ideas
 │   ├── plans/                # Detailed implementation plans
 │   ├── SETUP_WSL.md          # WSL2-specific setup notes
-│   └── aider/                # Aider-specific documentation
-│       └── ARCHITECT.md      # Aider persona/context (not for general use)
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
@@ -32,9 +30,6 @@ dotfiles/
 ├── opencode/                 # Stow package: opencode AI config
 │   └── .config/opencode/
 │       └── opencode.jsonc
-├── aider/                    # Stow package: aider AI config
-│   ├── .aider.conf.yml
-│   └── .aider.model.settings.yml
 └── scripts/                  # Repo-only utilities (not stowed)
     └── tmux-panes.sh
 ```
@@ -50,7 +45,7 @@ nvim/.config/nvim/    → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `aider`, `opencode`.
+`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

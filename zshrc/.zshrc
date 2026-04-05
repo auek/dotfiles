@@ -71,18 +71,16 @@ _copy() {
   fi
 }
 
-# dev: nvim + aider OR opencode + terminal
+# dev: opencode + nvim + terminal
 if command -v tmux &> /dev/null; then
   function dev() {
     local attach=true
-    local tool="opencode"
 
     while [[ "$1" == "-d" || "$1" == "-h" ]]; do
       if [[ "$1" == "-d" ]]; then
         attach=false
       elif [[ "$1" == "-h" ]]; then
-        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
-        echo "  aider          Start session with nvim + aider (default: opencode)"
+        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
         echo "  -d             Start session detached (do not attach)"
         echo "  -h             Show this help message"
         return 0
@@ -90,14 +88,8 @@ if command -v tmux &> /dev/null; then
       shift
     done
 
-    if [[ "$1" == "aider" ]]; then
-      tool="aider"
-      shift
-    fi
-
     if [[ "$#" -lt 1 ]]; then
-      echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
-      echo "  aider          Start session with nvim + aider (default: opencode)"
+      echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
       echo "  -d             Start session detached (do not attach)"
       echo "  -h             Show this help message"
       return 1
@@ -117,28 +109,15 @@ if command -v tmux &> /dev/null; then
     else
       if [[ -z "$dir" ]]; then
         echo "Error: project path required to create a new session"
-        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
         return 1
       fi
-      if [[ "$tool" == "aider" ]]; then
-        tmux new-session -d -s "$name" -c "$dir"
-
-        if command -v nvim &> /dev/null; then
-          tmux send-keys -t "$name" "nvim" Enter
-        fi
-
-        if command -v aider &> /dev/null; then
-          tmux split-window -h -t "$name" -c "$dir"
-          tmux send-keys -t "$name" "with_secrets aider" Enter
-        fi
-      else
-        tmux new-session -d -s "$name" -c "$dir"
-        tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
-        tmux new-window -t "$name" -c "$dir"
-        tmux split-window -h -t "$name:1" -c "$dir"
-        tmux send-keys -t "$name:1.0" "nvim" Enter
-        tmux select-window -t "$name:0"
-      fi
+      tmux new-session -d -s "$name" -c "$dir"
+      tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
+      tmux new-window -t "$name" -c "$dir"
+      tmux split-window -h -t "$name:1" -c "$dir"
+      tmux send-keys -t "$name:1.0" "nvim" Enter
+      tmux select-window -t "$name:0"
 
       if [ "$attach" = true ]; then
         if [ -n "$TMUX" ]; then
@@ -222,7 +201,6 @@ alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
 
 # Secrets-wrapped commands
-alias aider='with_secrets aider'
 alias llm='with_secrets llm'
 alias opencode='with_secrets --opencode opencode'
 

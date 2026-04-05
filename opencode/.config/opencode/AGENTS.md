@@ -20,8 +20,6 @@ When adding to `~/docs/scratch.md`:
 - Keep entries short and scannable.
 - Prefer a format like `- 2026-03-23: note text` unless the user asks for something more structured.
 
-Ignore assistant-specific Aider docs and config by default. Do not use `aider/**` or `docs/aider/**` as context unless the user explicitly asks for cross-tool comparison.
-
 ## Git workflow
 
 - When a coherent implementation milestone is complete, the agent may create a git commit without asking first.

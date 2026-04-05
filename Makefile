@@ -1,4 +1,4 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim kitty aider opencode
+STOW_PACKAGES = zshrc zprofile tmux nvim kitty opencode
 STOW_TARGET = $(HOME)
 
 .PHONY: stow unstow restow

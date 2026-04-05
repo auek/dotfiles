@@ -30,7 +30,7 @@ tiny  ⊂  slim  ⊂  full
 | `tmux` | yes |
 | `zprofile` | no — PATH additions (bob/nvim-bin, NVM) are irrelevant without those tools |
 | `nvim` | no |
-| `aider` | no |
+| `opencode` | no |
 
 ---
 

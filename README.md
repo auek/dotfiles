@@ -11,7 +11,6 @@ Automated setup of a development environment using a single Bash script and GNU 
 | `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `aider` | Aider AI config and model settings |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
 ## Prerequisites

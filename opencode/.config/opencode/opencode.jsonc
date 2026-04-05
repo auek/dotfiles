@@ -7,9 +7,7 @@
       "build/**",
       ".git/**",
       "target/**",
-      ".cache/**",
-      "aider/**",
-      "docs/aider/**"
+      ".cache/**"
     ]
   },
   "mcp": {

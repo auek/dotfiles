@@ -60,6 +60,16 @@ After installation, restart your shell:
 exec zsh -l
 ```
 
+On GNOME-based Fedora installs, `setup.sh` also applies the preferred Compose
+key setting for a US keyboard workflow:
+
+```bash
+gsettings set org.gnome.desktop.input-sources xkb-options "['compose:menu']"
+```
+
+This keeps the base layout as `US` and uses the `Menu` key as the Compose key
+for characters like `å`, `ä`, and `ö`.
+
 ## Makefile
 
 | Target | Description |

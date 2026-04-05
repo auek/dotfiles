@@ -204,6 +204,12 @@ else
   die "Stow failed. Resolve any conflicting files in $HOME, then rerun setup.sh. Use 'make -C $REPO_DIR unstow' only for links managed by this repo."
 fi
 
+if "$REPO_DIR/scripts/configure-compose-key.sh"; then
+  success "Compose key preferences applied when supported"
+else
+  warning "Compose key preference setup failed — continuing"
+fi
+
 # ─── Step 8: Install Oh My Zsh ────────────────────────────────────────────────
 
 step "8/11 — Installing Oh My Zsh"

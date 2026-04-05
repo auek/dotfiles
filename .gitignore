@@ -5,6 +5,7 @@ dist/
 build/
 .cache/
 target/
+.obsidian/
 
 # opencode runtime files
 opencode/.config/opencode/node_modules/

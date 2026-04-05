@@ -39,6 +39,18 @@ success() { echo "[setup] ✓ $*"; }
 warning() { echo "[setup] ! $*"; }
 die()     { echo "[setup] ERROR: $*" >&2; exit 1; }
 
+get_login_shell() {
+  local shell_path
+
+  shell_path="$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)"
+
+  if [ -n "$shell_path" ]; then
+    printf '%s\n' "$shell_path"
+  else
+    printf '%s\n' "${SHELL:-}"
+  fi
+}
+
 step() {
   echo
   echo "──────────────────────────────────────────"
@@ -48,7 +60,7 @@ step() {
 
 # ─── Step 1: Detect OS ────────────────────────────────────────────────────────
 
-step "1/10 — Detecting OS"
+step "1/11 — Detecting OS"
 
 if [ ! -f /etc/os-release ]; then
   die "Cannot detect OS: /etc/os-release not found"
@@ -92,7 +104,7 @@ fi
 
 # ─── Step 2: Install common packages ─────────────────────────────────────────
 
-step "2/10 — Installing common packages"
+step "2/11 — Installing common packages"
 
 case "$PKG_MANAGER" in
   dnf)
@@ -107,9 +119,26 @@ esac
 
 success "Common packages installed"
 
-# ─── Step 3: Install optional packages (full only) ───────────────────────────
+# ─── Step 3: Install Fedora container tooling ────────────────────────────────
 
-step "3/10 — Installing optional packages"
+step "3/11 — Installing Fedora container tooling"
+
+if [ "$PKG_MANAGER" = "dnf" ]; then
+  if [ "$IS_WSL" -eq 1 ]; then
+    info "WSL2 detected — skipping Fedora container tooling in setup.sh"
+    info "See docs/SETUP_WSL.md for the WSL-specific Podman setup"
+  else
+    info "Installing Podman with Docker-compatible CLI on Fedora"
+    sudo dnf install -y podman podman-docker docker-compose
+    success "Fedora container tooling installed"
+  fi
+else
+  info "Skipping Fedora container tooling on non-Fedora host"
+fi
+
+# ─── Step 4: Install optional packages (full only) ───────────────────────────
+
+step "4/11 — Installing optional packages"
 
 if [ "$PROFILE" = "full" ]; then
   info "Profile: full — installing optional packages"
@@ -121,13 +150,14 @@ else
   info "Profile: slim — skipping optional packages"
 fi
 
-# ─── Step 4: Set zsh as default shell ─────────────────────────────────────────
+# ─── Step 5: Set zsh as default shell ─────────────────────────────────────────
 
-step "4/10 — Setting zsh as default shell"
+step "5/11 — Setting zsh as default shell"
 
 ZSH_PATH="$(command -v zsh)"
+CURRENT_LOGIN_SHELL="$(get_login_shell)"
 
-if [ "$SHELL" = "$ZSH_PATH" ]; then
+if [ -n "$CURRENT_LOGIN_SHELL" ] && [ "$(readlink -f "$CURRENT_LOGIN_SHELL")" = "$(readlink -f "$ZSH_PATH")" ]; then
   info "zsh is already the default shell"
 else
   if grep -qF "$ZSH_PATH" /etc/shells; then
@@ -141,9 +171,9 @@ else
   fi
 fi
 
-# ─── Step 5: Symlink repo to ~/.dotfiles ──────────────────────────────────────
+# ─── Step 6: Symlink repo to ~/.dotfiles ──────────────────────────────────────
 
-step "5/10 — Symlinking repo to ~/.dotfiles"
+step "6/11 — Symlinking repo to ~/.dotfiles"
 
 # Ensure required directories exist
 mkdir -p "$HOME/.ssh" "$HOME/.config"
@@ -157,16 +187,19 @@ else
   success "Created ~/.dotfiles -> $REPO_DIR"
 fi
 
-# ─── Step 6: Stow dotfiles ────────────────────────────────────────────────────
+# ─── Step 7: Stow dotfiles ────────────────────────────────────────────────────
 
-step "6/10 — Stowing dotfiles"
+step "7/11 — Stowing dotfiles"
 
-make -C "$REPO_DIR" stow
-success "Dotfiles stowed"
+if make -C "$REPO_DIR" stow; then
+  success "Dotfiles stowed"
+else
+  die "Stow failed. Resolve any conflicting files in $HOME, then rerun setup.sh. Use 'make -C $REPO_DIR unstow' only for links managed by this repo."
+fi
 
-# ─── Step 7: Install Oh My Zsh ────────────────────────────────────────────────
+# ─── Step 8: Install Oh My Zsh ────────────────────────────────────────────────
 
-step "7/10 — Installing Oh My Zsh"
+step "8/11 — Installing Oh My Zsh"
 
 if [ -d "$HOME/.oh-my-zsh" ]; then
   info "Oh My Zsh already installed"
@@ -176,9 +209,9 @@ else
   success "Oh My Zsh installed"
 fi
 
-# ─── Step 8: Install zsh-autosuggestions ──────────────────────────────────────
+# ─── Step 9: Install zsh-autosuggestions ──────────────────────────────────────
 
-step "8/10 — Installing zsh-autosuggestions"
+step "9/11 — Installing zsh-autosuggestions"
 
 ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 
@@ -191,9 +224,9 @@ else
   success "zsh-autosuggestions $ZSH_AUTOSUGGESTIONS_VERSION installed"
 fi
 
-# ─── Step 9: Install dev tools (full only) ────────────────────────────────────
+# ─── Step 10: Install dev tools (full only) ───────────────────────────────────
 
-step "9/10 — Installing dev tools"
+step "10/11 — Installing dev tools"
 
 if [ "$PROFILE" = "full" ]; then
 
@@ -264,9 +297,9 @@ else
   info "Profile: slim — skipping dev tools"
 fi
 
-# ─── Step 10: Done ────────────────────────────────────────────────────────────
+# ─── Step 11: Done ────────────────────────────────────────────────────────────
 
-step "10/10 — Done"
+step "11/11 — Done"
 
 echo
 echo "  Setup complete (profile: $PROFILE)"

@@ -4,9 +4,13 @@ Technical reference for AI coding assistants working in this repository.
 
 ## Purpose
 
-This repo bootstraps a personal development environment on Fedora 40+ and
+This repo bootstraps a personal development environment on Fedora 42+ and
 Ubuntu 22.04+. It uses GNU Stow for dotfile symlinking and a single Bash
 script (`setup.sh`) for installation.
+
+It supports both native Linux and WSL2 environments. The base install flow is
+shared across both; WSL-specific behavior must stay behind runtime detection or
+live in `docs/SETUP_WSL.md`.
 
 ## Repo structure
 
@@ -15,7 +19,7 @@ dotfiles/
 ├── setup.sh                  # Main bootstrap script
 ├── Makefile                  # Stow link/unlink targets
 ├── docker-run.sh             # Drop into a test container
-├── docker-compose.yml        # Fedora 42 + Ubuntu 24.04 test containers
+├── docker-compose.yml        # Fedora 42+ + Ubuntu 24.04 test containers
 ├── Dockerfile.fedora
 ├── Dockerfile.ubuntu
 ├── docs/                     # Project documentation and backlog
@@ -57,11 +61,20 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - **WSL2 awareness**: Detects WSL2 via `/proc/version` for informational logging only. No WSL-specific install logic in `setup.sh`.
 - **Non-fatal optional packages**: Each optional package in `--full` is installed with `|| warning` so a single missing package does not abort the run.
 
+## Environment policy
+
+- Support both native Linux and WSL2.
+- Keep the default setup portable across both environments.
+- Do not apply WSL-specific behavior unless runtime WSL detection confirms it.
+- Do not add WSL-specific install branches to `setup.sh`.
+- Put WSL-only quirks in guarded dotfiles or in `docs/SETUP_WSL.md`.
+- Do not apply WSL-only workarounds on native Linux.
+
 ## What not to do
 
 - Do not put dotfiles outside of a stow package directory.
 - Do not reintroduce Ansible or any external orchestration tool.
-- Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `docs/SETUP_WSL.md` and in the dotfiles themselves (they already have WSL guards).
+- Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `docs/SETUP_WSL.md` and in the dotfiles themselves when guarded by runtime detection.
 - Do not stow `scripts/` — it is intentionally a repo-only utility.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
 - Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
@@ -79,8 +92,8 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 Use the provided Docker/Podman containers for clean environment testing:
 
 ```bash
-bash docker-run.sh -d fedora   # drop into Fedora 42 container
+bash docker-run.sh -d fedora   # drop into Fedora container
 bash docker-run.sh -d ubuntu   # drop into Ubuntu 24.04 container
 ```
 
-Primary test target is **Fedora 42**. See `docs/SETUP_WSL.md` for Podman setup on WSL2.
+Primary test target is **Fedora 42+**. See `docs/SETUP_WSL.md` for WSL2-specific notes.

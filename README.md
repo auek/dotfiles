@@ -2,6 +2,10 @@
 
 Automated setup of a development environment using a single Bash script and GNU Stow.
 
+Supports both native Linux and WSL2 Linux environments. The base install flow
+is shared; WSL-specific quirks are handled only where needed via runtime guards
+in dotfiles and notes in `docs/SETUP_WSL.md`.
+
 ## What's included
 
 | Package | Contents |
@@ -15,7 +19,7 @@ Automated setup of a development environment using a single Bash script and GNU 
 
 ## Prerequisites
 
-- Fedora 40+ or Ubuntu 22.04+
+- Fedora 42+ or Ubuntu 22.04+
 - `git`
 - Docker / Podman (optional, for container-based testing)
 
@@ -29,6 +33,14 @@ cd ~/.dotfiles
 bash setup.sh          # slim install (default)
 bash setup.sh --full   # full install including dev tools
 ```
+
+## Supported environments
+
+- Native Fedora 42+ and Ubuntu 22.04+
+- Fedora 42+ under WSL2
+
+WSL-specific behavior should only apply when runtime detection confirms WSL.
+Native Linux should not inherit WSL-only settings or workarounds.
 
 ### Profiles
 
@@ -53,7 +65,7 @@ exec zsh -l
 
 ## Docker testing
 
-A Fedora 42 and Ubuntu 24.04 container are available for testing the setup
+A Fedora and Ubuntu 24.04 container are available for testing the setup
 in a clean environment without touching your host.
 
 ```bash
@@ -86,4 +98,4 @@ docker rmi auek/dotfiles:fedora
 docker rmi auek/dotfiles:ubuntu
 ```
 
-See `docs/SETUP_WSL.md` for notes on running Podman on Fedora 42 under WSL2.
+See `docs/SETUP_WSL.md` for WSL2-specific setup notes and workarounds.

@@ -1,10 +1,13 @@
 # WSL2 Setup Notes
 
-Quirks and fixes for running this dotfiles setup on Fedora 42 under WSL2.
+Quirks and fixes for running this dotfiles setup on Fedora 42+ under WSL2.
+
+This document covers WSL-specific exceptions only. Native Linux should not need
+these workarounds.
 
 ---
 
-## Podman on Fedora 42 + WSL2
+## Podman on Fedora 42+ + WSL2
 
 ### Install required packages
 ```bash
@@ -21,7 +24,7 @@ sudo chmod u+s /usr/sbin/newuidmap /usr/sbin/newgidmap
 
 ### Fix container networking (nftables → iptables)
 
-WSL2's kernel does not support nftables. Podman 5.x on Fedora 42 uses the
+WSL2's kernel does not support nftables. Podman 5.x on Fedora 42+ uses the
 `netavark` network backend (CNI is not compiled in) which defaults to nftables.
 Force it to use iptables instead:
 ```bash

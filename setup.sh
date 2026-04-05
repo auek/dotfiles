@@ -15,6 +15,8 @@ PROFILE="slim"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
 NVM_VERSION="v0.40.1"
+KITTY_VERSION="0.46.2"
+KITTY_ARCHIVE_URL="https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz"
 DOTFILES_LINK="$HOME/.dotfiles"
 IS_WSL=0
 
@@ -51,6 +53,41 @@ get_login_shell() {
   fi
 }
 
+install_kitty() {
+  local current_version=""
+  local tmpdir
+
+  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config"
+
+  if [ -x "$HOME/.local/kitty.app/bin/kitty" ]; then
+    current_version="$("$HOME/.local/kitty.app/bin/kitty" --version | awk '{print $2}')"
+  fi
+
+  if [ "$current_version" = "$KITTY_VERSION" ]; then
+    info "kitty $KITTY_VERSION already installed in ~/.local/kitty.app"
+  else
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' RETURN
+
+    info "Installing kitty $KITTY_VERSION from upstream binary"
+    curl -L "$KITTY_ARCHIVE_URL" -o "$tmpdir/kitty.txz"
+    rm -rf "$HOME/.local/kitty.app"
+    tar -xJf "$tmpdir/kitty.txz" -C "$HOME/.local"
+    success "kitty $KITTY_VERSION installed"
+
+    rm -rf "$tmpdir"
+    trap - RETURN
+  fi
+
+  ln -sf "$HOME/.local/kitty.app/bin/kitty" "$HOME/.local/bin/kitty"
+  ln -sf "$HOME/.local/kitty.app/bin/kitten" "$HOME/.local/bin/kitten"
+  cp "$HOME/.local/kitty.app/share/applications/kitty.desktop" "$HOME/.local/share/applications/kitty.desktop"
+  sed -i "s|^TryExec=.*|TryExec=$HOME/.local/kitty.app/bin/kitty|" "$HOME/.local/share/applications/kitty.desktop"
+  sed -i "s|^Exec=.*|Exec=$HOME/.local/kitty.app/bin/kitty|" "$HOME/.local/share/applications/kitty.desktop"
+  sed -i "s|^Icon=.*|Icon=$HOME/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|" "$HOME/.local/share/applications/kitty.desktop"
+  printf 'kitty.desktop\n' > "$HOME/.config/xdg-terminals.list"
+}
+
 step() {
   echo
   echo "──────────────────────────────────────────"
@@ -74,7 +111,6 @@ case "$ID" in
     PKG_INSTALL="sudo dnf install -y"
     PKG_COMMON="curl git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-clients"
-    PKG_KITTY="kitty"
     PKG_KITTY_FONT="jetbrains-mono-fonts"
     info "Detected: Fedora $VERSION_ID"
     ;;
@@ -83,7 +119,6 @@ case "$ID" in
     PKG_INSTALL="sudo apt-get install -y"
     PKG_COMMON="curl git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-client"
-    PKG_KITTY="kitty"
     PKG_KITTY_FONT="fonts-jetbrains-mono"
     info "Detected: $PRETTY_NAME"
     ;;
@@ -142,9 +177,8 @@ if [ "$PROFILE" = "full" ]; then
   info "Profile: full — installing optional packages"
 
   if [ "$IS_WSL" -eq 0 ]; then
-    for pkg in "$PKG_KITTY" "$PKG_KITTY_FONT"; do
-      $PKG_INSTALL "$pkg" || warning "Optional package '$pkg' failed to install — skipping"
-    done
+    $PKG_INSTALL "$PKG_KITTY_FONT" || warning "Optional package '$PKG_KITTY_FONT' failed to install — skipping"
+    install_kitty || warning "Upstream kitty install failed — skipping"
   else
     info "WSL2 detected — skipping Kitty and JetBrains Mono"
   fi

@@ -59,6 +59,7 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - **Idempotent**: Every step is guarded with `command -v`, `[ -d ]`, or `[ -f ]` checks. Safe to run multiple times.
 - **OS detection**: Detects Fedora (dnf) or Ubuntu/Debian (apt) via `/etc/os-release`. Fails clearly on unsupported distros.
 - **WSL2 awareness**: Detects WSL2 via `/proc/version` for informational logging only. No WSL-specific install logic in `setup.sh`.
+- **Kitty install path**: Installs pinned upstream kitty in the `--full` profile on native Linux instead of relying on distro package versions.
 - **Non-fatal optional packages**: Each optional package in `--full` is installed with `|| warning` so a single missing package does not abort the run.
 
 ## Environment policy

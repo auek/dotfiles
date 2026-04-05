@@ -11,6 +11,10 @@ Docker-compatible CLI support in the `--full` profile; WSL2 Fedora keeps
 container setup as a separate,
 WSL-specific path documented in `docs/SETUP_WSL.md`.
 
+Kitty is installed from the upstream binary in the `--full` profile on native
+Linux. The Fedora RPM can be removed manually afterward if you want to avoid
+keeping both installed during the transition.
+
 ## What's included
 
 | Package | Contents |
@@ -52,7 +56,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 | Flag | What it installs |
 |---|---|
 | `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + kitty + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
+| `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
 
 After installation, restart your shell:
 

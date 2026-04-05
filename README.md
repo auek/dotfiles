@@ -35,7 +35,7 @@ bash setup.sh --full   # full install including dev tools
 | Flag | What it installs |
 |---|---|
 | `--slim` | curl, git, gcc, make, stow, tmux, zsh, kitty (non-WSL), Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr |
+| `--full` | Everything in slim + exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
 
 After installation, restart your shell:
 

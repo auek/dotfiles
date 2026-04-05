@@ -4,7 +4,7 @@
 #
 # Usage: setup.sh [--slim | --full]
 #   --slim  Install common packages, dotfiles, shell (default)
-#   --full  All of the above + dev tools (nvim, nvm, node, tldr)
+#   --full  All of the above + dev tools (nvim, nvm, node, tldr, llm)
 
 set -euo pipefail
 
@@ -248,6 +248,14 @@ if [ "$PROFILE" = "full" ]; then
     pipx install tldr
     tldr --update || true
     success "tldr installed"
+  fi
+
+  # llm
+  if command -v llm &>/dev/null; then
+    info "llm already installed"
+  else
+    pipx install llm
+    success "llm installed"
   fi
 
 else

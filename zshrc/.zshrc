@@ -21,6 +21,7 @@ plugins=(git ssh-agent zsh-autosuggestions)
 zstyle ':omz:*' aliases no
 zstyle :omz:plugins:ssh-agent identities id_ed25519
 
+export ZSH="$HOME/.oh-my-zsh"
 source $ZSH/oh-my-zsh.sh
 
 ### Binds ###

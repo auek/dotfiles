@@ -10,6 +10,7 @@ Automated setup of a development environment using a single Bash script and GNU 
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
 | `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
+| `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
 | `aider` | Aider AI config and model settings |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
@@ -34,7 +35,7 @@ bash setup.sh --full   # full install including dev tools
 
 | Flag | What it installs |
 |---|---|
-| `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
+| `--slim` | curl, git, gcc, make, stow, tmux, zsh, kitty (non-WSL), Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr |
 
 After installation, restart your shell:

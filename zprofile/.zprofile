@@ -20,6 +20,3 @@ export NVM_DIR="$HOME/.nvm"
 # Podman rootless socket (WSL2 workaround)
 [ -S "/run/user/${UID}/podman/podman.sock" ] && \
     export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
-
-### OMZ ###
-export ZSH="$HOME/.oh-my-zsh"

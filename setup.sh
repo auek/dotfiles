@@ -16,6 +16,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
 NVM_VERSION="v0.40.1"
 DOTFILES_LINK="$HOME/.dotfiles"
+IS_WSL=0
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ case "$ID" in
     PKG_INSTALL="sudo dnf install -y"
     PKG_COMMON="curl git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-clients"
+    PKG_KITTY="kitty"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
@@ -68,6 +70,7 @@ case "$ID" in
     PKG_INSTALL="sudo apt-get install -y"
     PKG_COMMON="curl git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-client"
+    PKG_KITTY="kitty"
     info "Detected: $PRETTY_NAME"
     ;;
   *)
@@ -75,9 +78,14 @@ case "$ID" in
     ;;
 esac
 
-# WSL detection (informational only)
+# WSL detection (skip Kitty install under WSL)
 if grep -qi microsoft /proc/version 2>/dev/null; then
+  IS_WSL=1
   info "Running under WSL2"
+fi
+
+if [ "$IS_WSL" -eq 0 ]; then
+  PKG_COMMON="$PKG_COMMON $PKG_KITTY"
 fi
 
 # ─── Step 2: Install common packages ─────────────────────────────────────────

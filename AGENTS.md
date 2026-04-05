@@ -28,6 +28,7 @@ dotfiles/
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
+├── kitty/.config/kitty/      # Stow package: Kitty terminal config
 ├── opencode/                 # Stow package: opencode AI config
 │   └── .config/opencode/
 │       └── opencode.jsonc
@@ -49,7 +50,7 @@ nvim/.config/nvim/    → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `aider`, `opencode`.
+`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `aider`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

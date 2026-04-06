@@ -1,10 +1,17 @@
 # WSL2 Setup Notes
 
-Quirks and fixes for running this dotfiles setup on Fedora 42 under WSL2.
+Quirks and fixes for running this dotfiles setup on Fedora 42+ under WSL2.
+
+This document covers WSL-specific exceptions only. Native Linux should not need
+these workarounds.
+
+On native Fedora Linux, `setup.sh --full` installs Podman plus Docker-compatible
+CLI support automatically. On WSL2, `setup.sh` intentionally skips container
+tooling so the WSL-specific path stays explicit and opt-in.
 
 ---
 
-## Podman on Fedora 42 + WSL2
+## Podman on Fedora 42+ + WSL2
 
 ### Install required packages
 ```bash
@@ -21,7 +28,7 @@ sudo chmod u+s /usr/sbin/newuidmap /usr/sbin/newgidmap
 
 ### Fix container networking (nftables → iptables)
 
-WSL2's kernel does not support nftables. Podman 5.x on Fedora 42 uses the
+WSL2's kernel does not support nftables. Podman 5.x on Fedora 42+ uses the
 `netavark` network backend (CNI is not compiled in) which defaults to nftables.
 Force it to use iptables instead:
 ```bash
@@ -46,10 +53,13 @@ The `docker-compose` plugin does not pick up the podman socket path
 automatically on WSL2. Set `DOCKER_HOST` so all `docker`/`docker compose`
 commands work without prefixing it manually.
 
-This is already handled in `.zprofile` (applied after `make stow`):
+This is already handled in `.zprofile` when WSL is detected (applied after
+`make stow`):
 ```zsh
-[ -S "/run/user/${UID}/podman/podman.sock" ] && \
-    export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
+if grep -qi microsoft /proc/version 2>/dev/null; then
+  [ -S "/run/user/${UID}/podman/podman.sock" ] && \
+      export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
+fi
 ```
 
 Until the dotfiles are stowed, export it manually in your shell:

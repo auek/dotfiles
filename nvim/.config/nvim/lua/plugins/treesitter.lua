@@ -18,8 +18,6 @@ return {
           "json",
           "lua",
           "make",
-          "markdown",
-          "markdown_inline",
           "python",
           "scss",
           "tsx",
@@ -28,6 +26,7 @@ return {
         },
         highlight = {
           enable = true,
+          disable = { "markdown", "markdown_inline" },
         },
         yati = {
           enable = true,

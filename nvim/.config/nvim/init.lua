@@ -55,6 +55,15 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+vim.api.nvim_create_autocmd("FileType", {
+  group = wrap_group,
+  pattern = { "markdown" },
+  callback = function(args)
+    -- Neovim 0.12 + nvim-treesitter currently crashes on some markdown buffers.
+    pcall(vim.treesitter.stop, args.buf)
+  end,
+})
+
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then

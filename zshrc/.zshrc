@@ -71,34 +71,31 @@ _copy() {
   fi
 }
 
-# dev: nvim + aider OR opencode + terminal
+# dev: opencode + nvim + terminal
 if command -v tmux &> /dev/null; then
   function dev() {
     local attach=true
-    local tool="opencode"
+    local use_claude=false
 
-    while [[ "$1" == "-d" || "$1" == "-h" ]]; do
+    while [[ "$1" == "-d" || "$1" == "-h" || "$1" == "--claude" ]]; do
       if [[ "$1" == "-d" ]]; then
         attach=false
+      elif [[ "$1" == "--claude" ]]; then
+        use_claude=true
       elif [[ "$1" == "-h" ]]; then
-        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
-        echo "  aider          Start session with nvim + aider (default: opencode)"
+        echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         echo "  -d             Start session detached (do not attach)"
+        echo "  --claude       Use claude as the REPL instead of opencode"
         echo "  -h             Show this help message"
         return 0
       fi
       shift
     done
 
-    if [[ "$1" == "aider" ]]; then
-      tool="aider"
-      shift
-    fi
-
     if [[ "$#" -lt 1 ]]; then
-      echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
-      echo "  aider          Start session with nvim + aider (default: opencode)"
+      echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
       echo "  -d             Start session detached (do not attach)"
+      echo "  --claude       Use claude as the REPL instead of opencode"
       echo "  -h             Show this help message"
       return 1
     fi
@@ -117,28 +114,19 @@ if command -v tmux &> /dev/null; then
     else
       if [[ -z "$dir" ]]; then
         echo "Error: project path required to create a new session"
-        echo "Usage: dev [-d] [-h] [aider] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         return 1
       fi
-      if [[ "$tool" == "aider" ]]; then
-        tmux new-session -d -s "$name" -c "$dir"
-
-        if command -v nvim &> /dev/null; then
-          tmux send-keys -t "$name" "nvim" Enter
-        fi
-
-        if command -v aider &> /dev/null; then
-          tmux split-window -h -t "$name" -c "$dir"
-          tmux send-keys -t "$name" "with_secrets aider" Enter
-        fi
+      tmux new-session -d -s "$name" -c "$dir"
+      if [[ "$use_claude" == true ]]; then
+        tmux send-keys -t "$name" "claude" Enter
       else
-        tmux new-session -d -s "$name" -c "$dir"
         tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
-        tmux new-window -t "$name" -c "$dir"
-        tmux split-window -h -t "$name:1" -c "$dir"
-        tmux send-keys -t "$name:1.0" "nvim" Enter
-        tmux select-window -t "$name:0"
       fi
+      tmux new-window -t "$name" -c "$dir"
+      tmux split-window -h -t "$name:1" -c "$dir"
+      tmux send-keys -t "$name:1.0" "nvim" Enter
+      tmux select-window -t "$name:0"
 
       if [ "$attach" = true ]; then
         if [ -n "$TMUX" ]; then
@@ -176,15 +164,53 @@ function gsuggest() {
     return 1
   fi
 
+  local recent_subjects payload
+  recent_subjects=$(git log --format=%s -n 5 2>/dev/null)
+
   local prompt
   if (( long_mode )); then
-    prompt="Output a git commit message. Conventional commits: lowercase type(scope?): subject. Add a body (2-4 sentences) explaining what changed and why. No headers, no commentary outside the message. Multiple unrelated changes: number each message."
+    prompt="You write git commit messages.
+
+Produce a conventional commit message:
+- first line: type(scope?): subject
+- blank line
+- body: 3-5 sentences
+
+Rules:
+- lowercase unless a proper noun requires otherwise
+- no quotes, code fences, bullets, numbering, or commentary
+- use the example commit subjects only as style reference, never as content
+- base the result on the diff
+- the body should explain what changed and why, not just restate the diff
+- paragraph breaks are allowed when they improve readability
+- prefer a concrete, specific summary over a generic one
+- if the diff is mixed, summarize the dominant change"
   else
-    prompt="Output only a git commit message title. No body, no prose, no commentary. Conventional commits: lowercase type(scope?): subject. Max 72 chars. Multiple unrelated changes: number each title."
+    prompt="You write git commit messages.
+
+Produce only a commit title in the format type(scope?): subject.
+Rules:
+- lowercase unless a proper noun requires otherwise
+- max 72 characters
+- no quotes, code fences, bullets, numbering, or commentary
+- use the example commit subjects only as style reference, never as content
+- base the result on the diff
+- prefer a concrete, specific summary over a generic one
+- if the diff is mixed, summarize the dominant change"
+  fi
+
+  payload="Current diff:
+$diff"
+
+  if [[ -n "$recent_subjects" ]]; then
+    payload="Example recent commit subjects for style reference only:
+$recent_subjects
+
+$payload"
   fi
   
   # Ensure secrets are loaded and use the robust clipboard helper
-  with_secrets llm -s "$prompt" "$diff" | tee /dev/tty | _copy
+  with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
 }
 
 ### Aliases ###
@@ -222,7 +248,6 @@ alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
 
 # Secrets-wrapped commands
-alias aider='with_secrets aider'
 alias llm='with_secrets llm'
 alias opencode='with_secrets --opencode opencode'
 

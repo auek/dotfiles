@@ -2,6 +2,19 @@
 
 Automated setup of a development environment using a single Bash script and GNU Stow.
 
+Supports both native Linux and WSL2 Linux environments. The base install flow
+is shared; WSL-specific quirks are handled only where needed via runtime guards
+in dotfiles and notes in `docs/SETUP_WSL.md`.
+
+On Fedora, container tooling is Podman-based. Native Fedora installs Podman plus
+Docker-compatible CLI support in the `--full` profile; WSL2 Fedora keeps
+container setup as a separate,
+WSL-specific path documented in `docs/SETUP_WSL.md`.
+
+Kitty is installed from the upstream binary in the `--full` profile on native
+Linux. The Fedora RPM can be removed manually afterward if you want to avoid
+keeping both installed during the transition.
+
 ## What's included
 
 | Package | Contents |
@@ -11,12 +24,11 @@ Automated setup of a development environment using a single Bash script and GNU 
 | `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `aider` | Aider AI config and model settings |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
 ## Prerequisites
 
-- Fedora 40+ or Ubuntu 22.04+
+- Fedora 42+ or Ubuntu 22.04+
 - `git`
 - Docker / Podman (optional, for container-based testing)
 
@@ -31,18 +43,36 @@ bash setup.sh          # slim install (default)
 bash setup.sh --full   # full install including dev tools
 ```
 
+## Supported environments
+
+- Native Fedora 42+ and Ubuntu 22.04+
+- Fedora 42+ under WSL2
+
+WSL-specific behavior should only apply when runtime detection confirms WSL.
+Native Linux should not inherit WSL-only settings or workarounds.
+
 ### Profiles
 
 | Flag | What it installs |
 |---|---|
-| `--slim` | curl, git, gcc, make, stow, tmux, zsh, kitty (non-WSL), Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr |
+| `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
+| `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
 
 After installation, restart your shell:
 
 ```bash
 exec zsh -l
 ```
+
+On GNOME-based Fedora installs, `setup.sh` also applies the preferred Compose
+key setting for a US keyboard workflow:
+
+```bash
+gsettings set org.gnome.desktop.input-sources xkb-options "['compose:menu']"
+```
+
+This keeps the base layout as `US` and uses the `Menu` key as the Compose key
+for characters like `å`, `ä`, and `ö`.
 
 ## Makefile
 
@@ -54,7 +84,7 @@ exec zsh -l
 
 ## Docker testing
 
-A Fedora 42 and Ubuntu 24.04 container are available for testing the setup
+A Fedora and Ubuntu 24.04 container are available for testing the setup
 in a clean environment without touching your host.
 
 ```bash
@@ -87,4 +117,4 @@ docker rmi auek/dotfiles:fedora
 docker rmi auek/dotfiles:ubuntu
 ```
 
-See `docs/SETUP_WSL.md` for notes on running Podman on Fedora 42 under WSL2.
+See `docs/SETUP_WSL.md` for WSL2-specific setup notes and workarounds.

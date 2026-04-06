@@ -20,14 +20,12 @@ When adding to `~/docs/scratch.md`:
 - Keep entries short and scannable.
 - Prefer a format like `- 2026-03-23: note text` unless the user asks for something more structured.
 
-Ignore assistant-specific Aider docs and config by default. Do not use `aider/**` or `docs/aider/**` as context unless the user explicitly asks for cross-tool comparison.
-
 ## Git workflow
 
 - When a coherent implementation milestone is complete, the agent may create a git commit without asking first.
 - A milestone commit must only happen after the agent has finished the scoped change, reviewed the diff, and run the relevant verification step for the repo (tests, lint, build, or `pre-commit` when appropriate).
 - Prefer a new commit over history rewriting. Do not use `git commit --amend`, force pushes, destructive resets, or branch deletion unless the user explicitly requests them.
-- Never create agent-authored commits on `main`, `master`, or `develop`. Use a feature branch and let the human squash or merge later after review.
+- Never create agent-authored commits on `main` or `master`. Commits on `develop` are allowed when appropriate.
 - Never push automatically. Human review and push remain explicit handoff steps.
 
 ## Markdown preferences

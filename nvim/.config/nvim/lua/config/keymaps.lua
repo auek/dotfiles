@@ -36,8 +36,7 @@ map("c", "<C-f>", function()
   require("telescope.builtin").command_history()
 end, vim.tbl_extend("force", default_opts, { desc = "Search command history" }))
 
--- Telescope grep: two separate keymaps for with/without aider history
--- Regular grep EXCLUDING aider chat history (normal use) and other hidden files
+-- Telescope grep: two separate keymaps for normal use vs full hidden-file search
 map("n", "<leader>fg", function()
   require('telescope.builtin').live_grep({
     vimgrep_arguments = {
@@ -48,14 +47,12 @@ map("n", "<leader>fg", function()
       "--line-number",
       "--column",
       "--smart-case",
-      "--hidden",
-      "--glob=!*.aider.chat.history.*",
-      "--glob=!**/.aider/*"
+      "--hidden"
     }
   })
 end, vim.tbl_extend("force", default_opts, { desc = "Live grep (exclude hidden)" }))
 
--- Grep INCLUDING everything, including aider chat history and other hidden files (for debugging purposes)
+-- Grep INCLUDING everything, including hidden files
 map("n", "<leader>fG", function()
   require('telescope.builtin').live_grep()
 end, vim.tbl_extend("force", default_opts, { desc = "Live grep (include all)" }))

@@ -75,13 +75,17 @@ _copy() {
 if command -v tmux &> /dev/null; then
   function dev() {
     local attach=true
+    local use_claude=false
 
-    while [[ "$1" == "-d" || "$1" == "-h" ]]; do
+    while [[ "$1" == "-d" || "$1" == "-h" || "$1" == "--claude" ]]; do
       if [[ "$1" == "-d" ]]; then
         attach=false
+      elif [[ "$1" == "--claude" ]]; then
+        use_claude=true
       elif [[ "$1" == "-h" ]]; then
-        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         echo "  -d             Start session detached (do not attach)"
+        echo "  --claude       Use claude as the REPL instead of opencode"
         echo "  -h             Show this help message"
         return 0
       fi
@@ -89,8 +93,9 @@ if command -v tmux &> /dev/null; then
     done
 
     if [[ "$#" -lt 1 ]]; then
-      echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
+      echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
       echo "  -d             Start session detached (do not attach)"
+      echo "  --claude       Use claude as the REPL instead of opencode"
       echo "  -h             Show this help message"
       return 1
     fi
@@ -109,11 +114,15 @@ if command -v tmux &> /dev/null; then
     else
       if [[ -z "$dir" ]]; then
         echo "Error: project path required to create a new session"
-        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         return 1
       fi
       tmux new-session -d -s "$name" -c "$dir"
-      tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
+      if [[ "$use_claude" == true ]]; then
+        tmux send-keys -t "$name" "claude" Enter
+      else
+        tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
+      fi
       tmux new-window -t "$name" -c "$dir"
       tmux split-window -h -t "$name:1" -c "$dir"
       tmux send-keys -t "$name:1.0" "nvim" Enter

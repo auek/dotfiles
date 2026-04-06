@@ -155,15 +155,53 @@ function gsuggest() {
     return 1
   fi
 
+  local recent_subjects payload
+  recent_subjects=$(git log --format=%s -n 5 2>/dev/null)
+
   local prompt
   if (( long_mode )); then
-    prompt="Output a git commit message. Conventional commits: lowercase type(scope?): subject. Add a body (2-4 sentences) explaining what changed and why. No headers, no commentary outside the message. Multiple unrelated changes: number each message."
+    prompt="You write git commit messages.
+
+Produce a conventional commit message:
+- first line: type(scope?): subject
+- blank line
+- body: 3-5 sentences
+
+Rules:
+- lowercase unless a proper noun requires otherwise
+- no quotes, code fences, bullets, numbering, or commentary
+- use the example commit subjects only as style reference, never as content
+- base the result on the diff
+- the body should explain what changed and why, not just restate the diff
+- paragraph breaks are allowed when they improve readability
+- prefer a concrete, specific summary over a generic one
+- if the diff is mixed, summarize the dominant change"
   else
-    prompt="Output only a git commit message title. No body, no prose, no commentary. Conventional commits: lowercase type(scope?): subject. Max 72 chars. Multiple unrelated changes: number each title."
+    prompt="You write git commit messages.
+
+Produce only a commit title in the format type(scope?): subject.
+Rules:
+- lowercase unless a proper noun requires otherwise
+- max 72 characters
+- no quotes, code fences, bullets, numbering, or commentary
+- use the example commit subjects only as style reference, never as content
+- base the result on the diff
+- prefer a concrete, specific summary over a generic one
+- if the diff is mixed, summarize the dominant change"
+  fi
+
+  payload="Current diff:
+$diff"
+
+  if [[ -n "$recent_subjects" ]]; then
+    payload="Example recent commit subjects for style reference only:
+$recent_subjects
+
+$payload"
   fi
   
   # Ensure secrets are loaded and use the robust clipboard helper
-  with_secrets llm -s "$prompt" "$diff" | tee /dev/tty | _copy
+  with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
 }
 
 ### Aliases ###

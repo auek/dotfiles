@@ -23,7 +23,8 @@ dotfiles/
 ├── Dockerfile.fedora
 ├── Dockerfile.ubuntu
 ├── docs/                     # Project documentation and backlog
-│   ├── BACKLOG.md            # Planned features and ideas
+│   ├── INBOX.md              # Triage intake — process and clear regularly
+│   ├── BACKLOG.md            # Deferred ideas and planned features
 │   ├── plans/                # Detailed implementation plans
 │   ├── SETUP_WSL.md          # WSL2-specific setup notes
 ├── zshrc/.zshrc              # Stow package: zsh config
@@ -78,7 +79,7 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not add WSL-specific logic to `setup.sh` — WSL quirks belong in `docs/SETUP_WSL.md` and in the dotfiles themselves when guarded by runtime detection.
 - Do not stow `scripts/` — it is intentionally a repo-only utility.
 - Do not hardcode UIDs or usernames — use `$USER`, `$HOME`, `$(whoami)` where needed.
-- Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/BACKLOG.md` for planned features or pending implementation plans.
+- Do not proactively create documentation files (*.md) or README files unless explicitly requested by the User. Always check `docs/INBOX.md` for incoming triaged work, then `docs/BACKLOG.md` for planned features or pending implementation plans.
 - Do not run `make stow`, `make unstow`, `make restow`, `setup.sh`, or any command that modifies system state or symlinks without explicit user confirmation.
 
 ## Maintenance

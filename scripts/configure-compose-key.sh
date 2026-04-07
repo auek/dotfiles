@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCHEMA="org.gnome.desktop.input-sources"
 KEY="xkb-options"
-VALUE="['compose:menu']"
+VALUE="['compose:ralt']"
 
 if ! command -v gsettings >/dev/null 2>&1; then
   echo "[compose] gsettings not available; skipping Compose key setup"
@@ -19,9 +19,9 @@ fi
 current="$(gsettings get "$SCHEMA" "$KEY")"
 
 if [ "$current" = "$VALUE" ]; then
-  echo "[compose] Compose key already set to Menu"
+  echo "[compose] Compose key already set to RAlt"
   exit 0
 fi
 
 gsettings set "$SCHEMA" "$KEY" "$VALUE"
-echo "[compose] Set Compose key to Menu"
+echo "[compose] Set Compose key to RAlt"

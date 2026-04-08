@@ -39,8 +39,9 @@ Clone the repo and run `setup.sh`:
 ```bash
 git clone <repo-url> ~/.dotfiles
 cd ~/.dotfiles
-bash setup.sh          # slim install (default)
-bash setup.sh --full   # full install including dev tools
+bash setup.sh                   # slim install (default)
+bash setup.sh --full            # full install including dev tools
+bash setup.sh --full --update   # first-time bootstrap: also upgrades all system packages
 ```
 
 ## Supported environments
@@ -56,7 +57,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 | Flag | What it installs |
 |---|---|
 | `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, exa, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, tldr, llm |
+| `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
 
 After installation, restart your shell:
 
@@ -98,8 +99,8 @@ bash docker-run.sh -d ubuntu
 Inside the container, run `setup.sh` manually:
 
 ```bash
-bash /home/devuser/code/dotfiles/setup.sh --slim
-bash /home/devuser/code/dotfiles/setup.sh --full
+bash /home/devuser/code/dotfiles/setup.sh --slim --update
+bash /home/devuser/code/dotfiles/setup.sh --full --update
 ```
 
 ### Docker reference

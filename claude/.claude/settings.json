@@ -18,7 +18,8 @@
       "Bash(git push *)"
     ],
     "allow": [
-      "Bash(*)"
+      "Bash(*)",
+      "WebFetch(*)"
     ]
   }
 }

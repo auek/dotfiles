@@ -179,7 +179,7 @@ Produce a conventional commit message:
 Rules:
 - lowercase unless a proper noun requires otherwise
 - no quotes, code fences, bullets, numbering, or commentary
-- use the example commit subjects only as style reference, never as content
+- use the ezample commit subjects only as style reference, never as content
 - base the result on the diff
 - the body should explain what changed and why, not just restate the diff
 - paragraph breaks are allowed when they improve readability
@@ -193,7 +193,7 @@ Rules:
 - lowercase unless a proper noun requires otherwise
 - max 72 characters
 - no quotes, code fences, bullets, numbering, or commentary
-- use the example commit subjects only as style reference, never as content
+- use the ezample commit subjects only as style reference, never as content
 - base the result on the diff
 - prefer a concrete, specific summary over a generic one
 - if the diff is mixed, summarize the dominant change"
@@ -221,11 +221,11 @@ alias ...="cd ../.."
 alias ....="cd ../../../.."
 
 # Tool-specific
-if command -v exa &> /dev/null; then
-  alias l="exa"
-  alias ls="exa"
-  alias ll="exa -lah"
-  alias t="exa --all -I .git --icons --classify --sort=type -T -L 2"
+if command -v eza &> /dev/null; then
+  alias l="eza"
+  alias ls="eza"
+  alias ll="eza -lah"
+  alias t="eza --all -I .git --icons --classify --sort=type -T -L 2"
 fi
 
 if command -v nvim &> /dev/null; then

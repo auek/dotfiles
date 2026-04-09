@@ -2,9 +2,10 @@
 #
 # setup.sh — Bootstrap development environment
 #
-# Usage: setup.sh [--slim | --full]
-#   --slim  Install common packages, dotfiles, shell (default)
-#   --full  All of the above + dev tools (nvim, nvm, node, tldr, llm)
+# Usage: setup.sh [--slim | --full] [--update]
+#   --slim    Install common packages, dotfiles, shell (default)
+#   --full    All of the above + dev tools (nvim, nvm, node, tldr, llm)
+#   --update  Run a full system package upgrade before installing (for first-time bootstrap)
 
 set -euo pipefail
 
@@ -12,6 +13,7 @@ set -euo pipefail
 
 USER="${USER:-$(whoami)}"
 PROFILE="slim"
+DO_UPDATE=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
 NVM_VERSION="v0.40.1"
@@ -24,11 +26,12 @@ IS_WSL=0
 
 for arg in "$@"; do
   case $arg in
-    --slim) PROFILE="slim" ;;
-    --full) PROFILE="full" ;;
+    --slim)   PROFILE="slim" ;;
+    --full)   PROFILE="full" ;;
+    --update) DO_UPDATE=1 ;;
     *)
       echo "Unknown argument: $arg"
-      echo "Usage: $0 [--slim | --full]"
+      echo "Usage: $0 [--slim | --full] [--update]"
       exit 1
       ;;
   esac
@@ -110,7 +113,7 @@ case "$ID" in
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
     PKG_COMMON="curl git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-clients"
+    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-clients"
     PKG_KITTY_FONT="jetbrains-mono-fonts"
     info "Detected: Fedora $VERSION_ID"
     ;;
@@ -118,7 +121,7 @@ case "$ID" in
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
     PKG_COMMON="curl git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="exa fd-find fzf htop bat ripgrep openssh-client"
+    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client"
     PKG_KITTY_FONT="fonts-jetbrains-mono"
     info "Detected: $PRETTY_NAME"
     ;;
@@ -139,7 +142,9 @@ step "2/11 — Installing common packages"
 
 case "$PKG_MANAGER" in
   dnf)
-    sudo dnf update -y
+    if [ "$DO_UPDATE" -eq 1 ]; then
+      sudo dnf update -y
+    fi
     $PKG_INSTALL $PKG_COMMON
     ;;
   apt)
@@ -230,7 +235,7 @@ fi
 
 # ─── Step 7: Stow dotfiles ────────────────────────────────────────────────────
 
-step "7/11 — Stowing dotfiles"
+step "7/12 — Stowing dotfiles"
 
 if make -C "$REPO_DIR" stow; then
   success "Dotfiles stowed"
@@ -238,15 +243,19 @@ else
   die "Stow failed. Resolve any conflicting files in $HOME, then rerun setup.sh. Use 'make -C $REPO_DIR unstow' only for links managed by this repo."
 fi
 
-if "$REPO_DIR/scripts/configure-compose-key.sh"; then
-  success "Compose key preferences applied when supported"
+# ─── Step 8: Configure GNOME keybindings ─────────────────────────────────────
+
+step "8/12 — Configuring GNOME keybindings"
+
+if "$REPO_DIR/scripts/configure-gnome-keybindings.sh"; then
+  success "GNOME keybindings applied when supported"
 else
-  warning "Compose key preference setup failed — continuing"
+  warning "GNOME keybindings setup failed — continuing"
 fi
 
-# ─── Step 8: Install Oh My Zsh ────────────────────────────────────────────────
+# ─── Step 9: Install Oh My Zsh ────────────────────────────────────────────────
 
-step "8/11 — Installing Oh My Zsh"
+step "9/12 — Installing Oh My Zsh"
 
 if [ -d "$HOME/.oh-my-zsh" ]; then
   info "Oh My Zsh already installed"
@@ -256,9 +265,9 @@ else
   success "Oh My Zsh installed"
 fi
 
-# ─── Step 9: Install zsh-autosuggestions ──────────────────────────────────────
+# ─── Step 10: Install zsh-autosuggestions ─────────────────────────────────────
 
-step "9/11 — Installing zsh-autosuggestions"
+step "10/12 — Installing zsh-autosuggestions"
 
 ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 
@@ -271,9 +280,9 @@ else
   success "zsh-autosuggestions $ZSH_AUTOSUGGESTIONS_VERSION installed"
 fi
 
-# ─── Step 10: Install dev tools (full only) ───────────────────────────────────
+# ─── Step 11: Install dev tools (full only) ───────────────────────────────────
 
-step "10/11 — Installing dev tools"
+step "11/12 — Installing dev tools"
 
 if [ "$PROFILE" = "full" ]; then
 
@@ -323,6 +332,15 @@ if [ "$PROFILE" = "full" ]; then
     success "node LTS installed"
   fi
 
+  # uv
+  if command -v uv &>/dev/null; then
+    info "uv already installed"
+  else
+    info "Installing uv"
+    curl -LsSf https://astral.sh/uv/install.sh | sh || warning "uv install failed"
+    success "uv installed"
+  fi
+
   # tldr
   if command -v tldr &>/dev/null; then
     info "tldr already installed"
@@ -344,9 +362,9 @@ else
   info "Profile: slim — skipping dev tools"
 fi
 
-# ─── Step 11: Done ────────────────────────────────────────────────────────────
+# ─── Step 12: Done ────────────────────────────────────────────────────────────
 
-step "11/11 — Done"
+step "12/12 — Done"
 
 echo
 echo "  Setup complete (profile: $PROFILE)"

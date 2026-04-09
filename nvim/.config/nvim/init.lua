@@ -5,7 +5,7 @@ require("config.keymaps")
 require("config.options")
 
 -- Clipboard
-if vim.fn.has("wsl") then
+if vim.fn.has("wsl") == 1 then
   vim.g.clipboard = {
     name = "WslClipboard",
     copy = {
@@ -17,6 +17,19 @@ if vim.fn.has("wsl") then
       'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
       ["*"] =
       'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+    },
+    cache_enabled = 0,
+  }
+elseif vim.fn.has("unix") == 1 and vim.fn.executable("wl-copy") == 1 then
+  vim.g.clipboard = {
+    name = "WlClipboard",
+    copy = {
+      ["+"] = "wl-copy",
+      ["*"] = "wl-copy",
+    },
+    paste = {
+      ["+"] = "wl-paste --no-newline",
+      ["*"] = "wl-paste --no-newline",
     },
     cache_enabled = 0,
   }

@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "deny": [
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",

@@ -223,9 +223,9 @@ alias ....="cd ../../../.."
 # Tool-specific
 if command -v eza &> /dev/null; then
   alias l="eza"
-  alias ls="eza"
-  alias ll="eza -lah"
-  alias t="eza --all -I .git --icons --classify --sort=type -T -L 2"
+  alias ll="eza -lah --git"
+  alias t="eza --all -I .git --icons --sort=type -T -L 2"
+  alias tt="eza --all -I .git --icons --sort=type -T"
 fi
 
 if command -v nvim &> /dev/null; then

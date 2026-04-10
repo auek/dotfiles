@@ -16,6 +16,10 @@ See [docs/plans/tiny-profile.md](plans/tiny-profile.md) for full design.
 
 ## Done
 
+### espanso text expansion (Fedora/Wayland)
+
+Installed via Terra repo (`espanso-wayland`). Config symlinked into dotfiles as a stow package (`espanso/.config/espanso/`). `match/packages/` left untracked (managed by espanso's package manager).
+
 ### Vim `*` register clipboard broken
 
 Configured `wl-clipboard` (`wl-copy`/`wl-paste`) for Linux/Wayland in both Neovim (`init.lua`) and tmux (`.tmux.conf`). WSL path unchanged.

@@ -1,5 +1,9 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(*)",
+      "WebFetch(*)"
+    ],
     "deny": [
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",
@@ -15,10 +19,6 @@
       "Bash(rm -fr *)",
       "Bash(dd *)",
       "Bash(git push *)"
-    ],
-    "allow": [
-      "Bash(*)",
-      "WebFetch(*)"
     ]
   }
 }

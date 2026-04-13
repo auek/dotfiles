@@ -56,7 +56,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 
 | Flag | What it installs |
 |---|---|
-| `--slim` | curl, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
+| `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
 
 After installation, restart your shell:

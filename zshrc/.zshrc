@@ -121,7 +121,7 @@ if command -v tmux &> /dev/null; then
       if [[ "$use_claude" == true ]]; then
         tmux send-keys -t "$name" "claude" Enter
       else
-        tmux send-keys -t "$name" "with_secrets --opencode opencode" Enter
+        tmux send-keys -t "$name" "opencode" Enter
       fi
       tmux new-window -t "$name" -c "$dir"
       tmux split-window -h -t "$name:1" -c "$dir"
@@ -249,7 +249,6 @@ alias gc-="git checkout -"
 
 # Secrets-wrapped commands
 alias llm='with_secrets llm'
-alias opencode='with_secrets --opencode opencode'
 
 # SSH
 if [ -z "$SSH_AUTH_SOCK" ]; then

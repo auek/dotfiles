@@ -65,15 +65,15 @@ After installation, restart your shell:
 exec zsh -l
 ```
 
-On GNOME-based Fedora installs, `setup.sh` also applies the preferred Compose
-key setting for a US keyboard workflow:
+On GNOME-based Fedora installs, `setup.sh` also applies the preferred
+`Swedish (US)` keyboard layout for a US keyboard workflow:
 
 ```bash
-gsettings set org.gnome.desktop.input-sources xkb-options "['compose:menu']"
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'se+us')]"
 ```
 
-This keeps the base layout as `US` and uses the `Menu` key as the Compose key
-for characters like `å`, `ä`, and `ö`.
+This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
+`Right Alt + [`, `Right Alt + ;`, and `Right Alt + '`.
 
 ## Makefile
 

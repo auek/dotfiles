@@ -21,20 +21,55 @@ if ! gsettings writable org.gnome.desktop.input-sources xkb-options >/dev/null 2
 fi
 
 # ─── Input sources ────────────────────────────────────────────────────────────
-# Set the right Alt key as the Compose key so that sequences like
-# RightAlt + , + c → ç work without a dedicated Compose key on the keyboard.
+# Use the built-in Swedish (US) XKB variant so Right Alt behaves like AltGr on
+# the Swedish punctuation positions: RAlt+[ => å, RAlt+; => ö, RAlt+' => ä.
 
-COMPOSE_SCHEMA="org.gnome.desktop.input-sources"
-COMPOSE_KEY="xkb-options"
-COMPOSE_VALUE="['compose:ralt']"
+INPUT_SCHEMA="org.gnome.desktop.input-sources"
+INPUT_SOURCES_KEY="sources"
+INPUT_OPTIONS_KEY="xkb-options"
+INPUT_SOURCE_VALUE="[('xkb', 'se+us')]"
 
-current_compose="$(gsettings get "$COMPOSE_SCHEMA" "$COMPOSE_KEY")"
+current_sources="$(gsettings get "$INPUT_SCHEMA" "$INPUT_SOURCES_KEY")"
 
-if [ "$current_compose" = "$COMPOSE_VALUE" ]; then
-  echo "[keybindings] Compose key already set to RAlt"
+if [ "$current_sources" = "$INPUT_SOURCE_VALUE" ]; then
+  echo "[keybindings] Keyboard layout already set to Swedish (US)"
 else
-  gsettings set "$COMPOSE_SCHEMA" "$COMPOSE_KEY" "$COMPOSE_VALUE"
-  echo "[keybindings] Set Compose key to RAlt"
+  gsettings set "$INPUT_SCHEMA" "$INPUT_SOURCES_KEY" "$INPUT_SOURCE_VALUE"
+  echo "[keybindings] Set keyboard layout to Swedish (US)"
+fi
+
+current_options="$(gsettings get "$INPUT_SCHEMA" "$INPUT_OPTIONS_KEY")"
+filtered_options=()
+
+for option in $(echo "$current_options" | tr -d "[]' " | tr ',' '\n'); do
+  [ -z "$option" ] && continue
+  case "$option" in
+    compose:*) ;;
+    *) filtered_options+=("$option") ;;
+  esac
+done
+
+if [ "${#filtered_options[@]}" -eq 0 ]; then
+  case "$current_options" in
+    "[]"|"@as []") filtered_options_value="$current_options" ;;
+    *) filtered_options_value="[]" ;;
+  esac
+else
+  filtered_options_value="["
+  for option in "${filtered_options[@]}"; do
+    if [ "$filtered_options_value" != "[" ]; then
+      filtered_options_value+=", "
+    fi
+    filtered_options_value+="'${option}'"
+  done
+  filtered_options_value+="]"
+fi
+
+if [ "$current_options" = "$filtered_options_value" ]; then
+  echo "[keybindings] No Compose key option configured"
+else
+  gsettings set "$INPUT_SCHEMA" "$INPUT_OPTIONS_KEY" "$filtered_options_value"
+  echo "[keybindings] Removed Compose key option to keep RAlt available for AltGr"
 fi
 
 # ─── Custom shortcuts ─────────────────────────────────────────────────────────

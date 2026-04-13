@@ -15,17 +15,6 @@
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
       "enabled": true
-    },
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": true,
-      "oauth": false,
-      "headers": {
-        "Authorization": "Bearer {env:GITHUB_MCP_PAT}",
-        "X-MCP-Toolsets": "repos,pull_requests",
-        "X-MCP-Readonly": "true"
-      }
     }
   },
   "permission": {

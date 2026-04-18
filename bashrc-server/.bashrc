@@ -15,3 +15,6 @@ alias ....='cd ../../../..'
 alias gst='git status'
 alias gb='git branch'
 alias glg='git log'
+alias gl='git pull'
+alias gcm="git checkout main || git checkout master"
+alias gc-="git checkout -"

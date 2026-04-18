@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(*)",
-      "WebFetch(*)"
+      "WebFetch(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "NotebookEdit(*)"
     ],
     "deny": [
       "Bash(git push --force*)",
@@ -20,5 +26,6 @@
       "Bash(dd *)",
       "Bash(git push *)"
     ]
-  }
+  },
+  "effortLevel": "high"
 }

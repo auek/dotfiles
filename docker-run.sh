@@ -2,26 +2,27 @@
 
 # Default values for options
 distro="ubuntu"
-tags="slim"
+profile="slim"
 
 usage() {
   echo "Docker Development Environment Setup Script"
   echo
-  echo "Usage: $0 [-d|--distro <distro>] [-t|--tags <tags>]"
+  echo "Usage: $0 [-d|--distro <distro>] [-t|--tags <profile>]"
   echo
   echo "Options:"
   echo "  -h, --help              Show this help message"
   echo "  -d, --distro <distro>   Specify distribution (ubuntu|fedora)"
   echo "                          Default: ubuntu"
-  echo "  -t, --tags <tags>       Specify installation profile:"
+  echo "  -t, --tags <profile>    Specify installation profile:"
+  echo "                          - server: Minimal remote/headless server install"
   echo "                          - slim: Minimal installation (default)"
   echo "                          - full: Complete development environment"
   echo
   echo "Examples:"
-  echo "  $0                      # Drop into ubuntu container (slim)"
-  echo "  $0 -d fedora            # Drop into fedora container (slim)"
-  echo "  $0 -d fedora -t full    # Drop into fedora container (full)"
-  echo "  $0 -d ubuntu -t slim    # Drop into ubuntu container (slim)"
+  echo "  $0                      # Run slim setup in ubuntu container"
+  echo "  $0 -d fedora            # Run slim setup in fedora container"
+  echo "  $0 -d fedora -t server  # Run server setup in fedora container"
+  echo "  $0 -d ubuntu -t full    # Run full setup in ubuntu container"
   echo
   exit 1
 }
@@ -38,13 +39,13 @@ while [ "$1" != "" ]; do
     shift
     distro="$1"
     ;;
-  --tags=*)
-    tags="${1#*=}"
-    ;;
-  -t)
-    shift
-    tags="$1"
-    ;;
+    --tags=*)
+      profile="${1#*=}"
+      ;;
+    -t)
+      shift
+      profile="$1"
+      ;;
   *)
     echo "Invalid option: $1"
     exit 1
@@ -53,10 +54,10 @@ while [ "$1" != "" ]; do
   shift
 done
 
-# Validate tags
-if [ "$tags" != "slim" ] && [ "$tags" != "full" ]; then
-  echo "Invalid tag: $tags"
-  echo "Tags must be one of: slim, full"
+# Validate profile
+if [ "$profile" != "server" ] && [ "$profile" != "slim" ] && [ "$profile" != "full" ]; then
+  echo "Invalid profile: $profile"
+  echo "Profiles must be one of: server, slim, full"
   exit 1
 fi
 
@@ -68,7 +69,7 @@ fi
 
 if [ "$distro" == "ubuntu" ] || [ "$distro" == "fedora" ]; then
   docker compose up -d "dotfiles-$distro" &&
-    docker compose exec "dotfiles-$distro" bash
+    docker compose exec "dotfiles-$distro" bash -lc "bash /home/devuser/code/dotfiles/setup.sh --$profile && exec bash"
 else
   printf "Invalid distro: %s. Please use 'ubuntu' or 'fedora'.\n" "$distro"
   exit 1

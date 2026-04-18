@@ -6,7 +6,7 @@ services:
     image: auek/dotfiles:ubuntu
     container_name: dotfiles-ubuntu
     volumes:
-      - ./:/home/devuser/code/dotfiles
+      - ./:/home/devuser/code/dotfiles:Z
     # Keep container running
     tty: true
     stdin_open: true
@@ -17,7 +17,7 @@ services:
     image: auek/dotfiles:fedora
     container_name: dotfiles-fedora
     volumes:
-      - ./:/home/devuser/code/dotfiles
+      - ./:/home/devuser/code/dotfiles:Z
     # Keep container running
     tty: true
     stdin_open: true

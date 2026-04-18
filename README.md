@@ -95,18 +95,24 @@ A Fedora and Ubuntu 24.04 container are available for testing the setup
 in a clean environment without touching your host.
 
 ```bash
-# Drop into a Fedora container
-bash docker-run.sh -d fedora
+# Run server setup in a Fedora container
+bash docker-run.sh -d fedora -t server
 
-# Drop into an Ubuntu container
-bash docker-run.sh -d ubuntu
+# Run slim setup in an Ubuntu container
+bash docker-run.sh -d ubuntu -t slim
+
+# Run full setup in a Fedora container
+bash docker-run.sh -d fedora -t full
 ```
 
-Inside the container, run `setup.sh` manually:
+`docker-run.sh` starts the selected container, runs `setup.sh` with the chosen
+profile, and then drops you into a shell inside the configured environment.
+
+Equivalent manual commands inside the container:
 
 ```bash
-bash /home/devuser/code/dotfiles/setup.sh --slim --update
 bash /home/devuser/code/dotfiles/setup.sh --server
+bash /home/devuser/code/dotfiles/setup.sh --slim --update
 bash /home/devuser/code/dotfiles/setup.sh --full --update
 ```
 

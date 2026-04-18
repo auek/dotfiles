@@ -15,8 +15,8 @@ Add Wayland clipboard history via `cliphist`. Run `wl-paste --watch cliphist sto
 ### `--server` profile
 
 Implemented a Bash-first server install profile for remote/headless systems.
-Adds `setup.sh --server`, `bashrc-server/.bashrc`, `tmux-server/.tmux.conf`,
-and `make stow-server` / `make unstow-server`.
+Adds `setup.sh --server`, `bashrc-server/.bashrc`, `vim-server/.vimrc`,
+`tmux-server/.tmux.conf`, and `make stow-server` / `make unstow-server`.
 
 Archived plan: [docs/plans/archive/server-profile.md](plans/archive/server-profile.md)
 

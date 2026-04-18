@@ -21,6 +21,7 @@ keeping both installed during the transition.
 |---|---|
 | `zshrc` | Zsh config (Oh My Zsh, aliases, FZF, dev helpers) |
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
+| `vim-server` | Minimal Vim config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
 | `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
@@ -59,7 +60,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 
 | Flag | What it installs |
 |---|---|
-| `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, server tmux config |
+| `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, minimal Vim config, server tmux config |
 | `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
 

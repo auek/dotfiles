@@ -1,5 +1,5 @@
 STOW_PACKAGES = zshrc zprofile tmux nvim kitty opencode claude espanso
-STOW_PACKAGES_SERVER = bashrc-server tmux-server
+STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_TARGET = $(HOME)
 
 .PHONY: stow unstow restow stow-server unstow-server

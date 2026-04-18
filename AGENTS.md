@@ -29,6 +29,7 @@ dotfiles/
 │   │   └── archive/          # Completed plans kept for reference
 │   ├── SETUP_WSL.md          # WSL2-specific setup notes
 ├── bashrc-server/.bashrc     # Stow package: minimal Bash config for servers
+├── vim-server/.vimrc         # Stow package: minimal Vim config for servers
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
 ├── tmux-server/.tmux.conf    # Stow package: tmux config for server installs
@@ -49,12 +50,13 @@ mirrors the structure expected under `$HOME`. For example:
 
 ```
 bashrc-server/.bashrc  → stowed to ~/.bashrc
+vim-server/.vimrc      → stowed to ~/.vimrc
 zshrc/.zshrc           → stowed to ~/.zshrc
 nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `bashrc-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `opencode`.
+`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

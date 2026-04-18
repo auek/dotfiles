@@ -20,8 +20,10 @@ keeping both installed during the transition.
 | Package | Contents |
 |---|---|
 | `zshrc` | Zsh config (Oh My Zsh, aliases, FZF, dev helpers) |
+| `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
 | `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
+| `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
@@ -39,6 +41,7 @@ Clone the repo and run `setup.sh`:
 ```bash
 git clone <repo-url> ~/.dotfiles
 cd ~/.dotfiles
+bash setup.sh --server         # minimal remote/headless server install
 bash setup.sh                   # slim install (default)
 bash setup.sh --full            # full install including dev tools
 bash setup.sh --full --update   # first-time bootstrap: also upgrades all system packages
@@ -56,6 +59,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 
 | Flag | What it installs |
 |---|---|
+| `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, server tmux config |
 | `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
 
@@ -80,7 +84,9 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 | Target | Description |
 |---|---|
 | `make stow` | Symlink all dotfile packages to `$HOME` |
+| `make stow-server` | Symlink only the server profile dotfiles to `$HOME` |
 | `make unstow` | Remove all symlinks |
+| `make unstow-server` | Remove only the server profile symlinks |
 | `make restow` | Unstow then stow (useful after adding new files) |
 
 ## Docker testing
@@ -100,6 +106,7 @@ Inside the container, run `setup.sh` manually:
 
 ```bash
 bash /home/devuser/code/dotfiles/setup.sh --slim --update
+bash /home/devuser/code/dotfiles/setup.sh --server
 bash /home/devuser/code/dotfiles/setup.sh --full --update
 ```
 

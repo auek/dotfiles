@@ -26,9 +26,12 @@ dotfiles/
 │   ├── INBOX.md              # Triage intake — process and clear regularly
 │   ├── BACKLOG.md            # Deferred ideas and planned features
 │   ├── plans/                # Detailed implementation plans
+│   │   └── archive/          # Completed plans kept for reference
 │   ├── SETUP_WSL.md          # WSL2-specific setup notes
+├── bashrc-server/.bashrc     # Stow package: minimal Bash config for servers
 ├── zshrc/.zshrc              # Stow package: zsh config
 ├── zprofile/.zprofile        # Stow package: login shell environment
+├── tmux-server/.tmux.conf    # Stow package: tmux config for server installs
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
@@ -45,21 +48,23 @@ Each dotfile package is a directory at the repo root. Its internal layout
 mirrors the structure expected under `$HOME`. For example:
 
 ```
-zshrc/.zshrc          → stowed to ~/.zshrc
-nvim/.config/nvim/    → stowed to ~/.config/nvim/
+bashrc-server/.bashrc  → stowed to ~/.bashrc
+zshrc/.zshrc           → stowed to ~/.zshrc
+nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `opencode`.
+`zshrc`, `bashrc-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 
 ## setup.sh design principles
 
-- **Single entrypoint**: `bash setup.sh [--slim | --full]`
+- **Single entrypoint**: `bash setup.sh [--server | --slim | --full]`
 - **Idempotent**: Every step is guarded with `command -v`, `[ -d ]`, or `[ -f ]` checks. Safe to run multiple times.
 - **OS detection**: Detects Fedora (dnf) or Ubuntu/Debian (apt) via `/etc/os-release`. Fails clearly on unsupported distros.
 - **WSL2 awareness**: Detects WSL2 via `/proc/version` for informational logging only. No WSL-specific install logic in `setup.sh`.
+- **Server profile**: `--server` is Bash-first and intended for remote/headless systems. It installs only minimal operational tooling and server-specific dotfiles.
 - **Kitty install path**: Installs pinned upstream kitty in the `--full` profile on native Linux instead of relying on distro package versions.
 - **Non-fatal optional packages**: Each optional package in `--full` is installed with `|| warning` so a single missing package does not abort the run.
 
@@ -71,6 +76,16 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not add WSL-specific install branches to `setup.sh`.
 - Put WSL-only quirks in guarded dotfiles or in `docs/SETUP_WSL.md`.
 - Do not apply WSL-only workarounds on native Linux.
+
+## Repository visibility
+
+- This repository is public.
+- Never commit secrets, tokens, private keys, machine-specific credentials, or
+  sensitive hostnames/IPs.
+- Prefer placeholders, environment variables, or local untracked files for
+  sensitive configuration.
+- Be careful with command examples and captured output so they do not expose
+  secret material.
 
 ## What not to do
 

@@ -2,7 +2,8 @@
 #
 # setup.sh — Bootstrap development environment
 #
-# Usage: setup.sh [--slim | --full] [--update]
+# Usage: setup.sh [--server | --slim | --full] [--update]
+#   --server  Install minimal remote server tooling (bash, tmux, vim)
 #   --slim    Install common packages, dotfiles, shell (default)
 #   --full    All of the above + dev tools (nvim, nvm, node, tldr, llm)
 #   --update  Run a full system package upgrade before installing (for first-time bootstrap)
@@ -26,12 +27,13 @@ IS_WSL=0
 
 for arg in "$@"; do
   case $arg in
+    --server) PROFILE="server" ;;
     --slim)   PROFILE="slim" ;;
     --full)   PROFILE="full" ;;
     --update) DO_UPDATE=1 ;;
     *)
       echo "Unknown argument: $arg"
-      echo "Usage: $0 [--slim | --full] [--update]"
+      echo "Usage: $0 [--server | --slim | --full] [--update]"
       exit 1
       ;;
   esac
@@ -100,7 +102,7 @@ step() {
 
 # ─── Step 1: Detect OS ────────────────────────────────────────────────────────
 
-step "1/11 — Detecting OS"
+step "1/12 — Detecting OS"
 
 if [ ! -f /etc/os-release ]; then
   die "Cannot detect OS: /etc/os-release not found"
@@ -112,6 +114,7 @@ case "$ID" in
   fedora)
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
+    PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-clients sqlite"
     PKG_KITTY_FONT="jetbrains-mono-fonts"
@@ -120,6 +123,7 @@ case "$ID" in
   ubuntu|debian)
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
+    PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3"
     PKG_KITTY_FONT="fonts-jetbrains-mono"
@@ -138,30 +142,40 @@ fi
 
 # ─── Step 2: Install common packages ─────────────────────────────────────────
 
-step "2/11 — Installing common packages"
+step "2/12 — Installing packages"
 
 case "$PKG_MANAGER" in
   dnf)
     if [ "$DO_UPDATE" -eq 1 ]; then
       sudo dnf update -y
     fi
-    $PKG_INSTALL $PKG_COMMON
+    if [ "$PROFILE" = "server" ]; then
+      info "Profile: server — installing minimal server packages"
+      $PKG_INSTALL $PKG_SERVER
+    else
+      $PKG_INSTALL $PKG_COMMON
+    fi
     ;;
   apt)
     sudo apt-get update -y
-    $PKG_INSTALL $PKG_COMMON
+    if [ "$PROFILE" = "server" ]; then
+      info "Profile: server — installing minimal server packages"
+      $PKG_INSTALL $PKG_SERVER
+    else
+      $PKG_INSTALL $PKG_COMMON
+    fi
     ;;
 esac
 
-success "Common packages installed"
+success "Packages installed"
 
 # ─── Step 3: Install Fedora container tooling ────────────────────────────────
 
-step "3/11 — Installing Fedora container tooling"
+step "3/12 — Installing Fedora container tooling"
 
 if [ "$PKG_MANAGER" = "dnf" ]; then
   if [ "$PROFILE" != "full" ]; then
-    info "Profile: slim — skipping Fedora container tooling"
+    info "Profile: $PROFILE — skipping Fedora container tooling"
   elif [ "$IS_WSL" -eq 1 ]; then
     info "WSL2 detected — skipping Fedora container tooling in setup.sh"
     info "See docs/SETUP_WSL.md for the WSL-specific Podman setup"
@@ -176,7 +190,7 @@ fi
 
 # ─── Step 4: Install optional packages (full only) ───────────────────────────
 
-step "4/11 — Installing optional packages"
+step "4/12 — Installing optional packages"
 
 if [ "$PROFILE" = "full" ]; then
   info "Profile: full — installing optional packages"
@@ -193,33 +207,38 @@ if [ "$PROFILE" = "full" ]; then
   done
   success "Optional packages done"
 else
-  info "Profile: slim — skipping optional packages"
+  info "Profile: $PROFILE — skipping optional packages"
 fi
 
 # ─── Step 5: Set zsh as default shell ─────────────────────────────────────────
 
-step "5/11 — Setting zsh as default shell"
+step "5/12 — Setting default shell"
 
-ZSH_PATH="$(command -v zsh)"
-CURRENT_LOGIN_SHELL="$(get_login_shell)"
-
-if [ -n "$CURRENT_LOGIN_SHELL" ] && [ "$(readlink -f "$CURRENT_LOGIN_SHELL")" = "$(readlink -f "$ZSH_PATH")" ]; then
-  info "zsh is already the default shell"
+if [ "$PROFILE" = "server" ]; then
+  info "Profile: server — keeping current shell"
 else
-  if grep -qF "$ZSH_PATH" /etc/shells; then
-    sudo chsh -s "$ZSH_PATH" "$USER"
-    success "Default shell set to $ZSH_PATH"
+
+  ZSH_PATH="$(command -v zsh)"
+  CURRENT_LOGIN_SHELL="$(get_login_shell)"
+
+  if [ -n "$CURRENT_LOGIN_SHELL" ] && [ "$(readlink -f "$CURRENT_LOGIN_SHELL")" = "$(readlink -f "$ZSH_PATH")" ]; then
+    info "zsh is already the default shell"
   else
-    warning "zsh not found in /etc/shells — adding it"
-    echo "$ZSH_PATH" | sudo tee -a /etc/shells
-    sudo chsh -s "$ZSH_PATH" "$USER"
-    success "Default shell set to $ZSH_PATH"
+    if grep -qF "$ZSH_PATH" /etc/shells; then
+      sudo chsh -s "$ZSH_PATH" "$USER"
+      success "Default shell set to $ZSH_PATH"
+    else
+      warning "zsh not found in /etc/shells — adding it"
+      echo "$ZSH_PATH" | sudo tee -a /etc/shells
+      sudo chsh -s "$ZSH_PATH" "$USER"
+      success "Default shell set to $ZSH_PATH"
+    fi
   fi
 fi
 
 # ─── Step 6: Symlink repo to ~/.dotfiles ──────────────────────────────────────
 
-step "6/11 — Symlinking repo to ~/.dotfiles"
+step "6/12 — Symlinking repo to ~/.dotfiles"
 
 # Ensure required directories exist
 mkdir -p "$HOME/.ssh" "$HOME/.config"
@@ -237,7 +256,13 @@ fi
 
 step "7/12 — Stowing dotfiles"
 
-if make -C "$REPO_DIR" stow; then
+if [ "$PROFILE" = "server" ]; then
+  STOW_TARGET_NAME="stow-server"
+else
+  STOW_TARGET_NAME="stow"
+fi
+
+if make -C "$REPO_DIR" "$STOW_TARGET_NAME"; then
   success "Dotfiles stowed"
 else
   die "Stow failed. Resolve any conflicting files in $HOME, then rerun setup.sh. Use 'make -C $REPO_DIR unstow' only for links managed by this repo."
@@ -247,7 +272,9 @@ fi
 
 step "8/12 — Configuring GNOME keybindings"
 
-if "$REPO_DIR/scripts/configure-gnome-keybindings.sh"; then
+if [ "$PROFILE" = "server" ]; then
+  info "Profile: server — skipping GNOME keybindings"
+elif "$REPO_DIR/scripts/configure-gnome-keybindings.sh"; then
   success "GNOME keybindings applied when supported"
 else
   warning "GNOME keybindings setup failed — continuing"
@@ -257,7 +284,9 @@ fi
 
 step "9/12 — Installing Oh My Zsh"
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
+if [ "$PROFILE" = "server" ]; then
+  info "Profile: server — skipping Oh My Zsh"
+elif [ -d "$HOME/.oh-my-zsh" ]; then
   info "Oh My Zsh already installed"
 else
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
@@ -271,7 +300,9 @@ step "10/12 — Installing zsh-autosuggestions"
 
 ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 
-if [ -d "$ZSH_AUTOSUGGEST_DIR" ]; then
+if [ "$PROFILE" = "server" ]; then
+  info "Profile: server — skipping zsh-autosuggestions"
+elif [ -d "$ZSH_AUTOSUGGEST_DIR" ]; then
   info "zsh-autosuggestions already installed"
 else
   git clone --branch "$ZSH_AUTOSUGGESTIONS_VERSION" --depth 1 \
@@ -359,7 +390,7 @@ if [ "$PROFILE" = "full" ]; then
   fi
 
 else
-  info "Profile: slim — skipping dev tools"
+  info "Profile: $PROFILE — skipping dev tools"
 fi
 
 # ─── Step 12: Done ────────────────────────────────────────────────────────────
@@ -370,5 +401,9 @@ echo
 echo "  Setup complete (profile: $PROFILE)"
 echo "  Restart your shell to apply all changes:"
 echo
-echo "    exec zsh -l"
+if [ "$PROFILE" = "server" ]; then
+  echo "    exec bash -l"
+else
+  echo "    exec zsh -l"
+fi
 echo

@@ -4,6 +4,11 @@
 
 FROM ubuntu:24.04
 
+ENV TZ=Europe/Stockholm
+
+RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && \
+    echo "$TZ" > /etc/timezone
+
 RUN apt-get update && \
     apt-get install -y sudo && \
     apt-get clean && \
@@ -15,7 +20,8 @@ RUN groupadd -r devuser && \
     usermod -aG sudo devuser && \
     echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     echo "devuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/devuser && \
-    chmod 0440 /etc/sudoers.d/devuser
+    chmod 0440 /etc/sudoers.d/devuser && \
+    rm -f /home/devuser/.bashrc /home/devuser/.profile /home/devuser/.bash_logout /home/devuser/.zshrc
 
 # Switch to devuser
 USER devuser

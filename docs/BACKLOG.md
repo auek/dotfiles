@@ -10,11 +10,15 @@ Ideas and potential features. Not prioritized or scheduled.
 
 Add Wayland clipboard history via `cliphist`. Run `wl-paste --watch cliphist store` as a background service (systemd user unit or compositor autostart). Bind a key to `cliphist list | fzf | cliphist decode | wl-copy` for fuzzy history picker.
 
-### `--tiny` profile
-Minimal install for servers, VPS, Raspberry Pi. vim, tmux, zsh aliases only.
-See [docs/plans/tiny-profile.md](plans/tiny-profile.md) for full design.
-
 ## Done
+
+### `--server` profile
+
+Implemented a Bash-first server install profile for remote/headless systems.
+Adds `setup.sh --server`, `bashrc-server/.bashrc`, `vim-server/.vimrc`,
+`tmux-server/.tmux.conf`, and `make stow-server` / `make unstow-server`.
+
+Archived plan: [docs/plans/archive/server-profile.md](plans/archive/server-profile.md)
 
 ### espanso text expansion (Fedora/Wayland)
 
@@ -31,4 +35,3 @@ Configured `wl-clipboard` (`wl-copy`/`wl-paste`) for Linux/Wayland in both Neovi
 ```
 font_family JetBrainsMono Nerd Font
 ```
-

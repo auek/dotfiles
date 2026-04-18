@@ -14,7 +14,8 @@ RUN groupadd -r devuser && \
     usermod -aG wheel devuser && \
     echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     echo "devuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/devuser && \
-    chmod 0440 /etc/sudoers.d/devuser
+    chmod 0440 /etc/sudoers.d/devuser && \
+    rm -f /home/devuser/.bashrc /home/devuser/.profile /home/devuser/.bash_logout /home/devuser/.zshrc
 
 # Switch to devuser
 USER devuser
@@ -22,4 +23,3 @@ WORKDIR /home/devuser
 
 # Keep container running
 ENTRYPOINT ["tail", "-f", "/dev/null"]
-

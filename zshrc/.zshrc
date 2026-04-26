@@ -52,6 +52,13 @@ with_secrets() {
   fi
 }
 
+# ddcutil brightness helpers
+if command -v ddcutil &> /dev/null; then
+  br()  { ddcutil setvcp 10 "$1"; }
+  br1() { ddcutil --display 1 setvcp 10 "$1"; }
+  br2() { ddcutil --display 2 setvcp 10 "$1"; }
+fi
+
 # WSL open function
 if grep -qi microsoft /proc/version 2>/dev/null; then
   open() { explorer.exe "${1:-.}"; }

@@ -27,5 +27,15 @@
       "Bash(git push *)"
     ]
   },
-  "effortLevel": "high"
+  "effortLevel": "medium",
+  "theme": "dark-ansi",
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    }
+  }
 }

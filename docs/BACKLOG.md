@@ -4,6 +4,12 @@ Ideas and potential features. Not prioritized or scheduled.
 
 ## Active
 
+### Install sqlite3 globally
+
+- install: `sudo dnf install sqlite`
+- add to the dotfiles install profile alongside other global CLI tools
+- useful for inspecting SQLite databases without needing a Python script
+
 ## Deferred
 
 ### Clipboard history with `cliphist`
@@ -11,6 +17,12 @@ Ideas and potential features. Not prioritized or scheduled.
 Add Wayland clipboard history via `cliphist`. Run `wl-paste --watch cliphist store` as a background service (systemd user unit or compositor autostart). Bind a key to `cliphist list | fzf | cliphist decode | wl-copy` for fuzzy history picker.
 
 ## Done
+
+### Cross-platform `open` command
+Added cross-platform `open()` function in `zshrc/.zshrc`: uses `open` on macOS, `explorer.exe` on WSL, `xdg-open` on native Linux, with a clear error if no handler is available.
+
+### `gsuggest` --accept flag
+Added `-a` flag to `gsuggest` in `zshrc/.zshrc`. When passed, the generated commit message is committed directly via `git commit -F -` instead of being copied to the clipboard.
 
 ### `--server` profile
 

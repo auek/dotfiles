@@ -59,10 +59,19 @@ if command -v ddcutil &> /dev/null; then
   br2() { ddcutil --display 2 setvcp 10 "$1"; }
 fi
 
-# WSL open function
-if grep -qi microsoft /proc/version 2>/dev/null; then
-  open() { explorer.exe "${1:-.}"; }
-fi
+# Cross-platform open command
+open() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    command open "${@:-.}"
+  elif grep -qi microsoft /proc/version 2>/dev/null; then
+    explorer.exe "${@:-.}"
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "${@:-.}"
+  else
+    echo "open: no handler found for this platform" >&2
+    return 1
+  fi
+}
 
 # Clipboard helper with graceful fallback
 _copy() {
@@ -158,13 +167,24 @@ function gsuggest() {
   fi
 
   local long_mode=0
-  if [[ "$1" == "-l" ]]; then
-    long_mode=1
-  fi
+  local accept_mode=0
+  while [[ "$1" == -* ]]; do
+    case "$1" in
+      -l) long_mode=1 ;;
+      -a) accept_mode=1 ;;
+      *) echo "gsuggest: unknown flag $1"; return 1 ;;
+    esac
+    shift
+  done
 
   local diff
+  local has_staged=0
   diff=$(git diff --staged)
-  [[ -z "$diff" ]] && diff=$(git diff HEAD)
+  if [[ -n "$diff" ]]; then
+    has_staged=1
+  else
+    diff=$(git diff HEAD)
+  fi
 
   if [[ -z "$diff" ]]; then
     echo "Nothing to commit"
@@ -216,8 +236,14 @@ $recent_subjects
 $payload"
   fi
   
-  # Ensure secrets are loaded and use the robust clipboard helper
-  with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
+  # Ensure secrets are loaded
+  if (( accept_mode )); then
+    local commit_cmd="git commit -F -"
+    (( ! has_staged )) && commit_cmd="git commit -a -F -"
+    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | eval "$commit_cmd"
+  else
+    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
+  fi
 }
 
 ### Aliases ###

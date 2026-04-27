@@ -62,11 +62,11 @@ fi
 # Cross-platform open command
 open() {
   if [[ "$(uname)" == "Darwin" ]]; then
-    command open "${1:-.}"
+    command open "${@:-.}"
   elif grep -qi microsoft /proc/version 2>/dev/null; then
-    explorer.exe "${1:-.}"
+    explorer.exe "${@:-.}"
   elif command -v xdg-open &>/dev/null; then
-    xdg-open "${1:-.}"
+    xdg-open "${@:-.}"
   else
     echo "open: no handler found for this platform" >&2
     return 1
@@ -178,8 +178,13 @@ function gsuggest() {
   done
 
   local diff
+  local has_staged=0
   diff=$(git diff --staged)
-  [[ -z "$diff" ]] && diff=$(git diff HEAD)
+  if [[ -n "$diff" ]]; then
+    has_staged=1
+  else
+    diff=$(git diff HEAD)
+  fi
 
   if [[ -z "$diff" ]]; then
     echo "Nothing to commit"
@@ -233,7 +238,9 @@ $payload"
   
   # Ensure secrets are loaded
   if (( accept_mode )); then
-    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | git commit -F -
+    local commit_cmd="git commit -F -"
+    (( ! has_staged )) && commit_cmd="git commit -a -F -"
+    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | eval "$commit_cmd"
   else
     with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
   fi

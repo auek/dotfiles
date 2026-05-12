@@ -133,16 +133,18 @@ if command -v tmux &> /dev/null; then
         echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         return 1
       fi
-      tmux new-session -d -s "$name" -c "$dir"
+      local current_width=$(tmux display -p '#{window_width}')
+      local current_height=$(tmux display -p '#{window_height}')
+      tmux new-session -d -s "$name" \
+        -x "$current_width" -y "$current_height" \
+        -c "$dir"
       if [[ "$use_claude" == true ]]; then
         tmux send-keys -t "$name" "claude" Enter
       else
         tmux send-keys -t "$name" "opencode" Enter
       fi
-      tmux new-window -t "$name" -c "$dir"
-      tmux split-window -h -t "$name:1" -c "$dir"
-      tmux send-keys -t "$name:1.0" "nvim" Enter
-      tmux select-window -t "$name:0"
+      tmux split-window -h -p 30 -t "$name" -c "$dir"
+      tmux select-pane -t "$name:0.0"
 
       if [ "$attach" = true ]; then
         if [ -n "$TMUX" ]; then

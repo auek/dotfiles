@@ -7,6 +7,11 @@ shopt -s histappend
 bind 'set bell-style none'
 bind 'set completion-ignore-case on'
 
+# colored prompt
+if [ "$TERM" != "dumb" ] && [ -x /usr/bin/tput ] && tput setaf 1 >/dev/null 2>&1; then
+    PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+fi
+
 alias p='pwd'
 alias ..='cd ..'
 alias ...='cd ../..'

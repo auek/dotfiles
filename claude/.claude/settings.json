@@ -37,5 +37,6 @@
         "@upstash/context7-mcp@latest"
       ]
     }
-  }
+  },
+  "agentPushNotifEnabled": true
 }

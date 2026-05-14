@@ -133,8 +133,14 @@ if command -v tmux &> /dev/null; then
         echo "Usage: dev [-d] [--claude] [-h] <session_name> [<project_path>]"
         return 1
       fi
-      local current_width=${COLUMNS:-$(tput cols 2>/dev/null || echo 220)}
-      local current_height=${LINES:-$(tput lines 2>/dev/null || echo 50)}
+      local current_width current_height
+      if [ -n "$TMUX" ]; then
+        current_width=$(tmux display -p '#{window_width}')
+        current_height=$(tmux display -p '#{window_height}')
+      else
+        current_width=${COLUMNS:-$(tput cols 2>/dev/null || echo 220)}
+        current_height=${LINES:-$(tput lines 2>/dev/null || echo 50)}
+      fi
       tmux new-session -d -s "$name" \
         -x "$current_width" -y "$current_height" \
         -c "$dir"

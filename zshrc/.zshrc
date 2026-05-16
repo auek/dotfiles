@@ -8,6 +8,7 @@ setopt appendhistory
 setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
 unsetopt BEEP
+unsetopt AUTO_CD
 
 # Case-insensitive completion
 autoload -Uz compinit && compinit

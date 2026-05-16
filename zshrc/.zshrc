@@ -54,7 +54,7 @@ with_secrets() {
 
 # ddcutil brightness helpers
 if command -v ddcutil &> /dev/null; then
-  br()  { ddcutil setvcp 10 "$1"; }
+  br()  { ( ddcutil --display 1 setvcp 10 "$1" >/dev/null & ddcutil --display 2 setvcp 10 "$1" >/dev/null & wait ); }
   br1() { ddcutil --display 1 setvcp 10 "$1"; }
   br2() { ddcutil --display 2 setvcp 10 "$1"; }
 fi

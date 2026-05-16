@@ -29,6 +29,7 @@
   },
   "effortLevel": "medium",
   "theme": "dark-ansi",
+  "agentPushNotifEnabled": true,
   "mcpServers": {
     "context7": {
       "command": "npx",
@@ -37,6 +38,5 @@
         "@upstash/context7-mcp@latest"
       ]
     }
-  },
-  "agentPushNotifEnabled": true
+  }
 }

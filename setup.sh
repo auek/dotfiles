@@ -116,7 +116,7 @@ case "$ID" in
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-clients sqlite"
+    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-clients sqlite fastfetch"
     PKG_KITTY_FONT="jetbrains-mono-fonts"
     info "Detected: Fedora $VERSION_ID"
     ;;
@@ -125,7 +125,7 @@ case "$ID" in
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3"
+    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3 fastfetch"
     PKG_KITTY_FONT="fonts-jetbrains-mono"
     info "Detected: $PRETTY_NAME"
     ;;

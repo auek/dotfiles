@@ -36,6 +36,11 @@
             "type": "command",
             "shell": "bash",
             "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-rm-rf.sh"
+          },
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-push.sh"
           }
         ]
       }

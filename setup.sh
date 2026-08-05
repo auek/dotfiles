@@ -18,7 +18,7 @@ DO_UPDATE=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
 NVM_VERSION="v0.40.1"
-KITTY_VERSION="0.46.2"
+KITTY_VERSION="0.48.1"
 KITTY_ARCHIVE_URL="https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz"
 DOTFILES_LINK="$HOME/.dotfiles"
 IS_WSL=0
@@ -77,7 +77,8 @@ install_kitty() {
     info "Installing kitty $KITTY_VERSION from upstream binary"
     curl -L "$KITTY_ARCHIVE_URL" -o "$tmpdir/kitty.txz"
     rm -rf "$HOME/.local/kitty.app"
-    tar -xJf "$tmpdir/kitty.txz" -C "$HOME/.local"
+    mkdir -p "$HOME/.local/kitty.app"
+    tar -xJf "$tmpdir/kitty.txz" -C "$HOME/.local/kitty.app"
     success "kitty $KITTY_VERSION installed"
 
     rm -rf "$tmpdir"

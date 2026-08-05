@@ -27,7 +27,28 @@
       "Bash(git push *)"
     ]
   },
+  "model": "sonnet",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-rm-rf.sh",
+            "shell": "bash"
+          },
+          {
+            "type": "command",
+            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-push.sh",
+            "shell": "bash"
+          }
+        ]
+      }
+    ]
+  },
   "effortLevel": "medium",
+  "tui": "fullscreen",
   "theme": "dark-ansi",
   "agentPushNotifEnabled": true,
   "mcpServers": {

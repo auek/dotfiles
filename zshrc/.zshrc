@@ -88,21 +88,17 @@ _copy() {
   fi
 }
 
-# dev: claude code + nvim + terminal
+# dev: opencode + nvim + terminal
 if command -v tmux &> /dev/null; then
   function dev() {
     local attach=true
-    local use_opencode=false
 
-    while [[ "$1" == "-d" || "$1" == "-h" || "$1" == "--opencode" ]]; do
+    while [[ "$1" == "-d" || "$1" == "-h" ]]; do
       if [[ "$1" == "-d" ]]; then
         attach=false
-      elif [[ "$1" == "--opencode" ]]; then
-        use_opencode=true
       elif [[ "$1" == "-h" ]]; then
-        echo "Usage: dev [-d] [--opencode] [-h] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
         echo "  -d             Start session detached (do not attach)"
-        echo "  --opencode     Use opencode as the REPL instead of claude"
         echo "  -h             Show this help message"
         return 0
       fi
@@ -110,9 +106,8 @@ if command -v tmux &> /dev/null; then
     done
 
     if [[ "$#" -lt 1 ]]; then
-      echo "Usage: dev [-d] [--opencode] [-h] <session_name> [<project_path>]"
+      echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
       echo "  -d             Start session detached (do not attach)"
-      echo "  --opencode     Use opencode as the REPL instead of claude"
       echo "  -h             Show this help message"
       return 1
     fi
@@ -131,7 +126,7 @@ if command -v tmux &> /dev/null; then
     else
       if [[ -z "$dir" ]]; then
         echo "Error: project path required to create a new session"
-        echo "Usage: dev [-d] [--opencode] [-h] <session_name> [<project_path>]"
+        echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
         return 1
       fi
       local current_width current_height
@@ -145,11 +140,7 @@ if command -v tmux &> /dev/null; then
       tmux new-session -d -s "$name" \
         -x "$current_width" -y "$current_height" \
         -c "$dir"
-      if [[ "$use_opencode" == true ]]; then
-        tmux send-keys -t "$name" "opencode" Enter
-      else
-        tmux send-keys -t "$name" "claude" Enter
-      fi
+      tmux send-keys -t "$name" "opencode" Enter
       tmux split-window -h -p 30 -t "$name" -c "$dir"
       tmux select-pane -t "$name:0.0"
 

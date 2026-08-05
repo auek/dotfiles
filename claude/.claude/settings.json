@@ -27,6 +27,7 @@
       "Bash(git push *)"
     ]
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -34,19 +35,18 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "bash",
-            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-rm-rf.sh"
+            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-rm-rf.sh",
+            "shell": "bash"
           },
           {
             "type": "command",
-            "shell": "bash",
-            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-push.sh"
+            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-push.sh",
+            "shell": "bash"
           }
         ]
       }
     ]
   },
-  "model": "sonnet",
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark-ansi",

@@ -23,13 +23,11 @@
     },
     "read": {
       "~/docs/projects.md": "allow",
-      "~/docs/notes.md": "allow",
-      "~/docs/scratch.md": "allow"
+      "~/docs/notes.md": "allow"
     },
     "edit": {
       "~/docs/projects.md": "deny",
-      "~/docs/notes.md": "deny",
-      "~/docs/scratch.md": "allow"
+      "~/docs/notes.md": "deny"
     },
     "bash": {
       "*": "allow",

@@ -36,11 +36,9 @@ dotfiles/
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
-├── opencode/                 # Stow package: opencode AI config
-│   └── .config/opencode/
-│       └── opencode.jsonc
-└── scripts/                  # Repo-only utilities (not stowed)
-    └── tmux-panes.sh
+└── opencode/                 # Stow package: opencode AI config
+    └── .config/opencode/
+        └── opencode.jsonc
 ```
 
 ## Stow package convention

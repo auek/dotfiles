@@ -90,6 +90,33 @@ _copy() {
 
 # dev: opencode + nvim + terminal
 if command -v tmux &> /dev/null; then
+  # tmx: attach to or create a minimal tmux session.
+  function tmx() {
+    if [[ "$#" -lt 1 || "$#" -gt 2 ]]; then
+      echo "Usage: tmx <session_name> [<directory>]"
+      return 1
+    fi
+
+    local name=$1
+    local dir=${2:-$PWD}
+
+    if [[ ! -d "$dir" ]]; then
+      echo "Error: directory does not exist: $dir"
+      return 1
+    fi
+
+    if [[ -n "$TMUX" ]]; then
+      if tmux has-session -t "=$name" 2>/dev/null; then
+        tmux switch-client -t "=$name"
+      else
+        tmux new-session -d -s "$name" -c "$dir" && \
+          tmux switch-client -t "=$name"
+      fi
+    else
+      tmux new-session -A -s "$name" -c "$dir"
+    fi
+  }
+
   function dev() {
     local attach=true
 

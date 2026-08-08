@@ -1,0 +1,10 @@
+width=600
+height=420
+location=center
+prompt=Search applications
+allow_images=true
+image_size=28
+hide_scroll=true
+matching=fuzzy
+insensitive=true
+no_actions=true

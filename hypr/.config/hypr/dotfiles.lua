@@ -39,6 +39,10 @@ hl.bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }))
 hl.bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }))
 
 hl.config({
+    input = {
+        kb_layout = "se",
+        kb_variant = "us",
+    },
     general = {
         gaps_in = 2,
         gaps_out = 2,

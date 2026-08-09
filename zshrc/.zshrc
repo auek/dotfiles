@@ -60,6 +60,40 @@ if command -v ddcutil &> /dev/null; then
   br2() { ddcutil --display 2 setvcp 10 "$1"; }
 fi
 
+# Hyprland IPC helper for terminals missing HYPRLAND_INSTANCE_SIGNATURE.
+hctl() {
+  if ! command -v Hyprland &>/dev/null; then
+    echo "hctl: Hyprland is not installed" >&2
+    return 127
+  fi
+
+  if ! command -v hyprctl &>/dev/null; then
+    echo "hctl: hyprctl is not installed" >&2
+    return 127
+  fi
+
+  if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    command hyprctl "$@"
+    return
+  fi
+
+  local -a instances
+  instances=("${(@f)$(command hyprctl instances 2>/dev/null | awk '/^instance / {sub(/^instance /, ""); sub(/:$/, ""); print}')}")
+
+  if (( ${#instances[@]} == 0 )); then
+    echo "hctl: no running Hyprland instance found" >&2
+    return 1
+  fi
+
+  if (( ${#instances[@]} > 1 )); then
+    echo "hctl: multiple Hyprland instances found; select one with hyprctl -i" >&2
+    command hyprctl instances >&2
+    return 1
+  fi
+
+  command hyprctl -i "$instances[1]" "$@"
+}
+
 # Cross-platform open command
 open() {
   if [[ "$(uname)" == "Darwin" ]]; then

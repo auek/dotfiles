@@ -36,7 +36,7 @@ dotfiles/
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
-├── hypr/.config/hypr/        # Stow package: Hyprland dotfiles.lua and idle config
+├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
 ├── wofi/.config/wofi/        # Stow package: Wofi launcher config
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/

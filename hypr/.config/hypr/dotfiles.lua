@@ -1,6 +1,7 @@
 local terminal = "kitty"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
+local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.jpg"
 
 hl.monitor({
     output = "",
@@ -16,6 +17,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd("lxpolkit")
     hl.exec_cmd("hypridle")
+    hl.exec_cmd("swaybg -i " .. wallpaper .. " -m fill")
 end)
 
 hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))
@@ -29,6 +31,10 @@ hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))
 hl.bind(main_mod .. " + J", hl.dsp.focus({ direction = "d" }))
 hl.bind(main_mod .. " + K", hl.dsp.focus({ direction = "u" }))
 hl.bind(main_mod .. " + L", hl.dsp.focus({ direction = "r" }))
+hl.bind(main_mod .. " + SHIFT + H", hl.dsp.window.move({ direction = "l" }))
+hl.bind(main_mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "d" }))
+hl.bind(main_mod .. " + SHIFT + K", hl.dsp.window.move({ direction = "u" }))
+hl.bind(main_mod .. " + SHIFT + L", hl.dsp.window.move({ direction = "r" }))
 
 for workspace = 1, 4 do
     hl.bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }))

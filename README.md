@@ -27,7 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland configuration (keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
+| `hypr` | Hyprland configuration (`dotfiles.conf`, keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
 | `wofi` | Wofi application launcher (compact Gruvbox palette) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
@@ -36,6 +36,19 @@ keeping both installed during the transition.
 - Fedora 42+ or Ubuntu 22.04+
 - `git`
 - Docker / Podman (optional, for container-based testing)
+
+### Hyprland bootstrap
+
+`~/.config/hypr/hyprland.conf` is intentionally a local, regular file rather
+than a Stow symlink. It sources the Stow-managed `dotfiles.conf`:
+
+```conf
+source = ~/.config/hypr/dotfiles.conf
+```
+
+Keeping the primary config outside the Git worktree prevents Hyprland from
+generating a fallback stub when a branch change temporarily removes a managed
+file.
 
 ## Installation
 

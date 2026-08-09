@@ -27,7 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland configuration (keybindings, startup helpers, NVIDIA settings, idle lock/suspend) |
+| `hypr` | Hyprland configuration (keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
 | `wofi` | Wofi application launcher (compact Gruvbox palette) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 

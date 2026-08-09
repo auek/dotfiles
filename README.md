@@ -27,7 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
+| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, wallpaper, idle display-off/suspend) |
 | `wofi` | Wofi application launcher (compact Gruvbox palette) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
@@ -49,6 +49,10 @@ require("dotfiles")
 Keeping the primary config outside the Git worktree prevents Hyprland from
 generating a fallback stub when a branch change temporarily removes a managed
 file.
+
+The Hyprland session uses `swaybg` to load
+`~/Pictures/Wallpapers/current.jpg` in fill mode. The image stays local rather
+than being redistributed through this public repository.
 
 ## Installation
 

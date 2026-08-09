@@ -1,0 +1,47 @@
+local terminal = "kitty"
+local menu = "wofi --show drun"
+local main_mod = "SUPER"
+
+hl.monitor({
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+})
+
+hl.env("LIBVA_DRIVER_NAME", "nvidia")
+hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+
+hl.on("hyprland.start", function()
+    hl.exec_cmd("mako")
+    hl.exec_cmd("lxpolkit")
+    hl.exec_cmd("hypridle")
+end)
+
+hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))
+hl.bind(main_mod .. " + D", hl.dsp.exec_cmd(menu))
+hl.bind(main_mod .. " + Q", hl.dsp.window.close())
+hl.bind(main_mod .. " + M", hl.dsp.exit())
+hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
+hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
+
+hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))
+hl.bind(main_mod .. " + J", hl.dsp.focus({ direction = "d" }))
+hl.bind(main_mod .. " + K", hl.dsp.focus({ direction = "u" }))
+hl.bind(main_mod .. " + L", hl.dsp.focus({ direction = "r" }))
+
+for workspace = 1, 4 do
+    hl.bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }))
+    hl.bind(main_mod .. " + SHIFT + " .. workspace, hl.dsp.window.move({ workspace = workspace }))
+end
+
+hl.bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }))
+hl.bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }))
+
+hl.config({
+    general = {
+        gaps_in = 2,
+        gaps_out = 2,
+        border_size = 0,
+    },
+})

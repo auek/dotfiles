@@ -27,7 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland configuration (`dotfiles.conf`, keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
+| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, idle display-off/suspend) |
 | `wofi` | Wofi application launcher (compact Gruvbox palette) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
@@ -39,11 +39,11 @@ keeping both installed during the transition.
 
 ### Hyprland bootstrap
 
-`~/.config/hypr/hyprland.conf` is intentionally a local, regular file rather
-than a Stow symlink. It sources the Stow-managed `dotfiles.conf`:
+`~/.config/hypr/hyprland.lua` is intentionally a local, regular file rather
+than a Stow symlink. It requires the Stow-managed `dotfiles.lua`:
 
-```conf
-source = ~/.config/hypr/dotfiles.conf
+```lua
+require("dotfiles")
 ```
 
 Keeping the primary config outside the Git worktree prevents Hyprland from

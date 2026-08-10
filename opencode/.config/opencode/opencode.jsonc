@@ -19,15 +19,8 @@
   },
   "permission": {
     "external_directory": {
-      "~/docs/**": "allow"
-    },
-    "read": {
-      "~/docs/projects.md": "allow",
-      "~/docs/notes.md": "allow"
-    },
-    "edit": {
-      "~/docs/projects.md": "deny",
-      "~/docs/notes.md": "deny"
+      "~/code/**": "allow",
+      "~/vaults/main/**": "allow"
     },
     "bash": {
       "*": "allow",

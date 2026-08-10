@@ -1,10 +1,6 @@
 # Global OpenCode Rules
 
-Use `~/docs` as personal context when relevant.
-
 For normal coding work, prefer short-lived feature branches over long-lived shared branches. Treat `main` and `master` as protected branches for agent-authored commits.
-
-Treat `~/docs/projects.md` and `~/docs/notes.md` as read-only context unless the user explicitly asks you to update them.
 
 ## Git workflow
 

@@ -4,12 +4,12 @@ Automated setup of a development environment using a single Bash script and GNU 
 
 Supports both native Linux and WSL2 Linux environments. The base install flow
 is shared; WSL-specific quirks are handled only where needed via runtime guards
-in dotfiles and notes in `docs/SETUP_WSL.md`.
+in dotfiles and notes in `docs/setup_wsl.md`.
 
 On Fedora, container tooling is Podman-based. Native Fedora installs Podman plus
 Docker-compatible CLI support in the `--full` profile; WSL2 Fedora keeps
 container setup as a separate,
-WSL-specific path documented in `docs/SETUP_WSL.md`.
+WSL-specific path documented in `docs/setup_wsl.md`.
 
 Kitty is installed from the upstream binary in the `--full` profile on native
 Linux. The Fedora RPM can be removed manually afterward if you want to avoid
@@ -151,4 +151,4 @@ docker rmi auek/dotfiles:fedora
 docker rmi auek/dotfiles:ubuntu
 ```
 
-See `docs/SETUP_WSL.md` for WSL2-specific setup notes and workarounds.
+See `docs/setup_wsl.md` for WSL2-specific setup notes and workarounds.

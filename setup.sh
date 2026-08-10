@@ -179,7 +179,7 @@ if [ "$PKG_MANAGER" = "dnf" ]; then
     info "Profile: $PROFILE — skipping Fedora container tooling"
   elif [ "$IS_WSL" -eq 1 ]; then
     info "WSL2 detected — skipping Fedora container tooling in setup.sh"
-    info "See docs/SETUP_WSL.md for the WSL-specific Podman setup"
+    info "See docs/setup_wsl.md for the WSL-specific Podman setup"
   else
     info "Installing Podman with Docker-compatible CLI on Fedora"
     sudo dnf install -y podman podman-docker docker-compose

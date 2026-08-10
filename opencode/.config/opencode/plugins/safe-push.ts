@@ -4,6 +4,7 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 const execFileAsync = promisify(execFile);
 const protectedBranches = new Set(["main", "master"]);
+const upstreamOptions = new Set(["-u", "--set-upstream"]);
 
 async function currentBranch(directory: string) {
   try {
@@ -29,11 +30,13 @@ function pushTargetsProtectedBranch(command: string, branch: string) {
   }
 
   const args = command.trim().split(/\s+/).slice(2);
-  if (args.some((arg) => arg.startsWith("-"))) return undefined;
+  if (args.some((arg) => arg.startsWith("-") && !upstreamOptions.has(arg))) return undefined;
 
-  if (args.length <= 1) return false;
+  const pushArgs = args.filter((arg) => !upstreamOptions.has(arg));
 
-  return args.slice(1).some((refspec) => {
+  if (pushArgs.length <= 1) return false;
+
+  return pushArgs.slice(1).some((refspec) => {
     const target = (refspec.includes(":") ? refspec.split(":").at(-1) : refspec)
       .replace(/^refs\/heads\//, "");
     return protectedBranches.has(target);
@@ -42,17 +45,17 @@ function pushTargetsProtectedBranch(command: string, branch: string) {
 
 export default (async ({ directory }) => {
   return {
-    "permission.ask": async (input, output) => {
-      if (input.type !== "bash" || typeof input.pattern !== "string") return;
+    "tool.execute.before": async (input, output) => {
+      if (input.tool !== "bash" || typeof output.args.command !== "string") return;
+      if (!/^git\s+push(?:\s|$)/.test(output.args.command)) return;
 
       const branch = await currentBranch(directory);
-      if (!branch) return;
+      const targetsProtectedBranch = branch && pushTargetsProtectedBranch(output.args.command, branch);
 
-      const targetsProtectedBranch = pushTargetsProtectedBranch(input.pattern, branch);
-      if (targetsProtectedBranch === true) {
-        output.status = "deny";
-      } else if (targetsProtectedBranch === false) {
-        output.status = "allow";
+      if (targetsProtectedBranch !== false) {
+        throw new Error(
+          "Blocked unsafe git push. Only simple, non-force pushes to non-main/master branches are permitted.",
+        );
       }
     },
   };

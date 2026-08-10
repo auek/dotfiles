@@ -4,6 +4,7 @@ import type { Plugin } from "@opencode-ai/plugin";
 
 const execFileAsync = promisify(execFile);
 const protectedBranches = new Set(["main", "master"]);
+const upstreamOptions = new Set(["-u", "--set-upstream"]);
 
 async function currentBranch(directory: string) {
   try {
@@ -29,11 +30,13 @@ function pushTargetsProtectedBranch(command: string, branch: string) {
   }
 
   const args = command.trim().split(/\s+/).slice(2);
-  if (args.some((arg) => arg.startsWith("-"))) return undefined;
+  if (args.some((arg) => arg.startsWith("-") && !upstreamOptions.has(arg))) return undefined;
 
-  if (args.length <= 1) return false;
+  const pushArgs = args.filter((arg) => !upstreamOptions.has(arg));
 
-  return args.slice(1).some((refspec) => {
+  if (pushArgs.length <= 1) return false;
+
+  return pushArgs.slice(1).some((refspec) => {
     const target = (refspec.includes(":") ? refspec.split(":").at(-1) : refspec)
       .replace(/^refs\/heads\//, "");
     return protectedBranches.has(target);

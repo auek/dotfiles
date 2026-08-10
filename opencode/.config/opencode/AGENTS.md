@@ -12,7 +12,7 @@ Treat `~/docs/projects.md` and `~/docs/notes.md` as read-only context unless the
 - A milestone commit must only happen after the agent has finished the scoped change, reviewed the diff, and run the relevant verification step for the repo (tests, lint, build, or `pre-commit` when appropriate).
 - Prefer a new commit over history rewriting. Do not use `git commit --amend`, force pushes, destructive resets, or branch deletion unless the user explicitly requests them.
 - Never create agent-authored commits on `main` or `master`. Commits on `develop` are allowed when appropriate.
-- The global safe-push plugin may automatically permit non-force pushes to branches other than `main` and `master`, including `git push -u origin <branch>`. It denies pushes to protected branches; force, tag, bulk, shell-composed, and otherwise ambiguous pushes require explicit user approval.
+- The global safe-push plugin permits simple, non-force pushes to branches other than `main` and `master`, including `git push -u origin <branch>`. It blocks pushes to protected branches and all force, tag, bulk, shell-composed, or otherwise ambiguous push commands.
 
 ## Markdown preferences
 

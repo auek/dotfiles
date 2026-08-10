@@ -45,17 +45,17 @@ function pushTargetsProtectedBranch(command: string, branch: string) {
 
 export default (async ({ directory }) => {
   return {
-    "permission.ask": async (input, output) => {
-      if (input.type !== "bash" || typeof input.pattern !== "string") return;
+    "tool.execute.before": async (input, output) => {
+      if (input.tool !== "bash" || typeof output.args.command !== "string") return;
+      if (!/^git\s+push(?:\s|$)/.test(output.args.command)) return;
 
       const branch = await currentBranch(directory);
-      if (!branch) return;
+      const targetsProtectedBranch = branch && pushTargetsProtectedBranch(output.args.command, branch);
 
-      const targetsProtectedBranch = pushTargetsProtectedBranch(input.pattern, branch);
-      if (targetsProtectedBranch === true) {
-        output.status = "deny";
-      } else if (targetsProtectedBranch === false) {
-        output.status = "allow";
+      if (targetsProtectedBranch !== false) {
+        throw new Error(
+          "Blocked unsafe git push. Only simple, non-force pushes to non-main/master branches are permitted.",
+        );
       }
     },
   };

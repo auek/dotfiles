@@ -2,6 +2,12 @@ local terminal = "kitty"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
 local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.jpg"
+local screenshot = [[
+mkdir -p "$HOME/Pictures/Screenshots" &&
+file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
+grim -g "$(slurp -d)" "$file" &&
+wl-copy --type image/png < "$file"
+]]
 
 hl.monitor({
     output = "",
@@ -26,6 +32,7 @@ hl.bind(main_mod .. " + Q", hl.dsp.window.close())
 hl.bind(main_mod .. " + M", hl.dsp.exit())
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
+hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 
 hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))
 hl.bind(main_mod .. " + J", hl.dsp.focus({ direction = "d" }))

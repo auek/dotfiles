@@ -51,6 +51,46 @@ end
 hl.bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }))
 hl.bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }))
 
+hl.curve("easeOutQuint", {
+    type = "bezier",
+    points = { { 0.23, 1 }, { 0.32, 1 } },
+})
+
+hl.curve("easeInOutCubic", {
+    type = "bezier",
+    points = { { 0.65, 0.05 }, { 0.36, 1 } },
+})
+
+hl.animation({
+    leaf = "windowsIn",
+    enabled = true,
+    speed = 5,
+    bezier = "easeOutQuint",
+    style = "popin 90%",
+})
+hl.animation({
+    leaf = "windowsOut",
+    enabled = true,
+    speed = 4,
+    bezier = "easeInOutCubic",
+    style = "popin 90%",
+})
+hl.animation({
+    leaf = "windowsMove",
+    enabled = true,
+    speed = 5,
+    bezier = "easeOutQuint",
+})
+hl.animation({
+    leaf = "workspaces",
+    enabled = true,
+    speed = 4,
+    bezier = "easeOutQuint",
+    style = "slidefade 15%",
+})
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 4, bezier = "easeOutQuint" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 4, bezier = "easeInOutCubic" })
+
 hl.config({
     input = {
         kb_layout = "se",

@@ -1,18 +1,25 @@
 #!/usr/bin/env zsh
 
-### Environment / Settings ###
+### Environment ###
 HISTFILE=~/.zsh_history
 HISTSIZE=500000
 SAVEHIST=500000
-setopt appendhistory
-setopt INC_APPEND_HISTORY
-setopt SHARE_HISTORY
-unsetopt BEEP
-unsetopt AUTO_CD
 
-# Case-insensitive completion
-autoload -Uz compinit && compinit
+export PATH="$HOME/.opencode/bin:$PATH"
+export PIP_REQUIRE_VIRTUALENV=true
+export ZSH="$HOME/.oh-my-zsh"
+
+### Shell Behavior ###
+setopt append_history
+setopt inc_append_history
+setopt share_history
+unsetopt beep
+unsetopt auto_cd
+
+### Completion ###
+# Case-insensitive completion.
 zstyle ":completion:*" matcher-list "m:{a-z}={A-Za-z}"
+autoload -Uz compinit && compinit
 
 ### Oh My Zsh Configuration ###
 ZSH_THEME="robbyrussell"
@@ -22,8 +29,7 @@ plugins=(git ssh-agent zsh-autosuggestions)
 zstyle ':omz:*' aliases no
 zstyle :omz:plugins:ssh-agent identities id_ed25519
 
-export ZSH="$HOME/.oh-my-zsh"
-source $ZSH/oh-my-zsh.sh
+source "$ZSH/oh-my-zsh.sh"
 
 ### Binds ###
 bindkey "[D" backward-word
@@ -42,7 +48,7 @@ with_secrets() {
     shift
   fi
 
-  if [ -f "$secrets_file" ]; then
+  if [[ -f "$secrets_file" ]]; then
     (
       source "$secrets_file"
       "$@"
@@ -54,7 +60,7 @@ with_secrets() {
 }
 
 # ddcutil brightness helpers
-if command -v ddcutil &> /dev/null; then
+if command -v ddcutil >/dev/null 2>&1; then
   br()  { ( ddcutil --display 1 setvcp 10 "$1" >/dev/null & ddcutil --display 2 setvcp 10 "$1" >/dev/null & wait ); }
   br1() { ddcutil --display 1 setvcp 10 "$1"; }
   br2() { ddcutil --display 2 setvcp 10 "$1"; }
@@ -62,12 +68,12 @@ fi
 
 # Hyprland IPC helper for terminals missing HYPRLAND_INSTANCE_SIGNATURE.
 hctl() {
-  if ! command -v Hyprland &>/dev/null; then
+  if ! command -v Hyprland >/dev/null 2>&1; then
     echo "hctl: Hyprland is not installed" >&2
     return 127
   fi
 
-  if ! command -v hyprctl &>/dev/null; then
+  if ! command -v hyprctl >/dev/null 2>&1; then
     echo "hctl: hyprctl is not installed" >&2
     return 127
   fi
@@ -100,7 +106,7 @@ open() {
     command open "${@:-.}"
   elif grep -qi microsoft /proc/version 2>/dev/null; then
     explorer.exe "${@:-.}"
-  elif command -v xdg-open &>/dev/null; then
+  elif command -v xdg-open >/dev/null 2>&1; then
     xdg-open "${@:-.}"
   else
     echo "open: no handler found for this platform" >&2
@@ -123,9 +129,9 @@ _copy() {
 }
 
 # dev: opencode + nvim + terminal
-if command -v tmux &> /dev/null; then
+if command -v tmux >/dev/null 2>&1; then
   # tmx: attach to or create a minimal tmux session.
-  function tmx() {
+  tmx() {
     if [[ "$#" -lt 1 || "$#" -gt 2 ]]; then
       echo "Usage: tmx <session_name> [<directory>]"
       return 1
@@ -151,7 +157,7 @@ if command -v tmux &> /dev/null; then
     fi
   }
 
-  function dev() {
+  dev() {
     local attach=true
 
     while [[ "$1" == "-d" || "$1" == "-h" ]]; do
@@ -178,7 +184,7 @@ if command -v tmux &> /dev/null; then
 
     if tmux has-session -t "$name" 2>/dev/null; then
       if [ "$attach" = true ]; then
-        if [ -n "$TMUX" ]; then
+        if [[ -n "$TMUX" ]]; then
           tmux switch-client -t "$name"
         else
           tmux attach -t "$name"
@@ -190,8 +196,14 @@ if command -v tmux &> /dev/null; then
         echo "Usage: dev [-d] [-h] <session_name> [<project_path>]"
         return 1
       fi
+
+      if [[ ! -d "$dir" ]]; then
+        echo "Error: directory does not exist: $dir"
+        return 1
+      fi
+
       local current_width current_height
-      if [ -n "$TMUX" ]; then
+      if [[ -n "$TMUX" ]]; then
         current_width=$(tmux display -p '#{window_width}')
         current_height=$(tmux display -p '#{window_height}')
       else
@@ -206,7 +218,7 @@ if command -v tmux &> /dev/null; then
       tmux select-pane -t "$name:0.0"
 
       if [ "$attach" = true ]; then
-        if [ -n "$TMUX" ]; then
+        if [[ -n "$TMUX" ]]; then
           tmux switch-client -t "$name"
         else
           tmux attach -t "$name"
@@ -215,14 +227,14 @@ if command -v tmux &> /dev/null; then
     fi
   }
 else
-  function dev() {
+  dev() {
     echo "Error: tmux is not installed."
   }
 fi
 
-# llm commit messages
-function gsuggest() {
-  if ! command -v llm &>/dev/null; then
+# LLM commit messages
+gsuggest() {
+  if ! command -v llm >/dev/null 2>&1; then
     echo "llm not installed"
     return 1
   fi
@@ -267,7 +279,7 @@ Produce a conventional commit message:
 Rules:
 - lowercase unless a proper noun requires otherwise
 - no quotes, code fences, bullets, numbering, or commentary
-- use the ezample commit subjects only as style reference, never as content
+- use the example commit subjects only as style reference, never as content
 - base the result on the diff
 - the body should explain what changed and why, not just restate the diff
 - paragraph breaks are allowed when they improve readability
@@ -281,7 +293,7 @@ Rules:
 - lowercase unless a proper noun requires otherwise
 - max 72 characters
 - no quotes, code fences, bullets, numbering, or commentary
-- use the ezample commit subjects only as style reference, never as content
+- use the example commit subjects only as style reference, never as content
 - base the result on the diff
 - prefer a concrete, specific summary over a generic one
 - if the diff is mixed, summarize the dominant change"
@@ -296,12 +308,12 @@ $recent_subjects
 
 $payload"
   fi
-  
-  # Ensure secrets are loaded
   if (( accept_mode )); then
-    local commit_cmd="git commit -F -"
-    (( ! has_staged )) && commit_cmd="git commit -a -F -"
-    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | eval "$commit_cmd"
+    if (( has_staged )); then
+      with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | git commit -F -
+    else
+      with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | git commit -a -F -
+    fi
   else
     with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
   fi
@@ -315,14 +327,14 @@ alias ...="cd ../.."
 alias ....="cd ../../../.."
 
 # Tool-specific
-if command -v eza &> /dev/null; then
+if command -v eza >/dev/null 2>&1; then
   alias l="eza"
   alias ll="eza -lah --git"
   alias t="eza --all -I .git --icons --sort=type -T -L 2"
   alias tt="eza --all -I .git --icons --sort=type -T"
 fi
 
-if command -v nvim &> /dev/null; then
+if command -v nvim >/dev/null 2>&1; then
   alias vim="nvim"
 fi
 
@@ -345,14 +357,14 @@ alias gc-="git checkout -"
 alias llm='with_secrets llm'
 
 # SSH
-if [ -z "$SSH_AUTH_SOCK" ]; then
+if [[ -z "$SSH_AUTH_SOCK" ]]; then
   eval "$(ssh-agent -s)" > /dev/null
   ssh-add 2>/dev/null
 fi
 
-### FZF and External Tool Integrations ###
-# FZF configuration (only if fd is available)
-if command -v fd &> /dev/null; then
+### External Tool Integrations ###
+# FZF configuration (only if fd is available).
+if command -v fd >/dev/null 2>&1; then
   FZF_CMD_ARGS="--hidden --exclude .git --exclude node_modules --exclude .cache --exclude .venv --exclude cache"
 
   export FZF_DEFAULT_COMMAND="fd --type f $FZF_CMD_ARGS"
@@ -379,17 +391,18 @@ if command -v fd &> /dev/null; then
 
   # Search directories from home directory (Alt + Shift + C)
   fzf-cd-home() {
-    local dir=$(fd --type d --max-depth 5 ${=FZF_CMD_ARGS} . "$HOME" 2>/dev/null | fzf)
-    if [ -n "$dir" ]; then
+    local dir
+    dir=$(fd --type d --max-depth 5 ${=FZF_CMD_ARGS} . "$HOME" 2>/dev/null | fzf)
+    if [[ -n "$dir" ]]; then
       cd "$dir"
       zle reset-prompt
     fi
   }
-zle -N fzf-cd-home
-bindkey "\eC" fzf-cd-home
+  zle -N fzf-cd-home
+  bindkey "\eC" fzf-cd-home
 
   # Check for bat to provide rich previews, otherwise fallback
-  if command -v bat &> /dev/null; then
+  if command -v bat >/dev/null 2>&1; then
     export FZF_DEFAULT_OPTS='--tmux center --preview "[[ -f {} ]] && bat --color=always --style=header,grid --line-range :500 {} || echo {} is a directory"'
   else
     export FZF_DEFAULT_OPTS='--tmux center --preview "[[ -f {} ]] && head -n 500 {} || echo {} is a directory"'
@@ -397,9 +410,3 @@ bindkey "\eC" fzf-cd-home
 
   source <(fzf --zsh)
 fi
-
-# opencode
-export PATH="$HOME/.opencode/bin:$PATH"
-
-# PIP, disallow installing without virtualenv
-export PIP_REQUIRE_VIRTUALENV=true

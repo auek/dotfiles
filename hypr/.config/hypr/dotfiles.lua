@@ -16,6 +16,7 @@ hl.monitor({
   scale = 1,
 })
 
+hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. os.getenv("PATH"))
 hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 
@@ -32,6 +33,7 @@ hl.bind(main_mod .. " + Q", hl.dsp.window.close())
 hl.bind(main_mod .. " + M", hl.dsp.exit())
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(main_mod .. " + S", hl.dsp.workspace.toggle_special("music"))
 hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 
 hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))
@@ -50,6 +52,11 @@ end
 
 hl.bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }))
 hl.bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }))
+
+hl.window_rule({
+  match = { class = [[^(Spotify|com\.spotify\.Client)$]] },
+  workspace = "special:music silent",
+})
 
 hl.curve("easeOutQuint", {
   type = "bezier",

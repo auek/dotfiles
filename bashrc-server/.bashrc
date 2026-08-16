@@ -4,8 +4,10 @@ HISTFILESIZE=500000
 
 shopt -s histappend
 
-bind 'set bell-style none'
-bind 'set completion-ignore-case on'
+if [[ $- == *i* ]]; then
+    bind 'set bell-style none'
+    bind 'set completion-ignore-case on'
+fi
 
 # colored prompt
 if [ "$TERM" != "dumb" ] && [ -x /usr/bin/tput ] && tput setaf 1 >/dev/null 2>&1; then

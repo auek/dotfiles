@@ -32,6 +32,8 @@ zstyle :omz:plugins:ssh-agent identities id_ed25519
 source "$ZSH/oh-my-zsh.sh"
 
 ### Binds ###
+# Oh My Zsh maps Alt+L to execute `ls`; retain the standard Emacs-style action.
+bindkey '\el' down-case-word
 bindkey "[D" backward-word
 bindkey "[C" forward-word
 bindkey "^[a" beginning-of-line

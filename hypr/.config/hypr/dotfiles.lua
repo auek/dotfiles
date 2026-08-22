@@ -24,6 +24,7 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("mako")
   hl.exec_cmd("lxpolkit")
   hl.exec_cmd("hypridle")
+  hl.exec_cmd("waybar")
   hl.exec_cmd("swaybg -i " .. wallpaper .. " -m fill")
 end)
 
@@ -105,7 +106,7 @@ hl.config({
   },
   general = {
     gaps_in = 2,
-    gaps_out = 2,
+    gaps_out = 4,
     border_size = 0,
   },
 })

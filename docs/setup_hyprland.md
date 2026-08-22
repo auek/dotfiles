@@ -17,7 +17,7 @@ sudo dnf install hyprland hypridle xdg-desktop-portal-hyprland
 Install the session utilities used by the Stow-managed configuration:
 
 ```bash
-sudo dnf install mako lxpolkit wofi swaybg grim slurp wl-clipboard
+sudo dnf install mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 ```
 
 | Package | Purpose |
@@ -27,6 +27,7 @@ sudo dnf install mako lxpolkit wofi swaybg grim slurp wl-clipboard
 | `xdg-desktop-portal-hyprland` | Desktop portal backend for Hyprland |
 | `mako` | Notification daemon |
 | `lxpolkit` | Polkit authentication agent |
+| `waybar` | Top status bar with workspaces, window title, audio, network, tray, and clock |
 | `wofi` | Application launcher |
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |

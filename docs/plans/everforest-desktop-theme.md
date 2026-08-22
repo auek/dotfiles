@@ -1,7 +1,8 @@
 # Implementation Plan: Everforest desktop theme
 
 Status: in progress. The shell UI and terminal/editor stages are visually
-accepted. The native GTK integration is prepared but not installed or applied.
+accepted. The native GTK integration is installed and applied, with visual
+acceptance and Flatpak behavior still pending.
 
 ## Goal
 
@@ -344,6 +345,7 @@ Expected existing files to modify:
 
 Expected new files if the relevant stages are accepted:
 
+- `hypr/.config/systemd/user/hyprland-session.target`
 - `mako/.config/mako/config`
 - GTK3/GTK4 settings under the `gtk` Stow package
 

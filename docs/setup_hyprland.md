@@ -124,6 +124,27 @@ require("dotfiles")
 
 Save this as `~/.config/hypr/hyprland.lua`.
 
+The `hypr` Stow package also installs `hyprland-session.target`. The Lua
+configuration starts this user target with Hyprland and stops it during
+shutdown. This activates `graphical-session.target`, which Fedora's desktop
+portal services require. After linking the package, reload user units once:
+
+```bash
+systemctl --user daemon-reload
+```
+
+After the next Hyprland login, verify the session and portal services:
+
+```bash
+systemctl --user is-active graphical-session.target
+gdbus call --session \
+  --dest org.freedesktop.portal.Desktop \
+  --object-path /org/freedesktop/portal/desktop \
+  --method org.freedesktop.DBus.Peer.Ping
+systemctl --user is-active xdg-desktop-portal.service
+systemctl --user is-active xdg-desktop-portal-hyprland.service
+```
+
 ## Local assets and key bindings
 
 Place a local wallpaper at `~/Pictures/Wallpapers/current.jpg`. It is loaded by

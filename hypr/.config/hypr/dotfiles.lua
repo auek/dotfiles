@@ -26,11 +26,16 @@ hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 
 hl.on("hyprland.start", function()
+  hl.exec_cmd("systemctl --user start hyprland-session.target")
   hl.exec_cmd("mako")
   hl.exec_cmd("lxpolkit")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("waybar")
   hl.exec_cmd(wallpaper_command)
+end)
+
+hl.on("hyprland.shutdown", function()
+  os.execute("systemctl --user stop hyprland-session.target && sleep 0.1")
 end)
 
 hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))

@@ -28,7 +28,7 @@ keeping both installed during the transition.
 | `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
-| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, Everforest window styling, NVIDIA settings, wallpaper, idle display-off/suspend) |
+| `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, systemd session target) |
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |
 | `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |

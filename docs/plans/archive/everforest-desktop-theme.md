@@ -1,8 +1,8 @@
 # Implementation Plan: Everforest desktop theme
 
-Status: in progress. The shell UI and terminal/editor stages are visually
-accepted. The native GTK integration is installed and applied, with visual
-acceptance and Flatpak behavior still pending.
+Status: complete. The shell UI, terminal/editor, native GTK, and Spek Flatpak
+stages are visually accepted. Adwaita icons and the default cursor remain in
+place as deliberate finishing choices.
 
 ## Goal
 
@@ -376,17 +376,13 @@ Before any commit:
 Live component reloads, Stow operations, external theme installation, and GTK
 system-setting changes must only be performed with explicit user confirmation.
 
-## Open decisions
+## Final decisions
 
-Resolve these before or during implementation:
-
-- whether Everforest Dark medium has enough contrast in Waybar during daylight
-- whether active windows need a full 2px green border or a subtler treatment
-- whether the current Powerline tab and tmux statusline shapes still fit the
-  softer desktop geometry
-- which icon and cursor themes complement Everforest without making the desktop
-  excessively green
-- whether server tmux should deliberately remain Gruvbox or become neutral
+- Everforest Dark medium has acceptable Waybar contrast in normal use.
+- Active windows use the proposed 2px green border.
+- The existing Powerline tab and tmux statusline shapes remain in place.
+- Adwaita icons and the default cursor remain deliberately unchanged.
+- Server tmux remains independent from the workstation theme.
 
 ## Non-goals
 
@@ -397,6 +393,3 @@ Resolve these before or during implementation:
 - replacing Waybar, Wofi, Mako, swaybg, Kitty, or tmux
 - distributing an external wallpaper or GTK theme in this repository
 - changing application behavior solely for visual novelty
-
-If the proposal is rejected, this file can remain as a record of the evaluated
-direction or be removed without affecting any active configuration.

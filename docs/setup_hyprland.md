@@ -86,15 +86,39 @@ gsettings set org.gnome.desktop.interface gtk-theme \
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 ```
 
-Close and reopen GTK applications after changing the theme. Flatpak overrides,
-icon themes, and cursor themes are deliberately deferred until the native GTK
-result has been evaluated.
+Close and reopen GTK applications after changing the theme. Icon and cursor
+themes remain at their recorded defaults.
+
+### Theme the Spek Flatpak
+
+Spek is the only installed Flatpak that uses GTK3. Give only that sandbox
+read-only access to the exact theme directory and select the theme explicitly:
+
+```bash
+flatpak override --user \
+  --filesystem="$HOME/.themes/Everforest-Green-Dark-Compact-Medium:ro" \
+  --env=GTK_THEME=Everforest-Green-Dark-Compact-Medium \
+  cc.spek.Spek
+```
+
+The other installed Flatpaks use Qt or Electron and do not need GTK theme
+access. Avoid a global `~/.themes` override, which would expose every installed
+theme to every Flatpak.
+
+Verify the scoped override and then reopen Spek:
+
+```bash
+flatpak override --user --show cc.spek.Spek
+flatpak run --command=sh cc.spek.Spek -c \
+  'test -r "$HOME/.themes/Everforest-Green-Dark-Compact-Medium/gtk-3.0/gtk.css"'
+```
 
 ### Roll back the GTK theme
 
 Restore the recorded baseline before removing theme assets:
 
 ```bash
+flatpak override --user --reset cc.spek.Spek
 gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
 gsettings set org.gnome.desktop.interface color-scheme 'default'
 make unstow-gtk
@@ -107,6 +131,8 @@ rm -rf \
 Only the three exact directories created by this installer variant are removed.
 The GTK4 imports disappear with `make unstow-gtk`; no external installer is
 allowed to delete GTK4 configuration. Reopen GTK applications afterward.
+The recorded baseline had no Spek override, so its app-specific override can be
+reset in full. Review it first if unrelated Spek overrides are added later.
 
 `hyprlock` is intentionally not configured. The idle policy turns displays off
 and suspends the machine; it does not lock the session.

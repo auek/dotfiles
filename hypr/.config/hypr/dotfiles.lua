@@ -1,7 +1,7 @@
 local terminal = "kitty"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
-local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.jpg"
+local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"
 local wallpaper_command = string.format(
   "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c 2d353b; fi",
   wallpaper,

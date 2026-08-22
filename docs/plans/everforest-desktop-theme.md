@@ -1,7 +1,7 @@
 # Implementation Plan: Everforest desktop theme
 
-Status: in progress. The shell UI stage is visually accepted. The terminal and
-editor stage is implemented and pending visual evaluation before GTK work.
+Status: in progress. The shell UI and terminal/editor stages are visually
+accepted. The native GTK integration is prepared but not installed or applied.
 
 ## Goal
 
@@ -178,7 +178,10 @@ Use the maintained
 [Everforest GTK theme](https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme)
 rather than vendoring generated theme assets into this repository.
 
-The intended upstream variant is:
+The pinned revision is `fede1614cf9a44a03cab25a525f28ff677c1596d` from
+upstream PR #35. It is based on `9b8be4d6648ae9eaae3dd550105081f8c9054825`
+and removes one GTK4-only property that fails GTK3 parsing. The selected variant
+is installed as `Everforest-Green-Dark-Compact-Medium` with:
 
 - dark color variant
 - medium Everforest contrast
@@ -188,9 +191,9 @@ The intended upstream variant is:
 
 Keep installation in `docs/setup_hyprland.md`, not `setup.sh`, because Hyprland
 and its desktop dependencies are deliberately manual and under evaluation.
-Applying the external theme may require a small `gtk` Stow package for GTK3 and
-GTK4 settings, but that should be confirmed after testing the upstream theme's
-installed names and generated paths.
+The opt-in `gtk` Stow package manages GTK3 and GTK4 settings plus safe GTK4 CSS
+imports. The upstream installer owns only its generated theme directories and
+does not manage files under `~/.config/gtk-4.0`.
 
 GTK work should also consider:
 
@@ -287,11 +290,12 @@ combine external GTK activation with the initial shell styling commit.
 
 ### Restoring Gruvbox
 
-If the new Mako package has been Stow-linked, remove that link from the revision
-that still contains the package before switching branches or reverting commits.
-This Stow operation still requires explicit user confirmation. If the branch was
-already switched, remove only a verified symlink that resolves into this
-repository's `mako` package; do not remove a regular user configuration.
+If the new Mako or GTK package has been Stow-linked, remove those links from the
+revision that still contains the packages before switching branches or
+reverting commits. These Stow operations still require explicit user
+confirmation. If the branch was already switched, remove only verified symlinks
+that resolve into this repository's packages; do not remove regular user
+configuration.
 
 If Everforest is rejected before the feature branch is merged, switch back to
 the previous branch and reapply the repository's Stow links only with explicit
@@ -304,8 +308,9 @@ After the Git-managed files are restored:
 2. Remove only GTK4 files or symlinks created by the Everforest installation;
    do not delete pre-existing user files.
 3. Remove only the Flatpak overrides added for Everforest.
-4. Uninstall external Everforest assets using the upstream installer's removal
-   mechanism when available, or remove only the inventoried Everforest paths.
+4. Remove only the three inventoried Everforest theme directories. Do not use
+   this pinned installer's removal mode because it unconditionally deletes GTK4
+   configuration paths.
 5. Reload or restart Hyprland components and graphical applications as needed.
 6. Verify Waybar, Wofi, Mako, Kitty, tmux, Neovim, GTK3, GTK4, tray menus, and
    file dialogs against the restored Gruvbox configuration.
@@ -340,7 +345,7 @@ Expected existing files to modify:
 Expected new files if the relevant stages are accepted:
 
 - `mako/.config/mako/config`
-- optional GTK3/GTK4 settings under a new `gtk` Stow package
+- GTK3/GTK4 settings under the `gtk` Stow package
 
 Do not change `setup.sh` merely to install or activate the desktop theme.
 
@@ -377,10 +382,8 @@ Resolve these before or during implementation:
 - whether active windows need a full 2px green border or a subtler treatment
 - whether the current Powerline tab and tmux statusline shapes still fit the
   softer desktop geometry
-- the exact installed name and command for the chosen Everforest GTK variant
 - which icon and cursor themes complement Everforest without making the desktop
   excessively green
-- whether GTK settings should be Stow-managed or remain documented local state
 - whether server tmux should deliberately remain Gruvbox or become neutral
 
 ## Non-goals

@@ -36,6 +36,78 @@ Mako's Stow-managed configuration uses the same Everforest colors, compact
 geometry, and urgency states as Waybar and Wofi. It is started automatically by
 the Hyprland configuration.
 
+## Install the GTK theme
+
+The `gtk` Stow package selects the external Everforest GTK theme for GTK3 and
+GTK4 applications. Install its Fedora build and compatibility dependencies:
+
+```bash
+sudo dnf install sassc gtk-murrine-engine
+```
+
+The upstream generic requirements mention `gnome-themes-extra`, but Fedora 44
+does not publish that package. Its Fedora-specific requirements are the two
+packages above.
+
+Clone the theme, fetch its GTK3 parser fix from upstream PR #35, and pin the
+reviewed revision:
+
+```bash
+mkdir -p ~/.local/src
+git clone https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme.git \
+  ~/.local/src/Everforest-GTK-Theme
+git -C ~/.local/src/Everforest-GTK-Theme fetch origin pull/35/head
+git -C ~/.local/src/Everforest-GTK-Theme checkout \
+  fede1614cf9a44a03cab25a525f28ff677c1596d
+```
+
+The pinned commit differs from upstream `master` only by removing a GTK4-only
+`border-spacing` property that otherwise produces GTK3 parser errors.
+
+Install only the dark, compact, green-accent, medium-contrast variant:
+
+```bash
+~/.local/src/Everforest-GTK-Theme/themes/install.sh \
+  --theme green \
+  --color dark \
+  --size compact \
+  --tweaks medium
+```
+
+This creates `~/.themes/Everforest-Green-Dark-Compact-Medium`. The opt-in Stow
+package selects it for GTK3 and imports its GTK4 styles for libadwaita without
+letting the external installer delete or replace existing GTK4 configuration.
+Apply the package and desktop preference only after verifying the theme path:
+
+```bash
+make stow-gtk
+gsettings set org.gnome.desktop.interface gtk-theme \
+  'Everforest-Green-Dark-Compact-Medium'
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+```
+
+Close and reopen GTK applications after changing the theme. Flatpak overrides,
+icon themes, and cursor themes are deliberately deferred until the native GTK
+result has been evaluated.
+
+### Roll back the GTK theme
+
+Restore the recorded baseline before removing theme assets:
+
+```bash
+gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+gsettings set org.gnome.desktop.interface color-scheme 'default'
+make unstow-gtk
+rm -rf \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium-hdpi \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium-xhdpi
+```
+
+Only the three exact directories created by this installer variant are removed.
+The GTK4 imports disappear with `make unstow-gtk`; no external installer is
+allowed to delete GTK4 configuration. Reopen GTK applications afterward.
+
 `hyprlock` is intentionally not configured. The idle policy turns displays off
 and suspends the machine; it does not lock the session.
 

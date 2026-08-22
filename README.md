@@ -27,6 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
+| `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
 | `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, Everforest window styling, NVIDIA settings, wallpaper, idle display-off/suspend) |
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |
@@ -106,11 +107,13 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 
 | Target | Description |
 |---|---|
-| `make stow` | Symlink all dotfile packages to `$HOME` |
+| `make stow` | Symlink the default workstation packages to `$HOME` |
 | `make stow-server` | Symlink only the server profile dotfiles to `$HOME` |
-| `make unstow` | Remove all symlinks |
+| `make stow-gtk` | Symlink the opt-in Everforest GTK settings after installing the external theme |
+| `make unstow` | Remove the default workstation package symlinks |
 | `make unstow-server` | Remove only the server profile symlinks |
-| `make restow` | Unstow then stow (useful after adding new files) |
+| `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
+| `make restow` | Restow the default workstation packages after adding files |
 
 ## Docker testing
 

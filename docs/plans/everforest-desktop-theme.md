@@ -1,7 +1,7 @@
 # Implementation Plan: Everforest desktop theme
 
-Status: in progress. The shell UI stage is implemented and pending visual
-evaluation before terminal or GTK work begins.
+Status: in progress. The shell UI stage is visually accepted. The terminal and
+editor stage is implemented and pending visual evaluation before GTK work.
 
 ## Goal
 
@@ -159,7 +159,7 @@ separate decision is made to theme remote/headless environments too.
 
 ### Neovim
 
-Replace Gruvbox with a maintained Everforest Neovim theme:
+Replace Gruvbox with `neanias/everforest-nvim`:
 
 - use dark mode with medium contrast
 - retain the current preference for non-italic strings, comments, operators,
@@ -169,8 +169,8 @@ Replace Gruvbox with a maintained Everforest Neovim theme:
 - update `lazy-lock.json` through the normal Lazy.nvim workflow
 - review completion, floating-window, diagnostics, and Git highlight contrast
 
-The exact plugin should be selected at implementation time after comparing the
-official Vim theme with actively maintained native Neovim alternatives.
+This native Lua implementation provides Treesitter, LSP, and lualine support
+while preserving explicit Dark Medium and non-italic settings.
 
 ### GTK applications
 
@@ -266,6 +266,9 @@ Flatpak overrides, and externally installed assets require an explicit record.
 5. Back up any regular GTK configuration file that an upstream installer would
    replace. Prefer identifiable symlinks over copied or overwritten GTK4 assets
    where the upstream theme supports them.
+6. Keep or pre-fetch the pinned Gruvbox Neovim plugin revision if offline
+   rollback is a requirement. Lazy.nvim otherwise needs network access to
+   reinstall it after the Everforest plugin replaces its local checkout.
 
 The implementation must not assume that removing a Stow package also restores
 external GTK or Flatpak state.
@@ -308,6 +311,9 @@ After the Git-managed files are restored:
    file dialogs against the restored Gruvbox configuration.
 7. Inspect the worktree and home-directory theme paths to confirm that no
    unintended Everforest files or broken symlinks remain.
+8. After restoring the Neovim lockfile, run Lazy.nvim's restore operation to
+   reinstall the pinned Gruvbox plugin. This step requires network access unless
+   its checkout or Git objects were retained locally.
 
 Installing an external theme is allowed to leave its inert assets on disk if
 switching away from it fully restores the desktop and removal would risk other
@@ -371,8 +377,6 @@ Resolve these before or during implementation:
 - whether active windows need a full 2px green border or a subtler treatment
 - whether the current Powerline tab and tmux statusline shapes still fit the
   softer desktop geometry
-- which Everforest Neovim implementation provides the best maintenance and
-  plugin integration tradeoff
 - the exact installed name and command for the chosen Everforest GTK variant
 - which icon and cursor themes complement Everforest without making the desktop
   excessively green

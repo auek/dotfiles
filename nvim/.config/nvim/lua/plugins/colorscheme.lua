@@ -1,23 +1,22 @@
 return {
-  "ellisonleao/gruvbox.nvim",
+  "neanias/everforest-nvim",
+  version = false,
   lazy = false,
   priority = 1000,
   config = function()
-    require("gruvbox").setup({
-      italic = {
-        strings = false,
-        comments = false,
-        operators = false,
-        folds = false,
-      },
+    vim.opt.background = "dark"
+    require("everforest").setup({
+      background = "medium",
+      transparent_background_level = 0,
+      italics = false,
+      disable_italic_comments = true,
     })
 
-    vim.opt.background = "dark"
     local success, errmsg = pcall(function()
-      vim.cmd([[colorscheme gruvbox]])
+      vim.cmd([[colorscheme everforest]])
     end)
     if not success then
-      vim.notify("Error applying gruvbox colorscheme: " .. errmsg, vim.log.levels.ERROR)
+      vim.notify("Error applying Everforest colorscheme: " .. errmsg, vim.log.levels.ERROR)
     end
   end
 }

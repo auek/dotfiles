@@ -23,10 +23,10 @@ keeping both installed during the transition.
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `vim-server` | Minimal Vim config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
-| `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
+| `tmux` | tmux config (Everforest theme, vi keys, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
-| `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
-| `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
+| `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
+| `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
 | `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, Everforest window styling, NVIDIA settings, wallpaper, idle display-off/suspend) |
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |

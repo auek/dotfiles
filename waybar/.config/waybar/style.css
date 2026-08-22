@@ -1,7 +1,7 @@
-@define-color background #2d353b;
-@define-color surface #343f44;
-@define-color raised #3d484d;
-@define-color border #4f585e;
+@define-color background rgba(12, 16, 11, 0.92);
+@define-color surface #22281d;
+@define-color raised #30392a;
+@define-color border #49523b;
 @define-color foreground #d3c6aa;
 @define-color muted #859289;
 @define-color accent #a7c080;

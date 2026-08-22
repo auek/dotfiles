@@ -1,4 +1,4 @@
-local terminal = "kitty"
+local terminal = "foot"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
 local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"

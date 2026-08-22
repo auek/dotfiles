@@ -1,4 +1,4 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim kitty hypr waybar wofi mako opencode claude espanso
+STOW_PACKAGES = zshrc zprofile tmux nvim kitty foot hypr waybar wofi mako opencode claude espanso
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
 STOW_PACKAGES_FOOT = foot

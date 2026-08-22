@@ -17,7 +17,7 @@ sudo dnf install hyprland hypridle xdg-desktop-portal-hyprland
 Install the session utilities used by the Stow-managed configuration:
 
 ```bash
-sudo dnf install mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
+sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 ```
 
 | Package | Purpose |
@@ -25,6 +25,7 @@ sudo dnf install mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 | `hyprland` | Wayland compositor |
 | `hypridle` | Turns displays off and suspends the system after inactivity |
 | `xdg-desktop-portal-hyprland` | Desktop portal backend for Hyprland |
+| `foot` | Default terminal emulator for the Hyprland configuration |
 | `mako` | Notification daemon |
 | `lxpolkit` | Polkit authentication agent |
 | `waybar` | Top status bar with workspaces, window title, audio, network, tray, and clock |
@@ -181,7 +182,7 @@ background color.
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
 
-In OpenCode, use `Ctrl+V` to attach the image. `Ctrl+Shift+V` is Kitty's text
+In OpenCode, use `Ctrl+V` to attach the image. `Ctrl+Shift+V` is Foot's text
 paste shortcut and cannot attach a PNG to a terminal application.
 
 ## Tmux across compositor changes

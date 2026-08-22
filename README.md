@@ -27,7 +27,7 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
-| `foot` | Opt-in Foot test configuration (zsh shell, Kitty-matched font and Everforest palette) |
+| `foot` | Default Foot terminal configuration (zsh shell, Everforest palette) |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
 | `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, systemd session target) |
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |

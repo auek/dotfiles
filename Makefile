@@ -1,9 +1,10 @@
 STOW_PACKAGES = zshrc zprofile tmux nvim kitty hypr waybar wofi mako opencode claude espanso
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
+STOW_PACKAGES_FOOT = foot
 STOW_TARGET = $(HOME)
 
-.PHONY: stow unstow restow stow-server unstow-server stow-gtk unstow-gtk
+.PHONY: stow unstow restow stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot
 
 stow:
 	stow --restow --target=$(STOW_TARGET) $(STOW_PACKAGES)
@@ -24,3 +25,9 @@ stow-gtk:
 
 unstow-gtk:
 	stow --delete --target=$(STOW_TARGET) $(STOW_PACKAGES_GTK)
+
+stow-foot:
+	stow --restow --target=$(STOW_TARGET) $(STOW_PACKAGES_FOOT)
+
+unstow-foot:
+	stow --delete --target=$(STOW_TARGET) $(STOW_PACKAGES_FOOT)

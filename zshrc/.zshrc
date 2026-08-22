@@ -211,6 +211,17 @@ if command -v tmux >/dev/null 2>&1; then
       else
         current_width=${COLUMNS:-$(tput cols 2>/dev/null || echo 220)}
         current_height=${LINES:-$(tput lines 2>/dev/null || echo 50)}
+
+        # Foot can briefly report zero dimensions while its Wayland surface is
+        # initializing; tmux rejects those values when creating a detached session.
+        if [[ ! "$current_width" =~ '^[1-9][0-9]*$' ]]; then
+          current_width=$(tput cols 2>/dev/null)
+          [[ "$current_width" =~ '^[1-9][0-9]*$' ]] || current_width=220
+        fi
+        if [[ ! "$current_height" =~ '^[1-9][0-9]*$' ]]; then
+          current_height=$(tput lines 2>/dev/null)
+          [[ "$current_height" =~ '^[1-9][0-9]*$' ]] || current_height=50
+        fi
       fi
       tmux new-session -d -s "$name" \
         -x "$current_width" -y "$current_height" \

@@ -241,6 +241,72 @@ Implement and evaluate the migration in reversible stages:
 Keep changes split into coherent commits so an unsuccessful application layer
 does not require reverting the terminal or shell work.
 
+## Rollback protocol
+
+Rollback must be prepared before any theme is activated. The Git-managed shell
+and terminal configuration is straightforward to restore, but GTK settings,
+Flatpak overrides, and externally installed assets require an explicit record.
+
+### Before implementation
+
+1. Create a dedicated feature branch. Do not implement or commit the migration
+   directly on `main` or `master`.
+2. Confirm that the current Gruvbox configuration is committed and that the
+   worktree changes included in the migration are understood.
+3. Record the current desktop settings in a local rollback note that is not
+   committed if it contains machine-specific information. At minimum, capture:
+   - GTK theme
+   - icon theme
+   - cursor theme and cursor size
+   - preferred color scheme
+   - any existing Flatpak filesystem overrides related to themes or icons
+4. Inventory existing files and symlinks under `~/.themes`, `~/.icons`,
+   `~/.config/gtk-3.0`, and `~/.config/gtk-4.0` before installing the external
+   theme.
+5. Back up any regular GTK configuration file that an upstream installer would
+   replace. Prefer identifiable symlinks over copied or overwritten GTK4 assets
+   where the upstream theme supports them.
+
+The implementation must not assume that removing a Stow package also restores
+external GTK or Flatpak state.
+
+### Commit boundaries
+
+Keep the rollout stages independently reversible:
+
+1. Hyprland, Waybar, Wofi, and Mako
+2. Kitty, tmux, and Neovim
+3. GTK settings and documented external-theme integration
+4. Optional icons, cursor, Flatpak overrides, and wallpaper refinements
+
+Each stage should be visually evaluated before the next stage begins. Do not
+combine external GTK activation with the initial shell styling commit.
+
+### Restoring Gruvbox
+
+If Everforest is rejected before the feature branch is merged, switch back to
+the previous branch and reapply the repository's Stow links only with explicit
+user confirmation. If the migration has already been merged, use new revert
+commits for the relevant stages rather than rewriting history.
+
+After the Git-managed files are restored:
+
+1. Restore the recorded GTK, icon, cursor, cursor-size, and color-scheme values.
+2. Remove only GTK4 files or symlinks created by the Everforest installation;
+   do not delete pre-existing user files.
+3. Remove only the Flatpak overrides added for Everforest.
+4. Uninstall external Everforest assets using the upstream installer's removal
+   mechanism when available, or remove only the inventoried Everforest paths.
+5. Reload or restart Hyprland components and graphical applications as needed.
+6. Verify Waybar, Wofi, Mako, Kitty, tmux, Neovim, GTK3, GTK4, tray menus, and
+   file dialogs against the restored Gruvbox configuration.
+7. Inspect the worktree and home-directory theme paths to confirm that no
+   unintended Everforest files or broken symlinks remain.
+
+Installing an external theme is allowed to leave its inert assets on disk if
+switching away from it fully restores the desktop and removal would risk other
+files. Correctly restored settings are more important than aggressive cleanup.
+
 ## Repository changes
 
 Expected existing files to modify:

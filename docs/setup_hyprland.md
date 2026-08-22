@@ -32,6 +32,10 @@ sudo dnf install mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
 
+Mako's Stow-managed configuration uses the same Everforest colors, compact
+geometry, and urgency states as Waybar and Wofi. It is started automatically by
+the Hyprland configuration.
+
 `hyprlock` is intentionally not configured. The idle policy turns displays off
 and suspends the machine; it does not lock the session.
 
@@ -52,7 +56,8 @@ Save this as `~/.config/hypr/hyprland.lua`.
 
 Place a local wallpaper at `~/Pictures/Wallpapers/current.jpg`. It is loaded by
 `swaybg` with fill mode and is intentionally not stored in this public
-repository.
+repository. When the file is absent, `swaybg` falls back to the Everforest
+background color.
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.

@@ -1,12 +1,19 @@
+@define-color background #2d353b;
+@define-color surface #343f44;
+@define-color raised #3d484d;
+@define-color border #4f585e;
+@define-color foreground #d3c6aa;
+@define-color accent #a7c080;
+
 * {
-    font-family: "JetBrains Mono", monospace;
+    font-family: "JetBrainsMono Nerd Font Mono", monospace;
     font-size: 14px;
 }
 
 #window {
-    background-color: #282828;
-    border: 2px solid #d79921;
-    border-radius: 10px;
+    background-color: @background;
+    border: 1px solid @border;
+    border-radius: 6px;
 }
 
 #outer-box {
@@ -16,10 +23,10 @@
 #input {
     margin: 2px;
     padding: 10px 12px;
-    background-color: #3c3836;
-    color: #ebdbb2;
+    background-color: @surface;
+    color: @foreground;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 #scroll {
@@ -28,19 +35,20 @@
 
 #entry {
     padding: 9px 10px;
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 #entry:selected {
-    background-color: #d79921;
+    background-color: @raised;
+    box-shadow: inset 2px 0 @accent;
 }
 
 #text {
-    color: #ebdbb2;
+    color: @foreground;
 }
 
 #entry:selected #text {
-    color: #282828;
+    color: @accent;
 }
 
 #img {

@@ -27,9 +27,10 @@ keeping both installed during the transition.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, wallpaper, idle display-off/suspend) |
-| `waybar` | Waybar top status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
-| `wofi` | Wofi application launcher (compact Gruvbox palette) |
+| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, Everforest window styling, NVIDIA settings, wallpaper, idle display-off/suspend) |
+| `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
+| `wofi` | Wofi application launcher (compact Everforest styling) |
+| `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
 ## Prerequisites
@@ -53,7 +54,8 @@ file.
 
 The Hyprland session uses `swaybg` to load
 `~/Pictures/Wallpapers/current.jpg` in fill mode. The image stays local rather
-than being redistributed through this public repository.
+than being redistributed through this public repository. If it is absent,
+`swaybg` uses the Everforest background color instead.
 
 ## Installation
 

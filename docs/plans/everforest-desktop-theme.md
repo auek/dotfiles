@@ -1,7 +1,7 @@
-# Proposed Implementation Plan: Everforest desktop theme
+# Implementation Plan: Everforest desktop theme
 
-Status: under consideration. This document records a possible direction only;
-no decision has been made to implement it.
+Status: in progress. The shell UI stage is implemented and pending visual
+evaluation before terminal or GTK work begins.
 
 ## Goal
 
@@ -124,7 +124,7 @@ Add a new `mako` Stow package containing `.config/mako/config`:
 
 - use opaque Everforest background and foreground colors
 - match the 6px radius, thin border, font, and compact spacing
-- define normal, warning, and critical urgency treatments
+- use the global style for normal urgency and define low and critical overrides
 - reserve red for genuinely critical notifications
 - keep notification positioning and timeouts conservative
 
@@ -283,6 +283,12 @@ Each stage should be visually evaluated before the next stage begins. Do not
 combine external GTK activation with the initial shell styling commit.
 
 ### Restoring Gruvbox
+
+If the new Mako package has been Stow-linked, remove that link from the revision
+that still contains the package before switching branches or reverting commits.
+This Stow operation still requires explicit user confirmation. If the branch was
+already switched, remove only a verified symlink that resolves into this
+repository's `mako` package; do not remove a regular user configuration.
 
 If Everforest is rejected before the feature branch is merged, switch back to
 the previous branch and reapply the repository's Stow links only with explicit

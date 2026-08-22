@@ -40,6 +40,7 @@ dotfiles/
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
 ├── waybar/.config/waybar/    # Stow package: Waybar top status bar config
 ├── wofi/.config/wofi/        # Stow package: Wofi launcher config
+├── mako/.config/mako/        # Stow package: Mako notification config
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/
         └── opencode.jsonc
@@ -58,7 +59,7 @@ nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `hypr`, `waybar`, `wofi`, `opencode`.
+`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `hypr`, `waybar`, `wofi`, `mako`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

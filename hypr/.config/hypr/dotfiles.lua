@@ -2,6 +2,11 @@ local terminal = "kitty"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
 local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.jpg"
+local wallpaper_command = string.format(
+  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c 2d353b; fi",
+  wallpaper,
+  wallpaper
+)
 local screenshot = [[
 mkdir -p "$HOME/Pictures/Screenshots" &&
 file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
@@ -25,7 +30,7 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("lxpolkit")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("waybar")
-  hl.exec_cmd("swaybg -i " .. wallpaper .. " -m fill")
+  hl.exec_cmd(wallpaper_command)
 end)
 
 hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))
@@ -105,8 +110,27 @@ hl.config({
     kb_variant = "us",
   },
   general = {
-    gaps_in = 2,
-    gaps_out = 4,
-    border_size = 0,
+    gaps_in = 4,
+    gaps_out = 8,
+    border_size = 2,
+    col = {
+      active_border = "rgba(a7c080ff)",
+      inactive_border = "rgba(475258ff)",
+    },
+  },
+  decoration = {
+    rounding = 6,
+    rounding_power = 2,
+    active_opacity = 1.0,
+    inactive_opacity = 1.0,
+    shadow = {
+      enabled = true,
+      range = 6,
+      render_power = 3,
+      color = 0x66232a2e,
+    },
+    blur = {
+      enabled = false,
+    },
   },
 })

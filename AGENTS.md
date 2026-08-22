@@ -38,6 +38,7 @@ dotfiles/
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
+├── waybar/.config/waybar/    # Stow package: Waybar top status bar config
 ├── wofi/.config/wofi/        # Stow package: Wofi launcher config
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/
@@ -57,7 +58,7 @@ nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `hypr`, `wofi`, `opencode`.
+`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `hypr`, `waybar`, `wofi`, `opencode`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 
@@ -79,6 +80,13 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - Do not add WSL-specific install branches to `setup.sh`.
 - Put WSL-only quirks in guarded dotfiles or in `docs/setup_wsl.md`.
 - Do not apply WSL-only workarounds on native Linux.
+
+## Hyprland policy
+
+- Hyprland and related desktop components remain under evaluation and are not
+  installed by any `setup.sh` profile.
+- Keep manual Hyprland setup requirements and package installation instructions
+  in `docs/setup_hyprland.md`.
 
 ## Repository visibility
 

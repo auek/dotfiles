@@ -1,4 +1,4 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim kitty hypr wofi opencode claude espanso
+STOW_PACKAGES = zshrc zprofile tmux nvim kitty hypr waybar wofi opencode claude espanso
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_TARGET = $(HOME)
 

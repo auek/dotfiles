@@ -28,6 +28,7 @@ keeping both installed during the transition.
 | `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
 | `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, wallpaper, idle display-off/suspend) |
+| `waybar` | Waybar top status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Gruvbox palette) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 

@@ -37,9 +37,13 @@ dotfiles/
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
+├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
+├── gtk/.config/gtk-4.0/      # Stow package: GTK4 theme settings
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
+├── hypr/.config/systemd/user/ # Stow package: Hyprland graphical session target
 ├── waybar/.config/waybar/    # Stow package: Waybar top status bar config
 ├── wofi/.config/wofi/        # Stow package: Wofi launcher config
+├── mako/.config/mako/        # Stow package: Mako notification config
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/
         └── opencode.jsonc
@@ -57,8 +61,10 @@ zshrc/.zshrc           → stowed to ~/.zshrc
 nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
-All packages are stowed to `$HOME` via `make stow`. The stowed packages are:
-`zshrc`, `bashrc-server`, `vim-server`, `zprofile`, `tmux`, `tmux-server`, `nvim`, `kitty`, `hypr`, `waybar`, `wofi`, `opencode`.
+The default workstation packages are stowed to `$HOME` via `make stow`:
+`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `hypr`, `waybar`, `wofi`, `mako`,
+and `opencode`. Server packages use `make stow-server`. The external-theme
+dependent `gtk` package is opt-in via `make stow-gtk`.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

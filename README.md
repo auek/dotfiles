@@ -23,13 +23,15 @@ keeping both installed during the transition.
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `vim-server` | Minimal Vim config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
-| `tmux` | tmux config (gruvbox theme, vi keys, WSL clipboard) |
+| `tmux` | tmux config (Everforest theme, vi keys, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
-| `nvim` | Neovim config (Lazy.nvim, LSP, Treesitter, completion) |
-| `kitty` | Kitty terminal config (zsh shell, Gruvbox theme) |
-| `hypr` | Hyprland Lua configuration (`dotfiles.lua`, keybindings, startup helpers, NVIDIA settings, wallpaper, idle display-off/suspend) |
-| `waybar` | Waybar top status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
-| `wofi` | Wofi application launcher (compact Gruvbox palette) |
+| `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
+| `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
+| `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
+| `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, systemd session target) |
+| `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
+| `wofi` | Wofi application launcher (compact Everforest styling) |
+| `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |
 | `opencode` | OpenCode AI config (agents, models, watcher settings) |
 
 ## Prerequisites
@@ -53,7 +55,8 @@ file.
 
 The Hyprland session uses `swaybg` to load
 `~/Pictures/Wallpapers/current.jpg` in fill mode. The image stays local rather
-than being redistributed through this public repository.
+than being redistributed through this public repository. If it is absent,
+`swaybg` uses the Everforest background color instead.
 
 ## Installation
 
@@ -104,11 +107,13 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 
 | Target | Description |
 |---|---|
-| `make stow` | Symlink all dotfile packages to `$HOME` |
+| `make stow` | Symlink the default workstation packages to `$HOME` |
 | `make stow-server` | Symlink only the server profile dotfiles to `$HOME` |
-| `make unstow` | Remove all symlinks |
+| `make stow-gtk` | Symlink the opt-in Everforest GTK settings after installing the external theme |
+| `make unstow` | Remove the default workstation package symlinks |
 | `make unstow-server` | Remove only the server profile symlinks |
-| `make restow` | Unstow then stow (useful after adding new files) |
+| `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
+| `make restow` | Restow the default workstation packages after adding files |
 
 ## Docker testing
 

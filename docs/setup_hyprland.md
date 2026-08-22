@@ -32,6 +32,108 @@ sudo dnf install mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
 
+Mako's Stow-managed configuration uses the same Everforest colors, compact
+geometry, and urgency states as Waybar and Wofi. It is started automatically by
+the Hyprland configuration.
+
+## Install the GTK theme
+
+The `gtk` Stow package selects the external Everforest GTK theme for GTK3 and
+GTK4 applications. Install its Fedora build and compatibility dependencies:
+
+```bash
+sudo dnf install sassc gtk-murrine-engine
+```
+
+The upstream generic requirements mention `gnome-themes-extra`, but Fedora 44
+does not publish that package. Its Fedora-specific requirements are the two
+packages above.
+
+Clone the theme, fetch its GTK3 parser fix from upstream PR #35, and pin the
+reviewed revision:
+
+```bash
+mkdir -p ~/.local/src
+git clone https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme.git \
+  ~/.local/src/Everforest-GTK-Theme
+git -C ~/.local/src/Everforest-GTK-Theme fetch origin pull/35/head
+git -C ~/.local/src/Everforest-GTK-Theme checkout \
+  fede1614cf9a44a03cab25a525f28ff677c1596d
+```
+
+The pinned commit differs from upstream `master` only by removing a GTK4-only
+`border-spacing` property that otherwise produces GTK3 parser errors.
+
+Install only the dark, compact, green-accent, medium-contrast variant:
+
+```bash
+~/.local/src/Everforest-GTK-Theme/themes/install.sh \
+  --theme green \
+  --color dark \
+  --size compact \
+  --tweaks medium
+```
+
+This creates `~/.themes/Everforest-Green-Dark-Compact-Medium`. The opt-in Stow
+package selects it for GTK3 and imports its GTK4 styles for libadwaita without
+letting the external installer delete or replace existing GTK4 configuration.
+Apply the package and desktop preference only after verifying the theme path:
+
+```bash
+make stow-gtk
+gsettings set org.gnome.desktop.interface gtk-theme \
+  'Everforest-Green-Dark-Compact-Medium'
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+```
+
+Close and reopen GTK applications after changing the theme. Icon and cursor
+themes remain at their recorded defaults.
+
+### Theme the Spek Flatpak
+
+Spek is the only installed Flatpak that uses GTK3. Give only that sandbox
+read-only access to the exact theme directory and select the theme explicitly:
+
+```bash
+flatpak override --user \
+  --filesystem="$HOME/.themes/Everforest-Green-Dark-Compact-Medium:ro" \
+  --env=GTK_THEME=Everforest-Green-Dark-Compact-Medium \
+  cc.spek.Spek
+```
+
+The other installed Flatpaks use Qt or Electron and do not need GTK theme
+access. Avoid a global `~/.themes` override, which would expose every installed
+theme to every Flatpak.
+
+Verify the scoped override and then reopen Spek:
+
+```bash
+flatpak override --user --show cc.spek.Spek
+flatpak run --command=sh cc.spek.Spek -c \
+  'test -r "$HOME/.themes/Everforest-Green-Dark-Compact-Medium/gtk-3.0/gtk.css"'
+```
+
+### Roll back the GTK theme
+
+Restore the recorded baseline before removing theme assets:
+
+```bash
+flatpak override --user --reset cc.spek.Spek
+gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+gsettings set org.gnome.desktop.interface color-scheme 'default'
+make unstow-gtk
+rm -rf \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium-hdpi \
+  ~/.themes/Everforest-Green-Dark-Compact-Medium-xhdpi
+```
+
+Only the three exact directories created by this installer variant are removed.
+The GTK4 imports disappear with `make unstow-gtk`; no external installer is
+allowed to delete GTK4 configuration. Reopen GTK applications afterward.
+The recorded baseline had no Spek override, so its app-specific override can be
+reset in full. Review it first if unrelated Spek overrides are added later.
+
 `hyprlock` is intentionally not configured. The idle policy turns displays off
 and suspends the machine; it does not lock the session.
 
@@ -48,11 +150,33 @@ require("dotfiles")
 
 Save this as `~/.config/hypr/hyprland.lua`.
 
+The `hypr` Stow package also installs `hyprland-session.target`. The Lua
+configuration starts this user target with Hyprland and stops it during
+shutdown. This activates `graphical-session.target`, which Fedora's desktop
+portal services require. After linking the package, reload user units once:
+
+```bash
+systemctl --user daemon-reload
+```
+
+After the next Hyprland login, verify the session and portal services:
+
+```bash
+systemctl --user is-active graphical-session.target
+gdbus call --session \
+  --dest org.freedesktop.portal.Desktop \
+  --object-path /org/freedesktop/portal/desktop \
+  --method org.freedesktop.DBus.Peer.Ping
+systemctl --user is-active xdg-desktop-portal.service
+systemctl --user is-active xdg-desktop-portal-hyprland.service
+```
+
 ## Local assets and key bindings
 
 Place a local wallpaper at `~/Pictures/Wallpapers/current.jpg`. It is loaded by
 `swaybg` with fill mode and is intentionally not stored in this public
-repository.
+repository. When the file is absent, `swaybg` falls back to the Everforest
+background color.
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.

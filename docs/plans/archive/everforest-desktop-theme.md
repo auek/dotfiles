@@ -1,7 +1,8 @@
-# Proposed Implementation Plan: Everforest desktop theme
+# Implementation Plan: Everforest desktop theme
 
-Status: under consideration. This document records a possible direction only;
-no decision has been made to implement it.
+Status: complete. The shell UI, terminal/editor, native GTK, and Spek Flatpak
+stages are visually accepted. Adwaita icons and the default cursor remain in
+place as deliberate finishing choices.
 
 ## Goal
 
@@ -124,7 +125,7 @@ Add a new `mako` Stow package containing `.config/mako/config`:
 
 - use opaque Everforest background and foreground colors
 - match the 6px radius, thin border, font, and compact spacing
-- define normal, warning, and critical urgency treatments
+- use the global style for normal urgency and define low and critical overrides
 - reserve red for genuinely critical notifications
 - keep notification positioning and timeouts conservative
 
@@ -159,7 +160,7 @@ separate decision is made to theme remote/headless environments too.
 
 ### Neovim
 
-Replace Gruvbox with a maintained Everforest Neovim theme:
+Replace Gruvbox with `neanias/everforest-nvim`:
 
 - use dark mode with medium contrast
 - retain the current preference for non-italic strings, comments, operators,
@@ -169,8 +170,8 @@ Replace Gruvbox with a maintained Everforest Neovim theme:
 - update `lazy-lock.json` through the normal Lazy.nvim workflow
 - review completion, floating-window, diagnostics, and Git highlight contrast
 
-The exact plugin should be selected at implementation time after comparing the
-official Vim theme with actively maintained native Neovim alternatives.
+This native Lua implementation provides Treesitter, LSP, and lualine support
+while preserving explicit Dark Medium and non-italic settings.
 
 ### GTK applications
 
@@ -178,7 +179,10 @@ Use the maintained
 [Everforest GTK theme](https://github.com/Fausto-Korpsvart/Everforest-GTK-Theme)
 rather than vendoring generated theme assets into this repository.
 
-The intended upstream variant is:
+The pinned revision is `fede1614cf9a44a03cab25a525f28ff677c1596d` from
+upstream PR #35. It is based on `9b8be4d6648ae9eaae3dd550105081f8c9054825`
+and removes one GTK4-only property that fails GTK3 parsing. The selected variant
+is installed as `Everforest-Green-Dark-Compact-Medium` with:
 
 - dark color variant
 - medium Everforest contrast
@@ -188,9 +192,9 @@ The intended upstream variant is:
 
 Keep installation in `docs/setup_hyprland.md`, not `setup.sh`, because Hyprland
 and its desktop dependencies are deliberately manual and under evaluation.
-Applying the external theme may require a small `gtk` Stow package for GTK3 and
-GTK4 settings, but that should be confirmed after testing the upstream theme's
-installed names and generated paths.
+The opt-in `gtk` Stow package manages GTK3 and GTK4 settings plus safe GTK4 CSS
+imports. The upstream installer owns only its generated theme directories and
+does not manage files under `~/.config/gtk-4.0`.
 
 GTK work should also consider:
 
@@ -266,6 +270,9 @@ Flatpak overrides, and externally installed assets require an explicit record.
 5. Back up any regular GTK configuration file that an upstream installer would
    replace. Prefer identifiable symlinks over copied or overwritten GTK4 assets
    where the upstream theme supports them.
+6. Keep or pre-fetch the pinned Gruvbox Neovim plugin revision if offline
+   rollback is a requirement. Lazy.nvim otherwise needs network access to
+   reinstall it after the Everforest plugin replaces its local checkout.
 
 The implementation must not assume that removing a Stow package also restores
 external GTK or Flatpak state.
@@ -284,6 +291,13 @@ combine external GTK activation with the initial shell styling commit.
 
 ### Restoring Gruvbox
 
+If the new Mako or GTK package has been Stow-linked, remove those links from the
+revision that still contains the packages before switching branches or
+reverting commits. These Stow operations still require explicit user
+confirmation. If the branch was already switched, remove only verified symlinks
+that resolve into this repository's packages; do not remove regular user
+configuration.
+
 If Everforest is rejected before the feature branch is merged, switch back to
 the previous branch and reapply the repository's Stow links only with explicit
 user confirmation. If the migration has already been merged, use new revert
@@ -295,13 +309,17 @@ After the Git-managed files are restored:
 2. Remove only GTK4 files or symlinks created by the Everforest installation;
    do not delete pre-existing user files.
 3. Remove only the Flatpak overrides added for Everforest.
-4. Uninstall external Everforest assets using the upstream installer's removal
-   mechanism when available, or remove only the inventoried Everforest paths.
+4. Remove only the three inventoried Everforest theme directories. Do not use
+   this pinned installer's removal mode because it unconditionally deletes GTK4
+   configuration paths.
 5. Reload or restart Hyprland components and graphical applications as needed.
 6. Verify Waybar, Wofi, Mako, Kitty, tmux, Neovim, GTK3, GTK4, tray menus, and
    file dialogs against the restored Gruvbox configuration.
 7. Inspect the worktree and home-directory theme paths to confirm that no
    unintended Everforest files or broken symlinks remain.
+8. After restoring the Neovim lockfile, run Lazy.nvim's restore operation to
+   reinstall the pinned Gruvbox plugin. This step requires network access unless
+   its checkout or Git objects were retained locally.
 
 Installing an external theme is allowed to leave its inert assets on disk if
 switching away from it fully restores the desktop and removal would risk other
@@ -327,8 +345,9 @@ Expected existing files to modify:
 
 Expected new files if the relevant stages are accepted:
 
+- `hypr/.config/systemd/user/hyprland-session.target`
 - `mako/.config/mako/config`
-- optional GTK3/GTK4 settings under a new `gtk` Stow package
+- GTK3/GTK4 settings under the `gtk` Stow package
 
 Do not change `setup.sh` merely to install or activate the desktop theme.
 
@@ -357,21 +376,13 @@ Before any commit:
 Live component reloads, Stow operations, external theme installation, and GTK
 system-setting changes must only be performed with explicit user confirmation.
 
-## Open decisions
+## Final decisions
 
-Resolve these before or during implementation:
-
-- whether Everforest Dark medium has enough contrast in Waybar during daylight
-- whether active windows need a full 2px green border or a subtler treatment
-- whether the current Powerline tab and tmux statusline shapes still fit the
-  softer desktop geometry
-- which Everforest Neovim implementation provides the best maintenance and
-  plugin integration tradeoff
-- the exact installed name and command for the chosen Everforest GTK variant
-- which icon and cursor themes complement Everforest without making the desktop
-  excessively green
-- whether GTK settings should be Stow-managed or remain documented local state
-- whether server tmux should deliberately remain Gruvbox or become neutral
+- Everforest Dark medium has acceptable Waybar contrast in normal use.
+- Active windows use the proposed 2px green border.
+- The existing Powerline tab and tmux statusline shapes remain in place.
+- Adwaita icons and the default cursor remain deliberately unchanged.
+- Server tmux remains independent from the workstation theme.
 
 ## Non-goals
 
@@ -382,6 +393,3 @@ Resolve these before or during implementation:
 - replacing Waybar, Wofi, Mako, swaybg, Kitty, or tmux
 - distributing an external wallpaper or GTK theme in this repository
 - changing application behavior solely for visual novelty
-
-If the proposal is rejected, this file can remain as a record of the evaluated
-direction or be removed without affecting any active configuration.

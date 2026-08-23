@@ -7,7 +7,7 @@
 @define-color accent #a7c080;
 @define-color warning #dbbc7f;
 @define-color urgent #e67e80;
-@define-color urgent_surface #514045;
+@define-color urgent_surface #493b40;
 
 * {
     border: none;

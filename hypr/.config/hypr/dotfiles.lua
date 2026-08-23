@@ -13,6 +13,14 @@ file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
 grim -g "$(slurp -d)" "$file" &&
 wl-copy --type image/png < "$file"
 ]]
+local toggle_color_scheme = [[
+current="$(gsettings get org.gnome.desktop.interface color-scheme)"
+if [ "$current" = "'prefer-dark'" ]; then
+  gsettings set org.gnome.desktop.interface color-scheme prefer-light
+else
+  gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+fi
+]]
 
 hl.monitor({
   output = "",
@@ -45,6 +53,7 @@ hl.bind(main_mod .. " + SHIFT + M", hl.dsp.exit())
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(main_mod .. " + E", hl.dsp.workspace.toggle_special("music"))
+hl.bind(main_mod .. " + SHIFT + T", hl.dsp.exec_cmd(toggle_color_scheme))
 hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 
 hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))

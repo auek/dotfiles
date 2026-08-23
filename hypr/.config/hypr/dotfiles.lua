@@ -3,7 +3,7 @@ local menu = "wofi --show drun"
 local main_mod = "SUPER"
 local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"
 local wallpaper_command = string.format(
-  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c 2d353b; fi",
+  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c 272e33; fi",
   wallpaper,
   wallpaper
 )
@@ -120,7 +120,7 @@ hl.config({
     border_size = 2,
     col = {
       active_border = "rgba(a7c080ff)",
-      inactive_border = "rgba(475258ff)",
+      inactive_border = "rgba(414b50ff)",
     },
   },
   decoration = {
@@ -132,7 +132,7 @@ hl.config({
       enabled = true,
       range = 6,
       render_power = 3,
-      color = 0x66232a2e,
+      color = 0x661e2326,
     },
     blur = {
       enabled = false,

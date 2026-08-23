@@ -229,7 +229,7 @@ return {
     config = function()
       local notify = require("notify")
       notify.setup({
-        background_colour = "#2d353b",
+        background_colour = "#272e33",
       })
       vim.notify = notify
     end,

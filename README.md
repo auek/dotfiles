@@ -33,7 +33,7 @@ keeping both installed during the transition.
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |
 | `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |
-| `opencode` | OpenCode AI config (agents, models, watcher settings) |
+| `opencode` | OpenCode AI and TUI config (Everforest theme, agents, models, watcher settings) |
 
 ## Prerequisites
 

@@ -47,7 +47,9 @@ dotfiles/
 ├── mako/.config/mako/        # Stow package: Mako notification config
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/
-        └── opencode.jsonc
+        ├── opencode.jsonc
+        ├── tui.json
+        └── themes/everforest-hard.json
 ```
 
 ## Stow package convention

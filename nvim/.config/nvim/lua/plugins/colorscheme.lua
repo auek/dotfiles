@@ -6,7 +6,7 @@ return {
   config = function()
     vim.opt.background = "dark"
     require("everforest").setup({
-      background = "medium",
+      background = "hard",
       transparent_background_level = 0,
       italics = false,
       disable_italic_comments = true,

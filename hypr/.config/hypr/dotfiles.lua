@@ -21,6 +21,10 @@ else
   gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 fi
 ]]
+local confirm_exit = [[
+choice="$(printf 'Cancel\nExit Hyprland' | wofi --dmenu --prompt 'Exit Hyprland?')"
+[ "$choice" = "Exit Hyprland" ] && hyprctl dispatch exit
+]]
 
 hl.monitor({
   output = "",
@@ -49,7 +53,7 @@ end)
 hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(main_mod .. " + D", hl.dsp.exec_cmd(menu))
 hl.bind(main_mod .. " + Q", hl.dsp.window.close())
-hl.bind(main_mod .. " + SHIFT + M", hl.dsp.exit())
+hl.bind(main_mod .. " + SHIFT + M", hl.dsp.exec_cmd(confirm_exit))
 hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(main_mod .. " + E", hl.dsp.workspace.toggle_special("music"))

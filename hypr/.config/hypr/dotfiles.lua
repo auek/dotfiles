@@ -25,6 +25,10 @@ local confirm_exit = [[
 choice="$(printf 'Cancel\nExit Hyprland' | wofi --dmenu --prompt 'Exit Hyprland?')"
 [ "$choice" = "Exit Hyprland" ] && hyprctl dispatch exit
 ]]
+local clipboard_history = [[
+choice="$(cliphist list | wofi --dmenu --prompt 'Clipboard history' --cache-file=/dev/null)"
+[ -n "$choice" ] && printf '%s\n' "$choice" | cliphist decode | wl-copy
+]]
 
 hl.monitor({
   output = "",
@@ -38,7 +42,7 @@ hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 
 hl.on("hyprland.start", function()
-  hl.exec_cmd("systemctl --user start hyprland-session.target")
+  hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR && systemctl --user start hyprland-session.target")
   hl.exec_cmd("mako")
   hl.exec_cmd("lxpolkit")
   hl.exec_cmd("hypridle")
@@ -58,6 +62,7 @@ hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(main_mod .. " + E", hl.dsp.workspace.toggle_special("music"))
 hl.bind(main_mod .. " + SHIFT + T", hl.dsp.exec_cmd(toggle_color_scheme))
+hl.bind(main_mod .. " + V", hl.dsp.exec_cmd(clipboard_history))
 hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 
 hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))

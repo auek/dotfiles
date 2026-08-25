@@ -41,7 +41,7 @@ dotfiles/
 ├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
 ├── gtk/.config/gtk-4.0/      # Stow package: GTK4 theme settings
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
-├── hypr/.config/systemd/user/ # Stow package: Hyprland graphical session target
+├── hypr/.config/systemd/user/ # Stow package: Hyprland graphical session target and clipboard history service
 ├── waybar/.config/waybar/    # Stow package: Waybar top status bar config
 ├── wofi/.config/wofi/        # Stow package: Wofi launcher config
 ├── mako/.config/mako/        # Stow package: Mako notification config

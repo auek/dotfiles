@@ -10,13 +10,13 @@ Ideas and potential features. Not prioritized or scheduled.
 - add to the dotfiles install profile alongside other global CLI tools
 - useful for inspecting SQLite databases without needing a Python script
 
-## Deferred
+## Done
 
 ### Clipboard history with `cliphist`
 
-Add Wayland clipboard history via `cliphist`. Run `wl-paste --watch cliphist store` as a background service (systemd user unit or compositor autostart). Bind a key to `cliphist list | fzf | cliphist decode | wl-copy` for fuzzy history picker.
-
-## Done
+Added a session-scoped `cliphist` systemd service for text and image clipboard
+data. `Super+V` opens a Wofi picker and restores the selected entry. History
+is wiped at Hyprland startup and shutdown.
 
 ### Cross-platform `open` command
 Added cross-platform `open()` function in `zshrc/.zshrc`: uses `open` on macOS, `explorer.exe` on WSL, `xdg-open` on native Linux, with a clear error if no handler is available.

@@ -26,7 +26,7 @@ choice="$(printf 'Cancel\nExit Hyprland' | wofi --dmenu --prompt 'Exit Hyprland?
 [ "$choice" = "Exit Hyprland" ] && hyprctl dispatch exit
 ]]
 local clipboard_history = [[
-choice="$(cliphist list | wofi --dmenu --prompt 'Clipboard history' --cache-file=/dev/null)"
+choice="$(cliphist list | wofi --dmenu --prompt 'Clipboard history' --cache-file=/dev/null --define=close_on_focus_loss=true)"
 [ -n "$choice" ] && printf '%s\n' "$choice" | cliphist decode | wl-copy
 ]]
 

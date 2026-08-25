@@ -29,7 +29,7 @@ keeping both installed during the transition.
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
 | `foot` | Default Foot terminal configuration (zsh shell, Everforest palette) |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
-| `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, systemd session target) |
+| `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, clipboard history, systemd session target) |
 | `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |
 | `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |

@@ -1,0 +1,12 @@
+[Unit]
+Description=Wayland clipboard history
+PartOf=hyprland-session.target
+After=hyprland-session.target
+Requisite=hyprland-session.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/cliphist wipe
+ExecStart=/usr/bin/bash -c '/usr/bin/wl-paste --type text --watch /usr/bin/cliphist store & /usr/bin/wl-paste --type image --watch /usr/bin/cliphist store & wait -n'
+ExecStopPost=/usr/bin/cliphist wipe
+Restart=on-failure

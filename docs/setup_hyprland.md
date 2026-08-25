@@ -1,8 +1,9 @@
-# Hyprland Setup (Fedora)
+# Hyprland Setup (Fedora 44+)
 
 This is the current manual setup for the Fedora Hyprland workstation. Hyprland
 packages are deliberately not installed by `setup.sh`; a future opt-in
-`--hyprland` profile can automate this list once its scope is defined.
+`--hyprland` profile can automate this list once its scope is defined. Fedora
+44 is the minimum because it packages `cliphist`.
 
 ## Install packages
 
@@ -17,7 +18,7 @@ sudo dnf install hyprland hypridle xdg-desktop-portal-hyprland
 Install the session utilities used by the Stow-managed configuration:
 
 ```bash
-sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
+sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard cliphist
 ```
 
 | Package | Purpose |
@@ -32,6 +33,7 @@ sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard
 | `wofi` | Application launcher |
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
+| `cliphist` | Session-only clipboard history for text and images |
 
 Mako's Stow-managed configuration uses the same Everforest colors, compact
 geometry, and urgency states as Waybar and Wofi. It is started automatically by
@@ -154,7 +156,10 @@ Save this as `~/.config/hypr/hyprland.lua`.
 The `hypr` Stow package also installs `hyprland-session.target`. The Lua
 configuration starts this user target with Hyprland and stops it during
 shutdown. This activates `graphical-session.target`, which Fedora's desktop
-portal services require. After linking the package, reload user units once:
+portal services require. The target also starts `cliphist.service`, which
+records text and image clipboard data only while Hyprland is running. Its
+database is wiped on startup and shutdown. After linking the package, reload
+user units once:
 
 ```bash
 systemctl --user daemon-reload
@@ -181,6 +186,11 @@ background color.
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
+
+The clipboard-history binding is `Super+V`. It opens a fuzzy Wofi picker for
+text and image entries; image entries are listed by type and size and restore
+the original image when selected. Clipboard history is retained only for the
+current Hyprland session. Run `cliphist wipe` to clear it immediately.
 
 In OpenCode, use `Ctrl+V` to attach the image. `Ctrl+Shift+V` is Foot's text
 paste shortcut and cannot attach a PNG to a terminal application.

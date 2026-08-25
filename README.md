@@ -23,7 +23,7 @@ keeping both installed during the transition.
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `vim-server` | Minimal Vim config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
-| `tmux` | tmux config (Everforest theme, vi keys, WSL clipboard) |
+| `tmux` | tmux config (Everforest theme, vi keys, Wayland session environment, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |

@@ -202,8 +202,9 @@ the previous `WAYLAND_DISPLAY` socket. Add the current Wayland environment when
 attaching to tmux rather than hardcoding a socket name:
 
 ```tmux
-set -ga update-environment " WAYLAND_DISPLAY XDG_RUNTIME_DIR"
+set -ga update-environment " WAYLAND_DISPLAY XDG_RUNTIME_DIR HYPRLAND_INSTANCE_SIGNATURE"
 ```
 
 Restarting the tmux server from the current graphical session also refreshes
-these variables.
+these variables. Existing shells retain their old environment; open a new pane
+after reconnecting to use the refreshed values.

@@ -5,18 +5,12 @@
   "spacing": 6,
 
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["hyprland/window"],
+  "modules-center": [],
   "modules-right": ["pulseaudio", "network", "tray", "clock"],
 
   "hyprland/workspaces": {
     "format": "{name}",
     "on-click": "activate"
-  },
-
-  "hyprland/window": {
-    "format": "{}",
-    "max-length": 80,
-    "separate-outputs": true
   },
 
   "pulseaudio": {
@@ -36,10 +30,6 @@
     "tooltip-format-wifi": "{essid}\n{ipaddr} ({signalStrength}%)",
     "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
     "tooltip-format-disconnected": "Disconnected"
-  },
-
-  "tray": {
-    "spacing": 8
   },
 
   "clock": {

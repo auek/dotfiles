@@ -12,11 +12,6 @@ elif command -v vim >/dev/null 2>&1; then
   export VISUAL="vim"
 fi
 
-# NVM setup
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
 # Podman rootless socket (WSL2 workaround only)
 if grep -qi microsoft /proc/version 2>/dev/null; then
   [ -S "/run/user/${UID}/podman/podman.sock" ] && \

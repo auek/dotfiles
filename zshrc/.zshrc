@@ -9,6 +9,42 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"
 
+# Load NVM only when a Node command is first used to keep shell startup fast.
+export NVM_DIR="$HOME/.nvm"
+
+_load_nvm() {
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    echo "nvm: $NVM_DIR/nvm.sh not found" >&2
+    return 127
+  fi
+
+  unfunction nvm node npm npx
+  source "$NVM_DIR/nvm.sh" || return
+  if [[ -s "$NVM_DIR/bash_completion" ]]; then
+    source "$NVM_DIR/bash_completion" || return
+  fi
+}
+
+nvm() {
+  _load_nvm || return
+  nvm "$@"
+}
+
+node() {
+  _load_nvm || return
+  command node "$@"
+}
+
+npm() {
+  _load_nvm || return
+  command npm "$@"
+}
+
+npx() {
+  _load_nvm || return
+  command npx "$@"
+}
+
 ### Shell Behavior ###
 setopt append_history
 setopt inc_append_history
@@ -384,7 +420,7 @@ if command -v fd >/dev/null 2>&1; then
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   export FZF_ALT_C_COMMAND="fd --type d $FZF_CMD_ARGS"
 
-  gbfz() {
+  gbf() {
     local delim=$'\t'
     local branch
 

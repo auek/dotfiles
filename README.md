@@ -125,6 +125,7 @@ are stowed. Switch all supported applications with one command:
 ```bash
 theme-set gruvbox
 theme-set everforest
+theme-set            # prints the active theme
 ```
 
 The command updates tmux and Waybar immediately. New Foot and Neovim instances

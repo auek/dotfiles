@@ -7,6 +7,15 @@ themes_root="$HOME/.local/share/dotfiles/themes"
 state_dir="$HOME/.local/state/dotfiles/theme"
 current="$state_dir/current"
 
+if (( $# == 0 )); then
+  if [[ -e "$current" ]] && theme_name="$(basename "$(readlink "$current")")" && [[ -d "$themes_root/$theme_name" ]]; then
+    printf '%s\n' "$theme_name"
+    exit 0
+  fi
+  printf 'No theme selected\n' >&2
+  exit 1
+fi
+
 if (( $# != 1 )) || [[ ! "$theme" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
   printf 'Usage: theme-set <theme>\n' >&2
   exit 2

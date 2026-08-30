@@ -12,6 +12,14 @@ export ZSH="$HOME/.oh-my-zsh"
 # Load NVM only when a Node command is first used to keep shell startup fast.
 export NVM_DIR="$HOME/.nvm"
 
+# Expose the default node's bin dir on PATH so child processes (e.g. nvim LSP
+# servers) can resolve `node` without triggering a full nvm.sh load.
+for node_bin in "$NVM_DIR"/versions/node/*/bin(Nn); do
+  export PATH="$node_bin:$PATH"
+  break
+done
+unset node_bin
+
 _load_nvm() {
   if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
     echo "nvm: $NVM_DIR/nvm.sh not found" >&2

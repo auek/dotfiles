@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+theme="${1:-}"
+themes_root="$HOME/.local/share/dotfiles/themes"
+state_dir="$HOME/.local/state/dotfiles/theme"
+current="$state_dir/current"
+
+if (( $# != 1 )) || [[ ! "$theme" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+  printf 'Usage: theme-set <theme>\n' >&2
+  exit 2
+fi
+
+theme_dir="$themes_root/$theme"
+if [[ ! -d "$theme_dir" ]]; then
+  printf 'Unknown theme: %s\n' "$theme" >&2
+  exit 1
+fi
+
+mkdir -p "$state_dir"
+ln -sfnT "$theme_dir" "$current"
+
+if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
+  tmux source-file "$theme_dir/tmux.conf"
+fi
+
+if command -v pkill >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then
+  pkill -SIGUSR2 -x waybar
+fi
+
+printf 'Theme switched to: %s\n' "$theme"

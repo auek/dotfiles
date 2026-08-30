@@ -19,45 +19,48 @@ return {
     "nvim-lualine/lualine.nvim",
     dependencies = { "kyazdani42/nvim-web-devicons" },
     config = function()
-      local everforest = require("everforest")
-      local palette = require("everforest.colours").generate_palette(everforest.config, vim.o.background)
-      local theme = {
-        normal = {
-          a = { bg = palette.statusline1, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.grey2 },
-          c = { bg = palette.bg1, fg = palette.grey1 },
-        },
-        insert = {
-          a = { bg = palette.statusline2, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.fg },
-          c = { bg = palette.bg1, fg = palette.fg },
-        },
-        visual = {
-          a = { bg = palette.statusline3, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.fg },
-          c = { bg = palette.bg1, fg = palette.fg },
-        },
-        replace = {
-          a = { bg = palette.orange, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.fg },
-          c = { bg = palette.bg1, fg = palette.fg },
-        },
-        command = {
-          a = { bg = palette.aqua, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.fg },
-          c = { bg = palette.bg1, fg = palette.fg },
-        },
-        terminal = {
-          a = { bg = palette.purple, fg = palette.bg0, gui = "bold" },
-          b = { bg = palette.bg3, fg = palette.fg },
-          c = { bg = palette.bg1, fg = palette.fg },
-        },
-        inactive = {
-          a = { bg = palette.bg1, fg = palette.grey1 },
-          b = { bg = palette.bg1, fg = palette.grey1 },
-          c = { bg = palette.bg1, fg = palette.grey1 },
-        },
-      }
+      local theme = "gruvbox"
+      if vim.g.dotfiles_theme == "everforest" then
+        local everforest = require("everforest")
+        local palette = require("everforest.colours").generate_palette(everforest.config, vim.o.background)
+        theme = {
+          normal = {
+            a = { bg = palette.statusline1, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.grey2 },
+            c = { bg = palette.bg1, fg = palette.grey1 },
+          },
+          insert = {
+            a = { bg = palette.statusline2, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.fg },
+            c = { bg = palette.bg1, fg = palette.fg },
+          },
+          visual = {
+            a = { bg = palette.statusline3, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.fg },
+            c = { bg = palette.bg1, fg = palette.fg },
+          },
+          replace = {
+            a = { bg = palette.orange, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.fg },
+            c = { bg = palette.bg1, fg = palette.fg },
+          },
+          command = {
+            a = { bg = palette.aqua, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.fg },
+            c = { bg = palette.bg1, fg = palette.fg },
+          },
+          terminal = {
+            a = { bg = palette.purple, fg = palette.bg0, gui = "bold" },
+            b = { bg = palette.bg3, fg = palette.fg },
+            c = { bg = palette.bg1, fg = palette.fg },
+          },
+          inactive = {
+            a = { bg = palette.bg1, fg = palette.grey1 },
+            b = { bg = palette.bg1, fg = palette.grey1 },
+            c = { bg = palette.bg1, fg = palette.grey1 },
+          },
+        }
+      end
 
       require("lualine").setup({
         options = { theme = theme }
@@ -229,7 +232,7 @@ return {
     config = function()
       local notify = require("notify")
       notify.setup({
-        background_colour = "#272e33",
+        background_colour = vim.g.dotfiles_theme_background or "#272e33",
       })
       vim.notify = notify
     end,

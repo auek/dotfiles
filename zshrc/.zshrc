@@ -12,13 +12,26 @@ export ZSH="$HOME/.oh-my-zsh"
 # Load NVM only when a Node command is first used to keep shell startup fast.
 export NVM_DIR="$HOME/.nvm"
 
-# Expose the default node's bin dir on PATH so child processes (e.g. nvim LSP
-# servers) can resolve `node` without triggering a full nvm.sh load.
-for node_bin in "$NVM_DIR"/versions/node/*/bin(Nn); do
-  export PATH="$node_bin:$PATH"
-  break
-done
-unset node_bin
+# Expose the nvm default node's bin dir on PATH so child processes (e.g. nvim
+# LSP servers) can resolve `node` without triggering a full nvm.sh load.
+# Resolves alias/default, following lts/* -> lts/<codename> -> version.
+_node_version=""
+[[ -r "$NVM_DIR/alias/default" ]] && _node_version="$(<"$NVM_DIR/alias/default")"
+case "$_node_version" in
+  lts/\*) [[ -r "$NVM_DIR/alias/lts/"'*' ]] && _node_version="$(<"$NVM_DIR/alias/lts/"'*')" ;&
+  lts/*) [[ -r "$NVM_DIR/alias/lts/${_node_version#lts/}" ]] && _node_version="$(<"$NVM_DIR/alias/lts/${_node_version#lts/}")" ;;
+esac
+[[ -n "$_node_version" && "$_node_version" != v* ]] && _node_version="v$_node_version"
+_node_bin="$NVM_DIR/versions/node/$_node_version/bin"
+# Fallback to the newest installed version if the alias is missing or dangling.
+if [[ ! -x "$_node_bin/node" ]]; then
+  _node_bin=""
+  for _nvm_bin in "$NVM_DIR"/versions/node/*/bin(Nn); do
+    _node_bin="$_nvm_bin"
+  done
+fi
+[[ -n "$_node_bin" && -x "$_node_bin/node" ]] && export PATH="$_node_bin:$PATH"
+unset _node_version _node_bin _nvm_bin
 
 _load_nvm() {
   if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then

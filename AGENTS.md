@@ -38,6 +38,7 @@ dotfiles/
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── kitty/.config/kitty/      # Stow package: Kitty terminal config
 ├── foot/.config/foot/        # Stow package: Foot terminal config
+├── themes/.local/            # Stow package: theme packs and theme-set command
 ├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
 ├── gtk/.config/gtk-4.0/      # Stow package: GTK4 theme settings
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
@@ -65,9 +66,14 @@ nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `foot`, `hypr`, `waybar`, `wofi`,
-`mako`, and `opencode`. Server packages use `make stow-server`. The external-
-theme dependent `gtk` package is opt-in via `make stow-gtk`.
+`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `foot`, `themes`, `hypr`, `waybar`,
+`wofi`, `mako`, and `opencode`. Server packages use `make stow-server`. The
+external-theme dependent `gtk` package is opt-in via `make stow-gtk`.
+
+The `themes` package installs static assets under
+`~/.local/share/dotfiles/themes` and the `theme-set` command under
+`~/.local/bin`. Theme selection is runtime state at
+`~/.local/state/dotfiles/theme/current`; it must not be stored in the worktree.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.
 

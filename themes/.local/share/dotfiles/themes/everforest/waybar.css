@@ -1,0 +1,10 @@
+@define-color background #2d353b;
+@define-color surface #343f44;
+@define-color raised #3d484d;
+@define-color border #4f585e;
+@define-color foreground #d3c6aa;
+@define-color muted #9da9a0;
+@define-color accent #7fbbb3;
+@define-color warning #dbbc7f;
+@define-color urgent #e67e80;
+@define-color urgent_surface #493b40;

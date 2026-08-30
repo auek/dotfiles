@@ -23,14 +23,15 @@ keeping both installed during the transition.
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `vim-server` | Minimal Vim config for remote/headless server installs |
 | `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
-| `tmux` | tmux config (Everforest theme, vi keys, Wayland session environment, WSL clipboard) |
+| `tmux` | tmux config (switchable theme, vi keys, Wayland session environment, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
-| `nvim` | Neovim config (Everforest theme, Lazy.nvim, LSP, Treesitter, completion) |
+| `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
-| `foot` | Default Foot terminal configuration (zsh shell, Everforest palette) |
+| `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
+| `themes` | Gruvbox and Everforest packs for Foot, tmux, Neovim, and Waybar, plus `theme-set` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
 | `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, clipboard history, systemd session target) |
-| `waybar` | Everforest Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
+| `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact Everforest styling) |
 | `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |
 | `opencode` | OpenCode AI and TUI config (Everforest theme, agents, models, watcher settings) |
@@ -115,6 +116,22 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 | `make unstow-server` | Remove only the server profile symlinks |
 | `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
 | `make restow` | Restow the default workstation packages after adding files |
+
+## Theme switching
+
+Everforest is selected automatically the first time the workstation packages
+are stowed. Switch all supported applications with one command:
+
+```bash
+theme-set gruvbox
+theme-set everforest
+```
+
+The command updates tmux and Waybar immediately. New Foot and Neovim instances
+use the selected theme; live reloads for those applications are outside the
+initial POC. Static theme packs live under `~/.local/share/dotfiles/themes`,
+while the local `current` symlink lives under `~/.local/state/dotfiles/theme`
+so switching themes does not modify the Git worktree.
 
 ## Docker testing
 

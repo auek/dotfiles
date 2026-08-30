@@ -11,3 +11,6 @@ target/
 opencode/.config/opencode/node_modules/
 opencode/.config/opencode/package.json
 opencode/.config/opencode/bun.lock
+
+# theme-switching runtime state (must not be tracked)
+themes/.local/state/

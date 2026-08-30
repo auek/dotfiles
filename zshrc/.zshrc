@@ -388,7 +388,7 @@ if command -v nvim >/dev/null 2>&1; then
 fi
 
 # Git
-alias gst="git status"
+alias gst="git status --short"
 alias gb="git branch"
 alias glg="git log"
 alias gp="git push"

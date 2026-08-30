@@ -1,6 +1,7 @@
 # Implementation Plan: Arch Linux container support
 
-Status: planned. No Arch support or container test has been implemented yet.
+Status: later. Retained without a current implementation commitment; no Arch
+support or container test has been implemented yet.
 
 ## Goal
 

@@ -4,13 +4,22 @@ Ideas and potential features. Not prioritized or scheduled.
 
 ## Active
 
-### Install sqlite3 globally
+No active backlog items.
 
-- install: `sudo dnf install sqlite`
-- add to the dotfiles install profile alongside other global CLI tools
-- useful for inspecting SQLite databases without needing a Python script
+## Later
+
+### Verify Neovim external-change auto-reload
+
+- confirm the existing `autoread` and `checktime` autocmd notices external file
+  changes without disrupting modified buffers or command-line mode
+- remove or adjust the autocmd if the behavior is noisy or unreliable
 
 ## Done
+
+### Install sqlite3 globally
+
+Added `sqlite` on Fedora and `sqlite3` on Ubuntu to the optional package set in
+`setup.sh` for inspecting SQLite databases from the command line.
 
 ### Clipboard history with `cliphist`
 

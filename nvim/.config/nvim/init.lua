@@ -35,7 +35,6 @@ elseif vim.fn.has("unix") == 1 and vim.fn.executable("wl-copy") == 1 then
   }
 end
 
--- TODO: Test this make sure this works
 -- Auto-reload file when changed externally
 vim.opt.autoread = true
 -- Trigger checktime to check for changes on disk

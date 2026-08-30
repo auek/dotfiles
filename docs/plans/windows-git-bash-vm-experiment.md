@@ -1,7 +1,7 @@
 # Implementation Plan: Windows Git Bash VM experiment
 
-Status: planned. No native Windows support or Windows VM test has been
-implemented yet.
+Status: later. Retained without a current experiment commitment; no native
+Windows support or Windows VM test has been implemented yet.
 
 ## Goal
 

@@ -1,8 +1,9 @@
 # Theme Switching POC
 
-Status: active. The initial theme-pack POC for Foot, tmux, and Neovim is the
-current implementation focus. Reload adapters and a semantic palette remain
-deferred until the simple shared-path design is validated.
+Status: complete. The shared theme-pack switcher is implemented for Foot,
+tmux, Neovim, and Waybar, and all first-version checks pass. Follow-up ideas
+(live reload for Foot and Neovim, a semantic palette) live in
+`docs/plans/theme-switching-follow-ups.md`.
 
 ## Goal
 
@@ -33,7 +34,7 @@ Do not initially build:
 - theme installation from remote repositories
 - theme previews
 - wallpaper handling
-- Waybar/Wofi/Hyprland integration → Wofi and Hyprland integration
+- Wofi and Hyprland integration
 - automatic theme conversion
 - complex validation
 - compatibility with arbitrary applications
@@ -192,14 +193,16 @@ restart.
 
 The Stow-managed `themes/.local/bin/theme-set` script validates a theme name,
 repoints the runtime `current` symlink, reloads tmux when a server is running,
-and sends `SIGUSR2` to Waybar when one is running. `make stow` initializes the
-selection to Everforest only when no valid selection exists.
+and sends `SIGUSR2` to Waybar when one is running. Run without an argument, it
+prints the active theme. `make stow` initializes the selection to Everforest
+only when no valid selection exists.
 
 Usage:
 
 ```bash
 theme-set gruvbox
 theme-set everforest
+theme-set            # prints the active theme
 ```
 
 ---
@@ -215,126 +218,6 @@ The POC is successful if:
 5. No application-specific theme paths have to be remembered during normal use.
 
 Live reloading everything is explicitly **not required** for the first version.
-
----
-
-## Possible second step: reload adapters
-
-Once the basic abstraction works, investigate per-application reload mechanisms.
-
-Possible model:
-
-```text
-theme-set gruvbox
-      │
-      ├── update current symlink
-      ├── reload tmux
-      ├── retint/reload Foot
-      └── tell Neovim instances to reload
-```
-
-Questions to investigate:
-
-### Foot
-
-- Can Foot reload an included config file?
-- Is restarting Foot necessary?
-- Can OSC escape sequences update terminal colors in existing terminals?
-- Is Omarchy's OSC approach worth borrowing?
-
-### tmux
-
-- Is `tmux source-file ~/.tmux.conf` sufficient?
-- Should only the theme fragment be sourced instead?
-- Will existing panes/status lines update immediately?
-
-### Neovim
-
-Possible approaches:
-
-- do nothing; only new instances get the new theme
-- expose a `:ReloadTheme` command
-- use Neovim's remote server/client functionality
-- watch the current theme file
-- send a command to running instances
-
-Avoid solving this unless it provides useful value.
-
----
-
-## Possible third step: semantic palette
-
-The initial theme-pack approach duplicates colors between application-specific files.
-
-For example:
-
-```text
-gruvbox/
-├── foot.ini
-├── tmux.conf
-└── nvim.lua
-```
-
-Each file may independently contain `#282828`, `#d4be98`, etc.
-
-If this duplication becomes annoying, introduce a semantic palette:
-
-```text
-themes/
-├── gruvbox.toml
-├── everforest.toml
-├── catppuccin.toml
-└── templates/
-    ├── foot.ini.tpl
-    ├── tmux.conf.tpl
-    └── nvim.lua.tpl
-```
-
-Example palette:
-
-```toml
-background = "#282828"
-foreground = "#d4be98"
-accent = "#7daea3"
-
-red = "#ea6962"
-green = "#a9b665"
-yellow = "#d8a657"
-blue = "#7daea3"
-```
-
-Then application templates translate the semantic palette into each application's terminology.
-
-Example tmux template:
-
-```tmux
-set -g status-style "bg={{ background }},fg={{ foreground }}"
-set -g pane-active-border-style "fg={{ accent }}"
-```
-
-Example Foot template:
-
-```ini
-[colors]
-background={{ background_strip }}
-foreground={{ foreground_strip }}
-regular4={{ blue_strip }}
-```
-
-This is conceptually similar to Omarchy's architecture:
-
-```text
-semantic palette
-       │
-       ▼
- application-specific templates
-       │
-   ┌───┼────┐
-   ▼   ▼    ▼
- Foot tmux Neovim
-```
-
-Do **not** implement this until the duplication in the simple theme-pack design becomes an actual problem.
 
 ---
 
@@ -403,11 +286,8 @@ The POC should deliberately remain much smaller because it only needs to support
 - [x] Implement minimal `theme-set`
 - [x] Verify tmux reload
 - [x] Verify Waybar reload
-- [ ] Verify new Foot instances
+- [x] Verify new Foot instances
 - [x] Verify new Neovim instances
-- [ ] Investigate Foot live retinting
-- [ ] Decide whether Neovim live reload is worthwhile
-- [ ] Evaluate whether duplicated palette values justify templates
 
 ---
 

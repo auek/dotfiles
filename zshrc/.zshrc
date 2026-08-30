@@ -389,7 +389,7 @@ fi
 
 # Git
 alias gst="git status --short"
-alias gb="git branch"
+alias gb="git branch --sort=-committerdate"
 alias glg="git log"
 alias gp="git push"
 alias gpsup="git push -u origin HEAD"

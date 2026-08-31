@@ -9,62 +9,10 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"
 
-# Load NVM only when a Node command is first used to keep shell startup fast.
+# NVM
 export NVM_DIR="$HOME/.nvm"
-
-# Expose the nvm default node's bin dir on PATH so child processes (e.g. nvim
-# LSP servers) can resolve `node` without triggering a full nvm.sh load.
-# Resolves alias/default, following lts/* -> lts/<codename> -> version.
-_node_version=""
-[[ -r "$NVM_DIR/alias/default" ]] && _node_version="$(<"$NVM_DIR/alias/default")"
-case "$_node_version" in
-  lts/\*) [[ -r "$NVM_DIR/alias/lts/"'*' ]] && _node_version="$(<"$NVM_DIR/alias/lts/"'*')" ;&
-  lts/*) [[ -r "$NVM_DIR/alias/lts/${_node_version#lts/}" ]] && _node_version="$(<"$NVM_DIR/alias/lts/${_node_version#lts/}")" ;;
-esac
-[[ -n "$_node_version" && "$_node_version" != v* ]] && _node_version="v$_node_version"
-_node_bin="$NVM_DIR/versions/node/$_node_version/bin"
-# Fallback to the newest installed version if the alias is missing or dangling.
-if [[ ! -x "$_node_bin/node" ]]; then
-  _node_bin=""
-  for _nvm_bin in "$NVM_DIR"/versions/node/*/bin(Nn); do
-    _node_bin="$_nvm_bin"
-  done
-fi
-[[ -n "$_node_bin" && -x "$_node_bin/node" ]] && export PATH="$_node_bin:$PATH"
-unset _node_version _node_bin _nvm_bin
-
-_load_nvm() {
-  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
-    echo "nvm: $NVM_DIR/nvm.sh not found" >&2
-    return 127
-  fi
-
-  unfunction nvm node npm npx
-  source "$NVM_DIR/nvm.sh" || return
-  if [[ -s "$NVM_DIR/bash_completion" ]]; then
-    source "$NVM_DIR/bash_completion" || return
-  fi
-}
-
-nvm() {
-  _load_nvm || return
-  nvm "$@"
-}
-
-node() {
-  _load_nvm || return
-  command node "$@"
-}
-
-npm() {
-  _load_nvm || return
-  command npm "$@"
-}
-
-npx() {
-  _load_nvm || return
-  command npx "$@"
-}
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
 
 ### Shell Behavior ###
 setopt append_history

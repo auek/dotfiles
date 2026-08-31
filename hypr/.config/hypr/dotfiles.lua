@@ -1,11 +1,20 @@
 local terminal = "foot"
 local menu = "wofi --show drun"
 local main_mod = "SUPER"
+local theme_root = os.getenv("HOME") .. "/.local/state/dotfiles/theme/current"
+local palette = dofile(theme_root .. "/hyprland.lua")
+local swaybg_color_file = io.open(theme_root .. "/swaybg-color", "r")
+if not swaybg_color_file then
+  error("missing theme fragment: " .. theme_root .. "/swaybg-color")
+end
+local swaybg_fallback = swaybg_color_file:read("*l") or ""
+swaybg_color_file:close()
 local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"
 local wallpaper_command = string.format(
-  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c 272e33; fi",
+  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c %q; fi",
   wallpaper,
-  wallpaper
+  wallpaper,
+  swaybg_fallback
 )
 local screenshot = [[
 mkdir -p "$HOME/Pictures/Screenshots" &&
@@ -137,8 +146,8 @@ hl.config({
     gaps_out = 8,
     border_size = 2,
     col = {
-      active_border = "rgba(a7c080ff)",
-      inactive_border = "rgba(414b50ff)",
+      active_border = palette.active_border,
+      inactive_border = palette.inactive_border,
     },
   },
   decoration = {
@@ -150,7 +159,7 @@ hl.config({
       enabled = true,
       range = 6,
       render_power = 3,
-      color = 0x661e2326,
+      color = palette.shadow_color,
     },
     blur = {
       enabled = false,

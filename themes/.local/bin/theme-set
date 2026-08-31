@@ -2,20 +2,41 @@
 
 set -euo pipefail
 
-theme="${1:-}"
 themes_root="$HOME/.local/share/dotfiles/themes"
 state_dir="$HOME/.local/state/dotfiles/theme"
 current="$state_dir/current"
 
+required_fragments=(
+  foot.ini
+  tmux.conf
+  nvim.lua
+  waybar.css
+  hyprland.lua
+  wofi.css
+  mako.conf
+  swaybg-color
+)
+
+missing_fragments() {
+  local dir="$1" fragment
+  for fragment in "${required_fragments[@]}"; do
+    [[ -r "$dir/$fragment" ]] || printf '%s\n' "$fragment"
+  done
+}
+
 if (( $# == 0 )); then
-  if [[ -e "$current" ]] && theme_name="$(basename "$(readlink "$current")")" && [[ -d "$themes_root/$theme_name" ]]; then
-    printf '%s\n' "$theme_name"
+  if [[ -L "$current" ]] \
+    && theme_dir="$(readlink -f "$current")" \
+    && [[ -d "$theme_dir" ]] \
+    && [[ -z "$(missing_fragments "$theme_dir")" ]]; then
+    basename "$theme_dir"
     exit 0
   fi
-  printf 'No theme selected\n' >&2
+  printf 'No valid theme selected\n' >&2
   exit 1
 fi
 
+theme="$1"
 if (( $# != 1 )) || [[ ! "$theme" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
   printf 'Usage: theme-set <theme>\n' >&2
   exit 2
@@ -27,8 +48,16 @@ if [[ ! -d "$theme_dir" ]]; then
   exit 1
 fi
 
+missing="$(missing_fragments "$theme_dir")"
+if [[ -n "$missing" ]]; then
+  printf 'Incomplete theme: %s (missing: %s)\n' "$theme" "${missing//$'\n'/ }" >&2
+  exit 1
+fi
+
 mkdir -p "$state_dir"
-ln -sfnT "$theme_dir" "$current"
+tmp_link="$state_dir/.current.tmp.$$"
+ln -s "$theme_dir" "$tmp_link"
+mv -T "$tmp_link" "$current"
 
 if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
   tmux source-file "$theme_dir/tmux.conf"

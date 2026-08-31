@@ -23,12 +23,12 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
-| `themes` | Gruvbox and Everforest packs for Foot, tmux, Neovim, and Waybar, plus `theme-set` |
+| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback) plus `theme-set` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
-| `hypr` | Hyprland Lua configuration (keybindings, Everforest styling, wallpaper, idle policy, clipboard history, systemd session target) |
+| `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, systemd session target) |
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
-| `wofi` | Wofi application launcher (compact Everforest styling) |
-| `mako` | Mako notifications (Everforest colors, urgency states, compact geometry) |
+| `wofi` | Wofi application launcher (compact layout, theme-driven palette) |
+| `mako` | Mako notifications (theme-driven colors, urgency states, compact geometry) |
 | `opencode` | OpenCode AI and TUI config (Everforest theme, agents, models, watcher settings) |
 
 ## Prerequisites
@@ -51,9 +51,9 @@ generating a fallback stub when a branch change temporarily removes a managed
 file.
 
 The Hyprland session uses `swaybg` to load
-`~/Pictures/Wallpapers/current.jpg` in fill mode. The image stays local rather
+`~/Pictures/Wallpapers/current.png` in fill mode. The image stays local rather
 than being redistributed through this public repository. If it is absent,
-`swaybg` uses the Everforest background color instead.
+`swaybg` uses the fallback color of the selected theme instead.
 
 ## Installation
 
@@ -110,7 +110,7 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 | `make unstow` | Remove the default workstation package symlinks |
 | `make unstow-server` | Remove only the server profile symlinks |
 | `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
-| `make restow` | Restow the default workstation packages after adding files |
+| `make restow` | Ensure default workstation package links exist after adding files without removing live configuration |
 
 ## Theme switching
 
@@ -123,11 +123,18 @@ theme-set everforest
 theme-set            # prints the active theme
 ```
 
-The command updates tmux and Waybar immediately. New Foot and Neovim instances
-use the selected theme; live reloads for those applications are outside the
-initial POC. Static theme packs live under `~/.local/share/dotfiles/themes`,
-while the local `current` symlink lives under `~/.local/state/dotfiles/theme`
-so switching themes does not modify the Git worktree.
+A theme pack contains a native fragment per supported component: `foot.ini`,
+`tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`, `wofi.css`, `mako.conf`,
+and `swaybg-color`. The command validates the pack before switching and
+replaces the `current` symlink atomically; invalid or incomplete packs never
+change the selection.
+
+The command updates tmux and Waybar immediately. Hyprland picks up the palette
+at its next reload, and Wofi, Mako, and new Foot and Neovim instances use the
+selected theme when launched. Static theme packs live under
+`~/.local/share/dotfiles/themes`, while the local `current` symlink lives under
+`~/.local/state/dotfiles/theme` so switching themes does not modify the Git
+worktree.
 
 ## Docker testing
 

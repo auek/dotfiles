@@ -37,7 +37,7 @@ dotfiles/
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
 ├── foot/.config/foot/        # Stow package: Foot terminal config
-├── themes/.local/            # Stow package: theme packs and theme-set command
+├── themes/.local/            # Stow package: theme packs (native fragments per component) and theme-set command
 ├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
 ├── gtk/.config/gtk-4.0/      # Stow package: GTK4 theme settings
 ├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
@@ -71,7 +71,12 @@ external-theme dependent `gtk` package is opt-in via `make stow-gtk`.
 
 The `themes` package installs static assets under
 `~/.local/share/dotfiles/themes` and the `theme-set` command under
-`~/.local/bin`. Theme selection is runtime state at
+`~/.local/bin`. Each theme pack holds one native fragment per supported
+component (`foot.ini`, `tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`,
+`wofi.css`, `mako.conf`, `swaybg-color`); application base configs keep layout
+and behavior and import only their fragment through the runtime `current` path.
+`theme-set` validates a pack completely before switching and swaps the symlink
+atomically. Theme selection is runtime state at
 `~/.local/state/dotfiles/theme/current`; it must not be stored in the worktree.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed.

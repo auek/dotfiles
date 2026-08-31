@@ -179,10 +179,11 @@ systemctl --user is-active xdg-desktop-portal-hyprland.service
 
 ## Local assets and key bindings
 
-Place a local wallpaper at `~/Pictures/Wallpapers/current.jpg`. It is loaded by
+Place a local wallpaper at `~/Pictures/Wallpapers/current.png`. It is loaded by
 `swaybg` with fill mode and is intentionally not stored in this public
-repository. When the file is absent, `swaybg` falls back to the Everforest
-background color.
+repository. When the file is absent, `swaybg` falls back to the fallback color
+of the selected theme (`swaybg-color` in the theme pack, read by
+`dotfiles.lua` at startup).
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.

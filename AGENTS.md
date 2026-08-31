@@ -52,8 +52,7 @@ dotfiles/
 └── opencode/                 # Stow package: opencode AI config
     └── .config/opencode/
         ├── opencode.jsonc
-        ├── tui.json
-        └── themes/everforest-hard.json
+        └── tui.json
 ```
 
 ## Stow package convention

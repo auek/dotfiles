@@ -29,7 +29,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact layout, theme-driven palette) |
 | `mako` | Mako notifications (theme-driven colors, urgency states, compact geometry) |
-| `opencode` | OpenCode AI and TUI config (Everforest theme, agents, models, watcher settings) |
+| `opencode` | OpenCode AI and TUI config (agents, models, watcher settings) |
 
 ## Prerequisites
 

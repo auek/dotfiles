@@ -113,7 +113,8 @@ def action_generate(args):
 
 def action_check(args):
     errors = []
-    for name in palette_names():
+    names = palette_names()
+    for name in names:
         try:
             palette = load_palette(name)
         except TemplateError as exc:
@@ -139,6 +140,13 @@ def action_check(args):
                 continue
             if target.read_text(encoding="utf-8") != output:
                 errors.append(f"{name}: stale fragment {fragment} (run generate)")
+    if THEMES_DIR.is_dir():
+        for path in sorted(THEMES_DIR.iterdir()):
+            if path.is_dir() and path.name not in names:
+                errors.append(
+                    f"{path.name}: orphan theme pack (no palette; remove the "
+                    "directory or restore its palette)"
+                )
     if errors:
         for error in errors:
             print(f"check failed: {error}", file=sys.stderr)

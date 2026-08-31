@@ -9,41 +9,10 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"
 
-# Load NVM only when a Node command is first used to keep shell startup fast.
+# NVM
 export NVM_DIR="$HOME/.nvm"
-
-_load_nvm() {
-  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
-    echo "nvm: $NVM_DIR/nvm.sh not found" >&2
-    return 127
-  fi
-
-  unfunction nvm node npm npx
-  source "$NVM_DIR/nvm.sh" || return
-  if [[ -s "$NVM_DIR/bash_completion" ]]; then
-    source "$NVM_DIR/bash_completion" || return
-  fi
-}
-
-nvm() {
-  _load_nvm || return
-  nvm "$@"
-}
-
-node() {
-  _load_nvm || return
-  command node "$@"
-}
-
-npm() {
-  _load_nvm || return
-  command npm "$@"
-}
-
-npx() {
-  _load_nvm || return
-  command npx "$@"
-}
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
 
 ### Shell Behavior ###
 setopt append_history

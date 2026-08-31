@@ -11,10 +11,6 @@ Docker-compatible CLI support in the `--full` profile; WSL2 Fedora keeps
 container setup as a separate,
 WSL-specific path documented in `docs/setup_wsl.md`.
 
-Kitty is installed from the upstream binary in the `--full` profile on native
-Linux. The Fedora RPM can be removed manually afterward if you want to avoid
-keeping both installed during the transition.
-
 ## What's included
 
 | Package | Contents |
@@ -26,7 +22,6 @@ keeping both installed during the transition.
 | `tmux` | tmux config (switchable theme, vi keys, Wayland session environment, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
-| `kitty` | Kitty terminal config (zsh shell, Everforest theme) |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
 | `themes` | Gruvbox and Everforest packs for Foot, tmux, Neovim, and Waybar, plus `theme-set` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
@@ -87,7 +82,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 |---|---|
 | `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, minimal Vim config, server tmux config |
 | `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + kitty 0.46.2 from upstream + JetBrains Mono (non-WSL), Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
+| `--full` | Everything in slim + Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
 
 After installation, restart your shell:
 

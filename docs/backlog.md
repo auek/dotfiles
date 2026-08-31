@@ -48,11 +48,3 @@ Installed via Terra repo (`espanso-wayland`). Config symlinked into dotfiles as 
 ### Vim `*` register clipboard broken
 
 Configured `wl-clipboard` (`wl-copy`/`wl-paste`) for Linux/Wayland in both Neovim (`init.lua`) and tmux (`.tmux.conf`). WSL path unchanged.
-
-### Kitty font missing Nerd Font glyphs
-
-`kitty.conf` uses plain JetBrains Mono which lacks Nerd Font glyph ranges; Neovim file explorer shows broken symbols. Install JetBrainsMono Nerd Font from https://github.com/ryanoasis/nerd-fonts/releases and update `kitty.conf`:
-
-```
-font_family JetBrainsMono Nerd Font
-```

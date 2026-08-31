@@ -69,7 +69,6 @@ arch)
   PKG_SERVER="curl git make stow tmux vim"
   PKG_COMMON="curl github-cli git gcc libatomic make python-pipx python-pip stow tmux unzip zsh"
   PKG_OPTIONAL="eza fd fzf htop bat ripgrep openssh sqlite fastfetch"
-  PKG_KITTY_FONT="ttf-jetbrains-mono-nerd"
   info "Detected: Arch Linux"
   ;;
 ```
@@ -85,7 +84,6 @@ The Arch package names above were verified against the official repositories on
 | `fd` | `fd` |
 | SSH client | `openssh` |
 | SQLite CLI | `sqlite` |
-| JetBrains Mono Nerd Font | `ttf-jetbrains-mono-nerd` |
 
 ### Pacman update policy
 
@@ -108,8 +106,8 @@ step. Preserve the current profile behavior:
 - `server` installs only `PKG_SERVER` and keeps Bash as the login shell.
 - `slim` installs `PKG_COMMON`, changes the login shell to Zsh, and installs the
   normal workstation Stow packages.
-- `full` adds fonts, optional CLI packages, Kitty, and the existing external dev
-  tool installers.
+- `full` adds optional CLI packages and the existing external dev tool
+  installers.
 
 Keep the current Fedora-only container-tooling step unchanged during the first
 pass. Installing Podman on the Arch host is a separate policy decision, and a
@@ -221,8 +219,6 @@ several upstream installers.
 
 Verify:
 
-- the Nerd Font package installs
-- Kitty installs at the pinned version and its launcher links exist
 - optional package commands such as `eza`, `fd`, `fzf`, `htop`, `bat`, `rg`,
   `ssh`, `sqlite3`, and `fastfetch` exist
 - Bob installs a working stable Neovim

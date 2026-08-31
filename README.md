@@ -110,7 +110,7 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 | `make unstow` | Remove the default workstation package symlinks |
 | `make unstow-server` | Remove only the server profile symlinks |
 | `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
-| `make restow` | Restow the default workstation packages after adding files |
+| `make restow` | Ensure default workstation package links exist after adding files without removing live configuration |
 
 ## Theme switching
 

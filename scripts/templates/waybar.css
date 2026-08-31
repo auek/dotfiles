@@ -1,0 +1,10 @@
+@define-color background #$background;
+@define-color surface #$surface;
+@define-color raised #$raised;
+@define-color border #$border;
+@define-color foreground #$foreground_soft;
+@define-color muted #$muted_bright;
+@define-color accent #$accent;
+@define-color warning #$warning;
+@define-color urgent #$urgent;
+@define-color urgent_surface #$urgent_surface;

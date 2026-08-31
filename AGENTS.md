@@ -29,6 +29,10 @@ dotfiles/
 │   │   └── archive/          # Completed plans kept for reference
 │   ├── setup_hyprland.md     # Fedora Hyprland manual setup
 │   ├── setup_wsl.md          # WSL2-specific setup notes
+├── scripts/                  # Repo-only utilities: theme generator, palettes, templates, misc scripts
+│   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
+│   ├── palettes/             # One JSON palette per theme
+│   └── templates/            # One template per fragment (per-theme overrides supported)
 ├── bashrc-server/.bashrc     # Stow package: minimal Bash config for servers
 ├── vim-server/.vimrc         # Stow package: minimal Vim config for servers
 ├── zshrc/.zshrc              # Stow package: zsh config
@@ -79,7 +83,11 @@ and behavior and import only their fragment through the runtime `current` path.
 atomically. Theme selection is runtime state at
 `~/.local/state/dotfiles/theme/current`; it must not be stored in the worktree.
 
-The `scripts/` directory is a repo-only utility — it is NOT stowed.
+The `scripts/` directory is a repo-only utility — it is NOT stowed. Theme
+fragments are generated from the JSON palettes in `scripts/palettes/` and the
+templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
+`make themes-generate` after editing a palette or template and
+`make themes-check` to verify checked-in fragments are current.
 
 ## setup.sh design principles
 

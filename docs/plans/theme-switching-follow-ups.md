@@ -1,8 +1,8 @@
 # Theme Switching Follow-ups
 
 Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
-PR #56. Milestone 2, semantic palettes and generated fragments, is next; live
-reloading follows in milestone 3.
+PR #56. Milestone 2 is implemented and under review; live reloading follows in
+milestone 3.
 
 ## Goal
 
@@ -93,7 +93,7 @@ Neovim, Waybar, Wofi, Mako, and Hyprland configuration passed. The swaybg
 fallback is implemented, but its visual live-session check is deferred for a
 follow-up report.
 
-## Milestone 2: Semantic Palettes and Generated Fragments (Next)
+## Milestone 2: Semantic Palettes and Generated Fragments
 
 Once native fragments establish the real shared color roles, replace repeated
 application literals with one semantic palette per theme. Generate native

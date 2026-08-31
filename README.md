@@ -125,9 +125,11 @@ theme-set            # prints the active theme
 
 A theme pack contains a native fragment per supported component: `foot.ini`,
 `tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`, `wofi.css`, `mako.conf`,
-and `swaybg-color`. The command validates the pack before switching and
-replaces the `current` symlink atomically; invalid or incomplete packs never
-change the selection.
+and `swaybg-color`. Fragments are generated from one semantic palette per theme
+(`scripts/palettes/*.json`) with `make themes-generate`; `make themes-check`
+verifies the checked-in fragments are current. The command validates the pack
+before switching and replaces the `current` symlink atomically; invalid or
+incomplete packs never change the selection.
 
 The command updates tmux and Waybar immediately. Hyprland picks up the palette
 at its next reload, and Wofi, Mako, and new Foot and Neovim instances use the

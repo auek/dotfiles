@@ -74,8 +74,8 @@ fi
 
 # ─── Custom shortcuts ─────────────────────────────────────────────────────────
 # GNOME stores custom shortcuts as an array of dconf paths. Each path has its
-# own name/command/binding sub-keys. We append a new slot only if a kitty
-# shortcut does not already exist.
+# own name/command/binding sub-keys. A prior Kitty shortcut is migrated to
+# Foot; otherwise, we append a new slot only if a Foot shortcut is absent.
 
 MEDIA_KEYS="org.gnome.settings-daemon.plugins.media-keys"
 CUSTOM_BASE="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
@@ -84,20 +84,27 @@ CUSTOM_BASE="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
 # ['/path/custom0/', '/path/custom1/', ...])
 current_list="$(gsettings get "$MEDIA_KEYS" custom-keybindings)"
 
-# Check whether any existing slot already has command 'kitty'
+# Check whether any existing slot already has a terminal command we manage.
 already_set=0
 # Strip brackets/quotes/spaces to get bare path segments
 for path in $(echo "$current_list" | tr -d "[]' " | tr ',' '\n'); do
   [ -z "$path" ] && continue
   cmd="$(gsettings get "${MEDIA_KEYS}.custom-keybinding:${path}" command 2>/dev/null || true)"
-  if [ "$cmd" = "'kitty'" ]; then
+  if [ "$cmd" = "'foot'" ]; then
     already_set=1
+    break
+  fi
+  if [ "$cmd" = "'kitty'" ]; then
+    gsettings set "${MEDIA_KEYS}.custom-keybinding:${path}" name 'Open Foot'
+    gsettings set "${MEDIA_KEYS}.custom-keybinding:${path}" command 'foot'
+    already_set=1
+    echo "[keybindings] Migrated Kitty shortcut to Foot"
     break
   fi
 done
 
 if [ "$already_set" -eq 1 ]; then
-  echo "[keybindings] Kitty shortcut (Ctrl+Alt+T) already configured"
+  echo "[keybindings] Foot shortcut (Ctrl+Alt+T) already configured"
 else
   # Find the first unused slot name (custom0, custom1, ...)
   index=0
@@ -115,9 +122,9 @@ else
   fi
 
   gsettings set "$MEDIA_KEYS" custom-keybindings "$new_list"
-  gsettings set "${MEDIA_KEYS}.custom-keybinding:${new_path}" name    'Open Kitty'
-  gsettings set "${MEDIA_KEYS}.custom-keybinding:${new_path}" command 'kitty'
+  gsettings set "${MEDIA_KEYS}.custom-keybinding:${new_path}" name    'Open Foot'
+  gsettings set "${MEDIA_KEYS}.custom-keybinding:${new_path}" command 'foot'
   gsettings set "${MEDIA_KEYS}.custom-keybinding:${new_path}" binding '<Primary><Alt>t'
 
-  echo "[keybindings] Added Kitty shortcut: Ctrl+Alt+T → kitty (slot: custom${index})"
+  echo "[keybindings] Added Foot shortcut: Ctrl+Alt+T → foot (slot: custom${index})"
 fi

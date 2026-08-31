@@ -36,7 +36,6 @@ dotfiles/
 ├── tmux-server/.tmux.conf    # Stow package: tmux config for server installs
 ├── tmux/.tmux.conf           # Stow package: tmux config
 ├── nvim/.config/nvim/        # Stow package: Neovim config
-├── kitty/.config/kitty/      # Stow package: Kitty terminal config
 ├── foot/.config/foot/        # Stow package: Foot terminal config
 ├── themes/.local/            # Stow package: theme packs and theme-set command
 ├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
@@ -66,7 +65,7 @@ nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `kitty`, `foot`, `themes`, `hypr`, `waybar`,
+`zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
 `wofi`, `mako`, and `opencode`. Server packages use `make stow-server`. The
 external-theme dependent `gtk` package is opt-in via `make stow-gtk`.
 
@@ -84,7 +83,6 @@ The `scripts/` directory is a repo-only utility — it is NOT stowed.
 - **OS detection**: Detects Fedora (dnf) or Ubuntu/Debian (apt) via `/etc/os-release`. Fails clearly on unsupported distros.
 - **WSL2 awareness**: Detects WSL2 via `/proc/version` for informational logging only. No WSL-specific install logic in `setup.sh`.
 - **Server profile**: `--server` is Bash-first and intended for remote/headless systems. It installs only minimal operational tooling and server-specific dotfiles.
-- **Kitty install path**: Installs pinned upstream kitty in the `--full` profile on native Linux instead of relying on distro package versions.
 - **Non-fatal optional packages**: Each optional package in `--full` is installed with `|| warning` so a single missing package does not abort the run.
 
 ## Environment policy

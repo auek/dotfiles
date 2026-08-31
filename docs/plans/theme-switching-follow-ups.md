@@ -8,7 +8,6 @@ worked on yet.
 
 Extend the completed theme switcher (Foot, tmux, Neovim, Waybar) so that
 switching theme also repaints running applications, and remove color
-duplication if it becomes an actual problem.
 
 Baseline: `docs/plans/archive/theme-switching-poc.md` and the `theme-set`
 command in the `themes` Stow package.
@@ -16,7 +15,6 @@ command in the `themes` Stow package.
 ## Remaining reload work
 
 tmux and Waybar already reload on switch. The two applications that still need
-a restart for a new theme are Foot and Neovim:
 
 ```text
 theme-set gruvbox
@@ -110,7 +108,6 @@ becomes an actual problem.
 
 Applications excluded by the POC non-goals that could later join the switch:
 
-- Kitty
 - Mako
 - Wofi
 - Hyprland

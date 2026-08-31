@@ -6,6 +6,8 @@ build/
 .cache/
 target/
 .obsidian/
+__pycache__/
+*.pyc
 
 # opencode runtime files
 opencode/.config/opencode/node_modules/

@@ -1,0 +1,26 @@
+##### COLORSCHEME: $display_name
+set-option -g status "on"
+set-option -g status-style bg=#$background,fg=#$foreground
+set-window-option -g window-status-style bg=#$surface,fg=#$tmux_panel_fg
+set-window-option -g window-status-activity-style bg=#$tmux_activity_bg,fg=#$tmux_activity_fg
+set-window-option -g window-status-current-style bg=#$tmux_current_bg,fg=#$tmux_current_fg
+set-option -g pane-active-border-style fg=#$tmux_accent
+set-option -g pane-border-style fg=#$tmux_border
+set-option -g message-style bg=#$surface,fg=#$foreground
+set-option -g message-command-style bg=#$surface,fg=#$foreground
+set-option -g display-panes-active-colour "#$tmux_accent"
+set-option -g display-panes-colour "#$tmux_border"
+set-window-option -g clock-mode-colour "#$tmux_clock"
+set-window-option -g window-status-bell-style bg=#$tmux_bell_bg,fg=#$tmux_bell_fg
+
+set-option -g status-justify "left"
+set-option -g status-left-style none
+set-option -g status-left-length "80"
+set-option -g status-right-style none
+set-option -g status-right-length "80"
+set-window-option -g window-status-separator ""
+
+set-option -g status-left "#[bg=#$tmux_status_left_bg,fg=#$tmux_status_left_fg] #S #[bg=#$background,fg=#$tmux_status_left_bg,nobold,noitalics,nounderscore]"
+set-option -g status-right "#[bg=#$background,fg=#$surface,nobold,nounderscore,noitalics]#[bg=#$surface,fg=#$tmux_status_right_text] %Y-%m-%d  %H:%M #[bg=#$surface,fg=#$tmux_status_right_mid,nobold,noitalics,nounderscore]#[bg=#$tmux_status_right_mid,fg=#$tmux_status_right_end] #h "
+set-window-option -g window-status-current-format "#[bg=#$tmux_current_fmt_bg,fg=#$background,nobold,noitalics,nounderscore]#[bg=#$tmux_current_fmt_bg,fg=#$tmux_current_fmt_fg2] #I #[bg=#$tmux_current_fmt_bg,fg=#$tmux_current_fmt_fg3,bold] #W#{?window_zoomed_flag,*Z,} #[bg=#$background,fg=#$tmux_current_fmt_bg,nobold,noitalics,nounderscore]"
+set-window-option -g window-status-format "#[bg=#$surface,fg=#$background,noitalics]#[bg=#$surface,fg=#$foreground] #I  #W #[bg=#$background,fg=#$surface,noitalics]"

@@ -1,8 +1,8 @@
 # Theme Switching Follow-ups
 
 Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
-PR #56. Milestone 2 is implemented and under review; live reloading follows in
-milestone 3.
+PR #56. Milestone 2 is complete and merged via PR #57. Live reloading is next
+in milestone 3.
 
 ## Goal
 
@@ -93,7 +93,7 @@ Neovim, Waybar, Wofi, Mako, and Hyprland configuration passed. The swaybg
 fallback is implemented, but its visual live-session check is deferred for a
 follow-up report.
 
-## Milestone 2: Semantic Palettes and Generated Fragments
+## Milestone 2: Semantic Palettes and Generated Fragments (Complete)
 
 Once native fragments establish the real shared color roles, replace repeated
 application literals with one semantic palette per theme. Generate native
@@ -126,6 +126,18 @@ Hard/green palette.
 - Generated fragments preserve intended behavior and native syntax.
 - Generation is idempotent and checked-in output is current.
 - `theme-set` continues to switch only the runtime symlink.
+
+### Completion Notes
+
+Implemented and merged in PR #57. Fragments are generated with
+`scripts/generate-themes.py` from one JSON palette per theme
+(`scripts/palettes/`) and shared templates (`scripts/templates/`), with
+`make themes-generate` and `make themes-check`. Generation is deterministic and
+atomic; check mode detects missing roles, unresolved values, stale output,
+incomplete packs, and orphan packs. Gruvbox output is byte-identical to the
+previous hand-written fragments. Everforest Waybar aligns to canonical Dark
+Hard/green, and the stray Everforest borders unify on the Dark Hard border role.
+`theme-set` still switches only the runtime symlink.
 
 ## Milestone 3: Live Reloads
 

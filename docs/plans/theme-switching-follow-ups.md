@@ -1,8 +1,8 @@
 # Theme Switching Follow-ups
 
-Status: active. Started 2026-08-31. The base theme switcher is complete and
-archived. The next work is core Hyprland shell coverage; semantic palettes and
-live reloading follow in later milestones.
+Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
+PR #56. Milestone 2, semantic palettes and generated fragments, is next; live
+reloading follows in milestone 3.
 
 ## Goal
 
@@ -38,7 +38,7 @@ Wallpaper assets remain local and untracked. The shared wallpaper path is
 `~/Pictures/Wallpapers/current.png`; only the fallback color may follow the
 selected theme.
 
-## Milestone 1: Core Hyprland Shell Coverage
+## Milestone 1: Core Hyprland Shell Coverage (Complete)
 
 Add native fragments to every theme pack:
 
@@ -86,7 +86,14 @@ new session.
 - `hyprctl configerrors` reports no configuration errors in a Hyprland session.
 - Runtime state remains outside the worktree.
 
-## Milestone 2: Semantic Palettes and Generated Fragments
+### Completion Notes
+
+Implemented and merged in PR #56. Static checks and live checks for tmux, Foot,
+Neovim, Waybar, Wofi, Mako, and Hyprland configuration passed. The swaybg
+fallback is implemented, but its visual live-session check is deferred for a
+follow-up report.
+
+## Milestone 2: Semantic Palettes and Generated Fragments (Next)
 
 Once native fragments establish the real shared color roles, replace repeated
 application literals with one semantic palette per theme. Generate native

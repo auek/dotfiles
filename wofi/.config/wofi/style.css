@@ -1,4 +1,9 @@
-@import url("../../.local/state/dotfiles/theme/current/wofi.css");
+@define-color background --wofi-color0;
+@define-color surface --wofi-color1;
+@define-color raised --wofi-color2;
+@define-color border --wofi-color3;
+@define-color foreground --wofi-color4;
+@define-color accent --wofi-color5;
 
 * {
     font-family: "JetBrainsMono Nerd Font Mono", monospace;

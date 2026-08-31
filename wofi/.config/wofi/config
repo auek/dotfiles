@@ -8,3 +8,4 @@ hide_scroll=true
 matching=fuzzy
 insensitive=true
 no_actions=true
+colors=../../.local/state/dotfiles/theme/current/wofi.css

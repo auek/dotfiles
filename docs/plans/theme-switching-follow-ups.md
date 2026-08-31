@@ -57,7 +57,7 @@ Add native fragments to every theme pack:
 Use each component's native configuration mechanism:
 
 - Wofi loads `current/wofi.css` with its `colors=` setting; the base stylesheet
-  maps Wofi color macros to GTK CSS `@define-color` values.
+  uses Wofi's color macros directly.
 - Mako includes `~/.local/state/dotfiles/theme/current/mako.conf`.
 - Hyprland loads pure palette data from `current/hyprland.lua` with `dofile()`.
 - Hyprland reads `current/swaybg-color` to construct swaybg's fallback color.

@@ -1,18 +1,11 @@
-@define-color background --wofi-color0;
-@define-color surface --wofi-color1;
-@define-color raised --wofi-color2;
-@define-color border --wofi-color3;
-@define-color foreground --wofi-color4;
-@define-color accent --wofi-color5;
-
 * {
     font-family: "JetBrainsMono Nerd Font Mono", monospace;
     font-size: 14px;
 }
 
 #window {
-    background-color: @background;
-    border: 1px solid @border;
+    background-color: --wofi-color0;
+    border: 1px solid --wofi-color3;
     border-radius: 6px;
 }
 
@@ -23,8 +16,8 @@
 #input {
     margin: 2px;
     padding: 10px 12px;
-    background-color: @surface;
-    color: @foreground;
+    background-color: --wofi-color1;
+    color: --wofi-color4;
     border: none;
     border-radius: 4px;
 }
@@ -39,16 +32,16 @@
 }
 
 #entry:selected {
-    background-color: @raised;
-    box-shadow: inset 2px 0 @accent;
+    background-color: --wofi-color2;
+    box-shadow: inset 2px 0 --wofi-color5;
 }
 
 #text {
-    color: @foreground;
+    color: --wofi-color4;
 }
 
 #entry:selected #text {
-    color: @accent;
+    color: --wofi-color5;
 }
 
 #img {

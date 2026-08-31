@@ -28,10 +28,10 @@ on-button-middle=dismiss-all
 on-button-right=dismiss
 on-touch=dismiss
 
+include=~/.local/state/dotfiles/theme/current/mako.conf
+
 [urgency=low]
 default-timeout=5000
 
 [urgency=critical]
 default-timeout=0
-
-include=~/.local/state/dotfiles/theme/current/mako.conf

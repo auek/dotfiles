@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+state_dir="$HOME/.local/state/dotfiles/theme/current"
+wallpaper_dir="$HOME/Pictures/Wallpapers"
+
+name=""
+color=""
+if [[ -r "$state_dir/wallpaper-name" ]]; then
+  name="$(cat "$state_dir/wallpaper-name" 2>/dev/null || true)"
+fi
+if [[ -r "$state_dir/swaybg-color" ]]; then
+  color="$(cat "$state_dir/swaybg-color" 2>/dev/null || true)"
+fi
+
+image=""
+if [[ -n "$name" ]]; then
+  for ext in png jpg jpeg; do
+    candidate="$wallpaper_dir/$name.$ext"
+    if [[ -f "$candidate" ]]; then
+      image="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -n "$image" ]]; then
+  exec swaybg -i "$image" -m fill
+fi
+exec swaybg -c "${color:-#000000}"

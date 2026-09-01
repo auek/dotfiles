@@ -143,12 +143,14 @@ Hard/green, and the stray Everforest borders unify on the Dark Hard border role.
 
 Small detour outside the original milestone scope. Each theme pack now carries a
 `wallpaper-name` fragment generated from a `meta.wallpaper` role in the palette
-(e.g. `everforest`, `gruvbox`). `dotfiles.lua` reads the selected theme's name
-and searches `~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the
-first match in fill mode, falling back to the theme's `swaybg-color` when no
-image is present. Wallpaper images remain local and untracked (public repo
-policy); only the startup path follows the theme. Live swaybg restart on
-`theme-set` is still out of scope and remains in Milestone 3.
+(e.g. `everforest`, `gruvbox`). A session-scoped `swaybg.service` user unit
+(started by `hyprland-session.target`) runs the `swaybg-current` helper, which
+reads the selected theme's name and searches
+`~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the first match in
+fill mode, falling back to the theme's `swaybg-color` when no image is present.
+Wallpaper images remain local and untracked (public repo policy). `theme-set`
+restarts `swaybg.service` after switching, so the background follows the theme
+live without logging out.
 
 ## Milestone 3: Live Reloads
 
@@ -171,6 +173,11 @@ independent and warnings are best effort.
 Move swaybg from an unmanaged startup command to a user service tied to
 `hyprland-session.target`. Use that service for restarts rather than broad
 process matching.
+
+> Completed during the wallpaper detour: `swaybg.service` now runs via
+> `hyprland-session.target` (Wants) using the `swaybg-current` helper, and
+> `theme-set` restarts it after switching. The remaining Milestone 3 reload
+> work is tmux, Mako, Hyprland, Neovim, and Foot.
 
 Do not send Unix signals to arbitrary Neovim processes. Consider remote reload
 only after `:ReloadTheme` safely reapplies the colorscheme and dependent plugin

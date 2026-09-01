@@ -158,8 +158,10 @@ configuration starts this user target with Hyprland and stops it during
 shutdown. This activates `graphical-session.target`, which Fedora's desktop
 portal services require. The target also starts `cliphist.service`, which
 records text and image clipboard data only while Hyprland is running. Its
-database is wiped on startup and shutdown. After linking the package, reload
-user units once:
+database is wiped on startup and shutdown. The target additionally starts
+`swaybg.service`, which loads the selected theme's wallpaper (see
+[Local assets and key bindings](#local-assets-and-key-bindings)). After linking
+the package, reload user units once:
 
 ```bash
 systemctl --user daemon-reload
@@ -182,10 +184,13 @@ systemctl --user is-active xdg-desktop-portal-hyprland.service
 Place a local wallpaper per theme at
 `~/Pictures/Wallpapers/<theme>.<ext>` with `<ext>` one of `.png`, `.jpg`, or
 `.jpeg` (for example `everforest.png` or `gruvbox.jpg`). The selected theme's
-image is loaded by `swaybg` with fill mode and is intentionally not stored in
-this public repository. When the file is absent, `swaybg` falls back to the
-fallback color of the selected theme (`swaybg-color` in the theme pack, read by
-`dotfiles.lua` at startup).
+image is loaded by the `swaybg.service` user unit (via the `swaybg-current`
+helper, which resolves `wallpaper-name` against `~/Pictures/Wallpapers`) with
+fill mode and is intentionally not stored in this public repository. When no
+matching file is present, `swaybg` falls back to the fallback color of the
+selected theme (`swaybg-color` in the theme pack). `theme-set` restarts
+`swaybg.service` after switching, so the background updates live without
+logging out.
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.

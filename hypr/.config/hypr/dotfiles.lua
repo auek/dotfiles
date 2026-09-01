@@ -3,6 +3,41 @@ local menu = "wofi --show drun"
 local main_mod = "SUPER"
 local theme_root = os.getenv("HOME") .. "/.local/state/dotfiles/theme/current"
 local palette = dofile(theme_root .. "/hyprland.lua")
+local swaybg_color_file = io.open(theme_root .. "/swaybg-color", "r")
+if not swaybg_color_file then
+  error("missing theme fragment: " .. theme_root .. "/swaybg-color")
+end
+local swaybg_fallback = swaybg_color_file:read("*l") or ""
+swaybg_color_file:close()
+local wallpaper_name_file = io.open(theme_root .. "/wallpaper-name", "r")
+if not wallpaper_name_file then
+  error("missing theme fragment: " .. theme_root .. "/wallpaper-name")
+end
+local wallpaper_name = wallpaper_name_file:read("*l") or ""
+wallpaper_name_file:close()
+local function file_exists(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+local wallpaper_dir = os.getenv("HOME") .. "/Pictures/Wallpapers"
+local wallpaper
+for _, ext in ipairs({ "png", "jpg", "jpeg" }) do
+  local candidate = wallpaper_dir .. "/" .. wallpaper_name .. "." .. ext
+  if file_exists(candidate) then
+    wallpaper = candidate
+    break
+  end
+end
+local wallpaper_command
+if wallpaper then
+  wallpaper_command = string.format("exec swaybg -i %q -m fill", wallpaper)
+else
+  wallpaper_command = string.format("exec swaybg -c %q", swaybg_fallback)
+end
 local screenshot = [[
 mkdir -p "$HOME/Pictures/Screenshots" &&
 file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
@@ -43,6 +78,7 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("lxpolkit")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("waybar")
+  hl.exec_cmd(wallpaper_command)
 end)
 
 hl.on("hyprland.shutdown", function()

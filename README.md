@@ -50,13 +50,12 @@ Keeping the primary config outside the Git worktree prevents Hyprland from
 generating a fallback stub when a branch change temporarily removes a managed
 file.
 
-The Hyprland session uses a `swaybg.service` user unit to load the selected
-theme's wallpaper, `~/Pictures/Wallpapers/<theme>.<ext>` where `<ext>` is
-`.png`, `.jpg`, or `.jpeg` (for example `everforest.png` or `gruvbox.jpg`), in
-fill mode. The image stays local rather than being redistributed through this
-public repository. If it is absent, `swaybg` uses the fallback color of the
-selected theme instead. `theme-set` restarts the service to apply the new
-wallpaper live.
+The Hyprland session uses `swaybg` to load the selected theme's wallpaper,
+`~/Pictures/Wallpapers/<theme>.<ext>` where `<ext>` is `.png`, `.jpg`, or
+`.jpeg` (for example `everforest.png` or `gruvbox.jpg`), in fill mode. The
+image stays local rather than being redistributed through this public
+repository. If it is absent, `swaybg` uses the fallback color of the selected
+theme instead.
 
 ## Installation
 

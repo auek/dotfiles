@@ -68,10 +68,4 @@ if command -v pkill >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then
   pkill -SIGUSR2 -x waybar
 fi
 
-if command -v systemctl >/dev/null 2>&1 \
-  && systemctl --user list-unit-files swaybg.service >/dev/null 2>&1; then
-  systemctl --user restart swaybg 2>/dev/null || \
-    printf 'warning: could not restart swaybg\n' >&2
-fi
-
 printf 'Theme switched to: %s\n' "$theme"

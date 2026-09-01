@@ -51,10 +51,11 @@ generating a fallback stub when a branch change temporarily removes a managed
 file.
 
 The Hyprland session uses `swaybg` to load the selected theme's wallpaper,
-`~/Pictures/Wallpapers/<theme>.png` (for example `everforest.png` or
-`gruvbox.png`), in fill mode. The image stays local rather than being
-redistributed through this public repository. If it is absent, `swaybg` uses
-the fallback color of the selected theme instead.
+`~/Pictures/Wallpapers/<theme>.<ext>` where `<ext>` is `.png`, `.jpg`, or
+`.jpeg` (for example `everforest.png` or `gruvbox.jpg`), in fill mode. The
+image stays local rather than being redistributed through this public
+repository. If it is absent, `swaybg` uses the fallback color of the selected
+theme instead.
 
 ## Installation
 

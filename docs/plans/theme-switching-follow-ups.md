@@ -143,12 +143,12 @@ Hard/green, and the stray Everforest borders unify on the Dark Hard border role.
 
 Small detour outside the original milestone scope. Each theme pack now carries a
 `wallpaper-name` fragment generated from a `meta.wallpaper` role in the palette
-(e.g. `everforest.png`, `gruvbox.png`). `dotfiles.lua` reads the selected
-theme's name and builds `~/Pictures/Wallpapers/<name>`; `swaybg` uses that image
-in fill mode, falling back to the theme's `swaybg-color` when the file is
-absent. Wallpaper images remain local and untracked (public repo policy); only
-the startup path follows the theme. Live swaybg restart on `theme-set` is still
-out of scope and remains in Milestone 3.
+(e.g. `everforest`, `gruvbox`). `dotfiles.lua` reads the selected theme's name
+and searches `~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the
+first match in fill mode, falling back to the theme's `swaybg-color` when no
+image is present. Wallpaper images remain local and untracked (public repo
+policy); only the startup path follows the theme. Live swaybg restart on
+`theme-set` is still out of scope and remains in Milestone 3.
 
 ## Milestone 3: Live Reloads
 

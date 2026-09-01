@@ -15,13 +15,29 @@ if not wallpaper_name_file then
 end
 local wallpaper_name = wallpaper_name_file:read("*l") or ""
 wallpaper_name_file:close()
-local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/" .. wallpaper_name
-local wallpaper_command = string.format(
-  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c %q; fi",
-  wallpaper,
-  wallpaper,
-  swaybg_fallback
-)
+local function file_exists(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+local wallpaper_dir = os.getenv("HOME") .. "/Pictures/Wallpapers"
+local wallpaper
+for _, ext in ipairs({ "png", "jpg", "jpeg" }) do
+  local candidate = wallpaper_dir .. "/" .. wallpaper_name .. "." .. ext
+  if file_exists(candidate) then
+    wallpaper = candidate
+    break
+  end
+end
+local wallpaper_command
+if wallpaper then
+  wallpaper_command = string.format("exec swaybg -i %q -m fill", wallpaper)
+else
+  wallpaper_command = string.format("exec swaybg -c %q", swaybg_fallback)
+end
 local screenshot = [[
 mkdir -p "$HOME/Pictures/Screenshots" &&
 file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&

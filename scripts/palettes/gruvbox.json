@@ -4,7 +4,8 @@
     "display_name": "Gruvbox Dark Medium",
     "colorscheme": "gruvbox",
     "background_mode": "dark",
-    "shadow_color": "0x66282828"
+    "shadow_color": "0x66282828",
+    "wallpaper": "gruvbox.png"
   },
   "colors": {
     "background": "282828",

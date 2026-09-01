@@ -4,7 +4,8 @@
     "display_name": "Everforest Dark Hard",
     "colorscheme": "everforest",
     "background_mode": "dark",
-    "shadow_color": "0x661e2326"
+    "shadow_color": "0x661e2326",
+    "wallpaper": "everforest.png"
   },
   "colors": {
     "background": "272e33",

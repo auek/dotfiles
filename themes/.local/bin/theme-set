@@ -15,6 +15,7 @@ required_fragments=(
   wofi.css
   mako.conf
   swaybg-color
+  wallpaper-name
 )
 
 missing_fragments() {

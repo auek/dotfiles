@@ -9,7 +9,13 @@ if not swaybg_color_file then
 end
 local swaybg_fallback = swaybg_color_file:read("*l") or ""
 swaybg_color_file:close()
-local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"
+local wallpaper_name_file = io.open(theme_root .. "/wallpaper-name", "r")
+if not wallpaper_name_file then
+  error("missing theme fragment: " .. theme_root .. "/wallpaper-name")
+end
+local wallpaper_name = wallpaper_name_file:read("*l") or ""
+wallpaper_name_file:close()
+local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/" .. wallpaper_name
 local wallpaper_command = string.format(
   "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c %q; fi",
   wallpaper,

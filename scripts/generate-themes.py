@@ -31,6 +31,7 @@ FRAGMENTS = (
     "wofi.css",
     "mako.conf",
     "swaybg-color",
+    "wallpaper-name",
 )
 
 

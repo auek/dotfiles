@@ -76,7 +76,8 @@ The `themes` package installs static assets under
 `~/.local/share/dotfiles/themes` and the `theme-set` command under
 `~/.local/bin`. Each theme pack holds one native fragment per supported
 component (`foot.ini`, `tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`,
-`wofi.css`, `mako.conf`, `swaybg-color`); application base configs keep layout
+`wofi.css`, `mako.conf`, `swaybg-color`, `wallpaper-name`); application base
+configs keep layout
 and behavior and import only their fragment through the runtime `current` path.
 `theme-set` validates a pack completely before switching and swaps the symlink
 atomically. Theme selection is runtime state at

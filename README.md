@@ -23,7 +23,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
-| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback) plus `theme-set` |
+| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
 | `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, systemd session target) |
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
@@ -50,10 +50,12 @@ Keeping the primary config outside the Git worktree prevents Hyprland from
 generating a fallback stub when a branch change temporarily removes a managed
 file.
 
-The Hyprland session uses `swaybg` to load
-`~/Pictures/Wallpapers/current.png` in fill mode. The image stays local rather
-than being redistributed through this public repository. If it is absent,
-`swaybg` uses the fallback color of the selected theme instead.
+The Hyprland session uses `swaybg` to load the selected theme's wallpaper,
+`~/Pictures/Wallpapers/<theme>.<ext>` where `<ext>` is `.png`, `.jpg`, or
+`.jpeg` (for example `everforest.png` or `gruvbox.jpg`), in fill mode. The
+image stays local rather than being redistributed through this public
+repository. If it is absent, `swaybg` uses the fallback color of the selected
+theme instead.
 
 ## Installation
 
@@ -125,7 +127,8 @@ theme-set            # prints the active theme
 
 A theme pack contains a native fragment per supported component: `foot.ini`,
 `tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`, `wofi.css`, `mako.conf`,
-and `swaybg-color`. Fragments are generated from one semantic palette per theme
+`swaybg-color`, and `wallpaper-name`. Fragments are generated from one semantic
+palette per theme
 (`scripts/palettes/*.json`) with `make themes-generate`; `make themes-check`
 verifies the checked-in fragments are current. The command validates the pack
 before switching and replaces the `current` symlink atomically; invalid or

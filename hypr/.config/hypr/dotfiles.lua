@@ -9,13 +9,35 @@ if not swaybg_color_file then
 end
 local swaybg_fallback = swaybg_color_file:read("*l") or ""
 swaybg_color_file:close()
-local wallpaper = os.getenv("HOME") .. "/Pictures/Wallpapers/current.png"
-local wallpaper_command = string.format(
-  "if [ -f %q ]; then exec swaybg -i %q -m fill; else exec swaybg -c %q; fi",
-  wallpaper,
-  wallpaper,
-  swaybg_fallback
-)
+local wallpaper_name_file = io.open(theme_root .. "/wallpaper-name", "r")
+if not wallpaper_name_file then
+  error("missing theme fragment: " .. theme_root .. "/wallpaper-name")
+end
+local wallpaper_name = wallpaper_name_file:read("*l") or ""
+wallpaper_name_file:close()
+local function file_exists(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+local wallpaper_dir = os.getenv("HOME") .. "/Pictures/Wallpapers"
+local wallpaper
+for _, ext in ipairs({ "png", "jpg", "jpeg" }) do
+  local candidate = wallpaper_dir .. "/" .. wallpaper_name .. "." .. ext
+  if file_exists(candidate) then
+    wallpaper = candidate
+    break
+  end
+end
+local wallpaper_command
+if wallpaper then
+  wallpaper_command = string.format("exec swaybg -i %q -m fill", wallpaper)
+else
+  wallpaper_command = string.format("exec swaybg -c %q", swaybg_fallback)
+end
 local screenshot = [[
 mkdir -p "$HOME/Pictures/Screenshots" &&
 file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&

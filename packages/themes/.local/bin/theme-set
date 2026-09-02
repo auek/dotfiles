@@ -56,6 +56,10 @@ if [[ -n "$missing" ]]; then
 fi
 
 mkdir -p "$state_dir"
+previous_theme=""
+if previous_dir="$(readlink -f "$current" 2>/dev/null)" && [[ -d "$previous_dir" ]]; then
+  previous_theme="$(basename "$previous_dir")"
+fi
 tmp_link="$state_dir/.current.tmp.$$"
 ln -s "$theme_dir" "$tmp_link"
 mv -T "$tmp_link" "$current"
@@ -80,10 +84,28 @@ if command -v hyprctl >/dev/null 2>&1 && hyprctl activeworkspace >/dev/null 2>&1
     || printf 'warning: could not reload Hyprland\n' >&2
 fi
 
-if command -v systemctl >/dev/null 2>&1 \
-  && systemctl --user is-active --quiet swaybg.service 2>/dev/null; then
-  systemctl --user restart swaybg.service 2>/dev/null \
-    || printf 'warning: could not restart swaybg\n' >&2
+if command -v systemctl >/dev/null 2>&1; then
+  old_swaybg_unit="swaybg.service"
+  if [[ -n "$previous_theme" ]]; then
+    old_swaybg_unit="swaybg@$previous_theme.service"
+  fi
+
+  if systemctl --user is-active --quiet swaybg.service 2>/dev/null \
+    || systemctl --user is-active --quiet "$old_swaybg_unit" 2>/dev/null; then
+    new_swaybg_unit="swaybg@$theme.service"
+    if systemctl --user start "$new_swaybg_unit" 2>/dev/null; then
+      # Keep the old layer surface in place until the replacement has rendered.
+      sleep 1
+      systemctl --user stop swaybg.service 2>/dev/null \
+        || printf 'warning: could not stop the previous swaybg service\n' >&2
+      if [[ "$old_swaybg_unit" != "$new_swaybg_unit" ]]; then
+        systemctl --user stop "$old_swaybg_unit" 2>/dev/null \
+          || printf 'warning: could not stop the previous swaybg service\n' >&2
+      fi
+    else
+      printf 'warning: could not start the replacement swaybg service\n' >&2
+    fi
+  fi
 fi
 
 if command -v foot-reload >/dev/null 2>&1; then

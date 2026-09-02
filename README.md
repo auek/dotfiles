@@ -141,8 +141,9 @@ verifies the checked-in fragments are current. The command validates the pack
 before switching and replaces the `current` symlink atomically; invalid or
 incomplete packs never change the selection.
 
-The command updates tmux, Waybar, Mako, and Hyprland immediately, restarts
-the session `swaybg.service` to switch the background, and repaints running
+The command updates tmux, Waybar, Mako, and Hyprland immediately, starts a
+replacement `swaybg` instance before stopping the previous one to switch the
+background without a blank frame, and repaints running
 Foot terminals via OSC color updates. Each reload is
 independent and best-effort: a missing application or failed reload warns
 without reverting the selection. Wofi and new Foot instances pick up the theme

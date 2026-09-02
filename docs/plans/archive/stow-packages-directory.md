@@ -1,7 +1,6 @@
 # Implementation Plan: Move Stow packages under `packages/`
 
-Status: later. This records the agreed repository-layout migration; no package
-directories, Stow links, or host configuration have been changed.
+Status: complete, 2026-09-02. Implemented on `chore/stow-packages-directory`.
 
 ## Goal
 
@@ -238,3 +237,14 @@ directories, all packages reside directly under `packages/`, all package sets
 can be Stowed from an isolated target, theme generation remains deterministic,
 and any explicitly approved live links resolve to the new source paths without
 changing selected runtime theme state or profile behavior.
+
+## Completion Notes
+
+All 17 packages now live under `packages/`, and the Makefile passes that
+directory explicitly to every Stow command. The active workstation links were
+unstowed before the move and restored from their new paths afterward.
+
+Fresh-target verification found and fixed a Stow directory-folding edge case:
+`stow` and `stow-foot` now create `$HOME/.local/state` before linking the
+themes package, preventing `theme-set` runtime state from being written into
+the package source directory.

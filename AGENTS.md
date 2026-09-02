@@ -33,44 +33,43 @@ dotfiles/
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
-├── bashrc-server/.bashrc     # Stow package: minimal Bash config for servers
-├── vim-server/.vimrc         # Stow package: minimal Vim config for servers
-├── zshrc/.zshrc              # Stow package: zsh config
-├── zprofile/.zprofile        # Stow package: login shell environment
-├── tmux-server/.tmux.conf    # Stow package: tmux config for server installs
-├── tmux/.tmux.conf           # Stow package: tmux config
-├── nvim/.config/nvim/        # Stow package: Neovim config
-├── foot/.config/foot/        # Stow package: Foot terminal config
-├── themes/.local/            # Stow package: theme packs (native fragments per component) and theme-set command
-├── gtk/.config/gtk-3.0/      # Stow package: GTK3 theme settings
-├── gtk/.config/gtk-4.0/      # Stow package: GTK4 theme settings
-├── hypr/.config/hypr/        # Stow package: Hyprland Lua, wallpaper startup, and idle config
-├── hypr/.config/systemd/user/ # Stow package: Hyprland graphical session target and clipboard history service
-├── waybar/.config/waybar/    # Stow package: Waybar top status bar config
-├── wofi/.config/wofi/        # Stow package: Wofi launcher config
-├── mako/.config/mako/        # Stow package: Mako notification config
-└── opencode/                 # Stow package: opencode AI config
-    └── .config/opencode/
-        ├── opencode.jsonc
-        └── tui.json
+└── packages/                 # GNU Stow package sources
+    ├── bashrc-server/.bashrc # Minimal Bash config for servers
+    ├── vim-server/.vimrc     # Minimal Vim config for servers
+    ├── zshrc/.zshrc          # Zsh config
+    ├── zprofile/.zprofile    # Login shell environment
+    ├── tmux-server/.tmux.conf # tmux config for server installs
+    ├── tmux/.tmux.conf       # tmux config
+    ├── nvim/.config/nvim/    # Neovim config
+    ├── foot/.config/foot/    # Foot terminal config
+    ├── themes/.local/        # Theme packs and theme-set command
+    ├── gtk/.config/          # GTK3 and GTK4 theme settings
+    ├── hypr/.config/         # Hyprland and graphical session configuration
+    ├── waybar/.config/waybar/
+    ├── wofi/.config/wofi/
+    ├── mako/.config/mako/
+    ├── opencode/.config/opencode/
+    ├── claude/.claude/
+    └── espanso/.config/espanso/
 ```
 
 ## Stow package convention
 
-Each dotfile package is a directory at the repo root. Its internal layout
-mirrors the structure expected under `$HOME`. For example:
+Each dotfile package is a directory directly under `packages/`. Its internal
+layout mirrors the structure expected under `$HOME`. For example:
 
 ```
-bashrc-server/.bashrc  → stowed to ~/.bashrc
-vim-server/.vimrc      → stowed to ~/.vimrc
-zshrc/.zshrc           → stowed to ~/.zshrc
-nvim/.config/nvim/     → stowed to ~/.config/nvim/
+packages/bashrc-server/.bashrc  → stowed to ~/.bashrc
+packages/vim-server/.vimrc      → stowed to ~/.vimrc
+packages/zshrc/.zshrc           → stowed to ~/.zshrc
+packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
-`wofi`, `mako`, and `opencode`. Server packages use `make stow-server`. The
-external-theme dependent `gtk` package is opt-in via `make stow-gtk`.
+`wofi`, `mako`, `opencode`, `claude`, and `espanso`. Server packages use
+`make stow-server`. The external-theme dependent `gtk` package is opt-in via
+`make stow-gtk`.
 
 The `themes` package installs static assets under
 `~/.local/share/dotfiles/themes` and the `theme-set` command under

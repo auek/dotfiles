@@ -20,7 +20,7 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PALETTES_DIR = pathlib.Path(__file__).resolve().parent / "palettes"
 TEMPLATES_DIR = pathlib.Path(__file__).resolve().parent / "templates"
-THEMES_DIR = ROOT / "themes" / ".local" / "share" / "dotfiles" / "themes"
+THEMES_DIR = ROOT / "packages" / "themes" / ".local" / "share" / "dotfiles" / "themes"
 
 FRAGMENTS = (
     "foot.ini",

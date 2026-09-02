@@ -156,9 +156,10 @@ Save this as `~/.config/hypr/hyprland.lua`.
 The `hypr` Stow package also installs `hyprland-session.target`. The Lua
 configuration starts this user target with Hyprland and stops it during
 shutdown. This activates `graphical-session.target`, which Fedora's desktop
-portal services require. The target also starts `cliphist.service`, which
-records text and image clipboard data only while Hyprland is running. Its
-database is wiped on startup and shutdown. After linking the package, reload
+portal services require. The target also starts `cliphist.service` (which
+records text and image clipboard data only while Hyprland is running; its
+database is wiped on startup and shutdown) and `swaybg.service` (the wallpaper
+daemon). After linking the package, reload
 user units once:
 
 ```bash
@@ -184,8 +185,15 @@ Place a local wallpaper per theme at
 `.jpeg` (for example `everforest.png` or `gruvbox.jpg`). The selected theme's
 image is loaded by `swaybg` with fill mode and is intentionally not stored in
 this public repository. When the file is absent, `swaybg` falls back to the
-fallback color of the selected theme (`swaybg-color` in the theme pack, read by
-`dotfiles.lua` at startup).
+fallback color of the selected theme (`swaybg-color` in the theme pack).
+
+`swaybg` runs as the session-scoped `swaybg.service` user unit. The unit's
+`ExecStart` (`~/.local/bin/swaybg-current`) reads the selected theme's
+`wallpaper-name` and `swaybg-color` fragments at start and builds the swaybg
+command. The Lua configuration starts the unit together with
+`hyprland-session.target` after importing the Wayland environment, and
+`theme-set` restarts the unit to switch the background live. The daemon-reload
+above registers the unit after linking the package.
 
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.

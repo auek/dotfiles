@@ -68,4 +68,20 @@ if command -v pkill >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then
   pkill -SIGUSR2 -x waybar
 fi
 
+if command -v makoctl >/dev/null 2>&1; then
+  makoctl reload >/dev/null 2>&1 \
+    || printf 'warning: could not reload mako\n' >&2
+fi
+
+if command -v hyprctl >/dev/null 2>&1 && hyprctl activeworkspace >/dev/null 2>&1; then
+  hyprctl reload config-only >/dev/null \
+    || printf 'warning: could not reload Hyprland\n' >&2
+fi
+
+if command -v systemctl >/dev/null 2>&1 \
+  && systemctl --user is-active --quiet swaybg.service 2>/dev/null; then
+  systemctl --user restart swaybg.service 2>/dev/null \
+    || printf 'warning: could not restart swaybg\n' >&2
+fi
+
 printf 'Theme switched to: %s\n' "$theme"

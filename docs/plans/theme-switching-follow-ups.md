@@ -1,8 +1,9 @@
 # Theme Switching Follow-ups
 
 Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
-PR #56. Milestone 2 is complete and merged via PR #57. Live reloading is next
-in milestone 3.
+PR #56. Milestone 2 is complete and merged via PR #57. Live reloading in
+milestone 3 is in progress: Mako, Hyprland, and swaybg reloads plus the Neovim
+`:ReloadTheme` command are implemented; Foot and remote Neovim reload remain.
 
 ## Goal
 
@@ -143,12 +144,13 @@ Hard/green, and the stray Everforest borders unify on the Dark Hard border role.
 
 Small detour outside the original milestone scope. Each theme pack now carries a
 `wallpaper-name` fragment generated from a `meta.wallpaper` role in the palette
-(e.g. `everforest`, `gruvbox`). `dotfiles.lua` reads the selected theme's name
-and searches `~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the
-first match in fill mode, falling back to the theme's `swaybg-color` when no
-image is present. Wallpaper images remain local and untracked (public repo
-policy); only the startup path follows the theme. Live swaybg restart on
-`theme-set` is still out of scope and remains in Milestone 3.
+(e.g. `everforest`, `gruvbox`). The session `swaybg.service` reads the selected
+theme's name and fallback color via `swaybg-current` and searches
+`~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the first match in
+fill mode, falling back to the theme's `swaybg-color` when no image is present.
+Wallpaper images remain local and untracked (public repo policy); only the
+lookup logic follows the theme. Live swaybg restart on `theme-set` is
+implemented in Milestone 3.
 
 ## Milestone 3: Live Reloads
 
@@ -179,6 +181,20 @@ configuration in one instance.
 Foot has no safe config-file reload. Do not enable OSC updates by default until
 there is a reliable way to address Foot-owned terminals without affecting other
 applications or interrupting shells.
+
+### Completion Notes
+
+Implemented on `feat/theme-live-reload`. Mako
+reloads with `makoctl reload` when the daemon is available. Hyprland reloads
+with `hyprctl reload config-only`, which was verified to re-evaluate the Lua
+palette live in both directions. `swaybg` moved from an unmanaged `dotfiles.lua`
+startup command to the session-scoped `swaybg.service` user unit, started with
+`hyprland-session.target` and restarted by `theme-set`; wallpaper resolution
+now lives in the `swaybg-current` wrapper. Neovim gained an explicit
+`:ReloadTheme` command that re-applies the selected `nvim.lua` fragment.
+Each reload is independent and best-effort; failures warn without reverting the
+selection. Remote reload for running Neovim instances is still deferred and
+should be revisited together with Foot live updates.
 
 ### Acceptance Criteria
 

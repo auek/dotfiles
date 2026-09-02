@@ -1,0 +1,11 @@
+[Unit]
+Description=Wallpaper daemon
+PartOf=hyprland-session.target
+After=hyprland-session.target
+Requisite=hyprland-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/swaybg-current
+Restart=on-failure
+RestartSec=1

@@ -141,9 +141,12 @@ verifies the checked-in fragments are current. The command validates the pack
 before switching and replaces the `current` symlink atomically; invalid or
 incomplete packs never change the selection.
 
-The command updates tmux and Waybar immediately. Hyprland picks up the palette
-at its next reload, and Wofi, Mako, and new Foot and Neovim instances use the
-selected theme when launched. Static theme packs live under
+The command updates tmux, Waybar, Mako, and Hyprland immediately, and restarts
+the session `swaybg.service` to switch the background. Each reload is
+independent and best-effort: a missing application or failed reload warns
+without reverting the selection. Wofi and new Foot instances pick up the theme
+when launched, and running Neovim instances re-apply it with `:ReloadTheme`.
+Static theme packs live under
 `~/.local/share/dotfiles/themes`, while the local `current` symlink lives under
 `~/.local/state/dotfiles/theme` so switching themes does not modify the Git
 worktree.

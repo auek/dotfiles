@@ -25,16 +25,25 @@ return {
     vim.g.dotfiles_theme = "everforest"
     vim.g.dotfiles_theme_background = "#272e33"
 
-    local theme_file = vim.fn.expand("~/.local/state/dotfiles/theme/current/nvim.lua")
-    local success, errmsg
-    if vim.fn.filereadable(theme_file) == 1 then
-      success, errmsg = pcall(dofile, theme_file)
-    else
-      success, errmsg = pcall(vim.cmd.colorscheme, "everforest")
+    local apply_theme = function()
+      local theme_file = vim.fn.expand("~/.local/state/dotfiles/theme/current/nvim.lua")
+      local success, errmsg
+      if vim.fn.filereadable(theme_file) == 1 then
+        success, errmsg = pcall(dofile, theme_file)
+      else
+        vim.g.dotfiles_theme = "everforest"
+        vim.g.dotfiles_theme_background = "#272e33"
+        success, errmsg = pcall(vim.cmd.colorscheme, "everforest")
+      end
+
+      if not success then
+        vim.notify("Error applying current colorscheme: " .. errmsg, vim.log.levels.ERROR)
+      end
     end
 
-    if not success then
-      vim.notify("Error applying current colorscheme: " .. errmsg, vim.log.levels.ERROR)
-    end
+    apply_theme()
+    vim.api.nvim_create_user_command("ReloadTheme", apply_theme, {
+      desc = "Reapply the selected dotfiles theme",
+    })
   end
 }

@@ -84,4 +84,8 @@ if command -v systemctl >/dev/null 2>&1 \
     || printf 'warning: could not restart swaybg\n' >&2
 fi
 
+if command -v foot-reload >/dev/null 2>&1; then
+  foot-reload || printf 'warning: could not reload foot\n' >&2
+fi
+
 printf 'Theme switched to: %s\n' "$theme"

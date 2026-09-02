@@ -42,7 +42,7 @@ dotfiles/
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
     ├── foot/.config/foot/    # Foot terminal config
-    ├── themes/.local/        # Theme packs plus theme-set and swaybg-current commands
+    ├── themes/.local/        # Theme packs plus theme-set, swaybg-current, and foot-reload commands
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
     ├── hypr/.config/         # Hyprland Lua config and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/

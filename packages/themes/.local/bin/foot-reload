@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# foot-reload — apply the selected theme to running Foot terminals.
+#
+# Reads the active theme's `foot.ini` fragment, emits the matching OSC color
+# sequences, and writes them to the pty of every running Foot terminal's child
+# process. Foot consumes the OSC (foreground, background, cursor, selection,
+# palette), so shells and TUIs in those terminals are not interrupted.
+
+set -euo pipefail
+
+fragment="$HOME/.local/state/dotfiles/theme/current/foot.ini"
+[[ -r "$fragment" ]] || exit 0
+
+declare -A color=()
+while IFS=$'\t' read -r key value; do
+  color[$key]="$value"
+done < <(awk -F= '
+  /^[[:space:]]*\[/ {
+    in_section = ($0 ~ /^[[:space:]]*\[colors(-dark|-light)?\]/)
+    next
+  }
+  in_section && index($0, "=") > 0 {
+    key = $1
+    sub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+    value = substr($0, index($0, "=") + 1)
+    sub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+    print key "\t" value
+  }
+' "$fragment")
+
+(( ${#color[@]} > 0 )) || exit 0
+
+osc=""
+emit() {
+  local code="$1" value="$2"
+  [[ -n "$value" ]] || return
+  osc+="$(printf '\033]%s;%s\007' "$code" "$value")"
+}
+
+emit 10 "${color[foreground]:-}"
+emit 11 "${color[background]:-}"
+emit 12 "${color[cursor]%% *}"
+emit 17 "${color[selection-background]:-}"
+emit 19 "${color[selection-foreground]:-}"
+
+for i in {0..7}; do
+  emit "4;$i" "${color[regular$i]:-}"
+  emit "4;$((i + 8))" "${color[bright$i]:-}"
+done
+
+[[ -n "$osc" ]] || exit 0
+pgrep -x foot >/dev/null 2>&1 || exit 0
+
+for foot_pid in $(pgrep -x foot); do
+  for child_pid in $(pgrep -P "$foot_pid" 2>/dev/null || true); do
+    tty="$(readlink "/proc/$child_pid/fd/1" 2>/dev/null || true)"
+    [[ "$tty" == /dev/pts/* ]] || continue
+    printf '%b' "$osc" >"$tty" 2>/dev/null || true
+  done
+done

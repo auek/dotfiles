@@ -34,6 +34,9 @@ osc=""
 emit() {
   local code="$1" value="$2"
   [[ -n "$value" ]] || return
+  if [[ "$value" =~ ^[[:xdigit:]]{6}$ ]]; then
+    value="#$value"
+  fi
   osc+="$(printf '\033]%s;%s\007' "$code" "$value")"
 }
 

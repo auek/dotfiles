@@ -61,11 +61,13 @@ ln -s "$theme_dir" "$tmp_link"
 mv -T "$tmp_link" "$current"
 
 if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
-  tmux source-file "$theme_dir/tmux.conf"
+  tmux source-file "$theme_dir/tmux.conf" \
+    || printf 'warning: could not reload tmux\n' >&2
 fi
 
 if command -v pkill >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then
-  pkill -SIGUSR2 -x waybar
+  pkill -SIGUSR2 -x waybar \
+    || printf 'warning: could not reload waybar\n' >&2
 fi
 
 if command -v makoctl >/dev/null 2>&1; then

@@ -23,9 +23,9 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
-| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set` |
+| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set`, `foot-reload`, and `swaybg-current` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
-| `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, systemd session target) |
+| `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, `hyprland-session.target`, and `swaybg.service`) |
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact layout, theme-driven palette) |
 | `mako` | Mako notifications (theme-driven colors, urgency states, compact geometry) |

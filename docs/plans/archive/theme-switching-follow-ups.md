@@ -1,10 +1,9 @@
 # Theme Switching Follow-ups
 
-Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
-PR #56. Milestone 2 is complete and merged via PR #57. Live reloading in
-milestone 3 is implemented for Mako, Hyprland, swaybg, Foot, and Neovim
-(`:ReloadTheme` plus focus-based auto-reapply); only remote Neovim reload
-remains deferred, blocked on a Neovim build with `clientserver`.
+Status: complete. Started 2026-08-31. Milestone 1 merged via PR #56,
+milestone 2 via PR #57, and milestone 3 via PR #61. Remote Neovim reload
+remains deferred, blocked on a Neovim build with `clientserver`. Flash-free
+wallpaper transitions require a persistent renderer and remain in the backlog.
 
 ## Goal
 
@@ -194,8 +193,9 @@ reloads with `makoctl reload` when the daemon is available. Hyprland reloads
 with `hyprctl reload config-only`, which was verified to re-evaluate the Lua
 palette live in both directions. `swaybg` moved from an unmanaged `dotfiles.lua`
 startup command to the session-scoped `swaybg.service` user unit, started with
-`hyprland-session.target` and restarted by `theme-set`; wallpaper resolution
-now lives in the `swaybg-current` wrapper. Neovim gained an explicit
+`hyprland-session.target`. `theme-set` starts a replacement
+`swaybg@<theme>.service` before stopping the previous unit; wallpaper
+resolution now lives in the `swaybg-current` wrapper. Neovim gained an explicit
 `:ReloadTheme` command that re-applies the selected `nvim.lua` fragment, plus a
 focus/enter/idle auto-reapply that detects a switched fragment by its resolved
 target and mtime. Foot

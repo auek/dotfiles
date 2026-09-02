@@ -1,8 +1,10 @@
 # Theme Switching Follow-ups
 
 Status: active. Started 2026-08-31. Milestone 1 is complete and merged via
-PR #56. Milestone 2 is complete and merged via PR #57. Live reloading is next
-in milestone 3.
+PR #56. Milestone 2 is complete and merged via PR #57. Live reloading in
+milestone 3 is implemented for Mako, Hyprland, swaybg, Foot, and Neovim
+(`:ReloadTheme` plus focus-based auto-reapply); only remote Neovim reload
+remains deferred, blocked on a Neovim build with `clientserver`.
 
 ## Goal
 
@@ -143,12 +145,13 @@ Hard/green, and the stray Everforest borders unify on the Dark Hard border role.
 
 Small detour outside the original milestone scope. Each theme pack now carries a
 `wallpaper-name` fragment generated from a `meta.wallpaper` role in the palette
-(e.g. `everforest`, `gruvbox`). `dotfiles.lua` reads the selected theme's name
-and searches `~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the
-first match in fill mode, falling back to the theme's `swaybg-color` when no
-image is present. Wallpaper images remain local and untracked (public repo
-policy); only the startup path follows the theme. Live swaybg restart on
-`theme-set` is still out of scope and remains in Milestone 3.
+(e.g. `everforest`, `gruvbox`). The session `swaybg.service` reads the selected
+theme's name and fallback color via `swaybg-current` and searches
+`~/Pictures/Wallpapers/<name>.png|.jpg|.jpeg`; `swaybg` uses the first match in
+fill mode, falling back to the theme's `swaybg-color` when no image is present.
+Wallpaper images remain local and untracked (public repo policy); only the
+lookup logic follows the theme. Live swaybg restart on `theme-set` is
+implemented in Milestone 3.
 
 ## Milestone 3: Live Reloads
 
@@ -165,20 +168,42 @@ independent and warnings are best effort.
 | Mako | Use `makoctl reload` when available. |
 | Hyprland | Use `hyprctl reload config-only` after verifying Lua is reevaluated. |
 | swaybg | Restart a session-scoped `swaybg.service`. |
-| Neovim | Start with an explicit `:ReloadTheme` command. |
-| Foot | Evaluate OSC color updates separately. |
+| Neovim | Reapply on focus when the selected fragment changes; `:ReloadTheme` for an immediate switch. |
+| Foot | Write OSC color updates to running terminals' ptys. |
 
 Move swaybg from an unmanaged startup command to a user service tied to
 `hyprland-session.target`. Use that service for restarts rather than broad
 process matching.
 
-Do not send Unix signals to arbitrary Neovim processes. Consider remote reload
-only after `:ReloadTheme` safely reapplies the colorscheme and dependent plugin
-configuration in one instance.
+Do not send Unix signals to arbitrary Neovim processes. `:ReloadTheme` safely
+reapplies the colorscheme and dependent plugin configuration in one instance;
+the focus-based auto-reapply uses the same path and only fires when the
+fragment's resolved target or mtime changes. This Neovim build lacks
+`clientserver`, so remote `--remote-send` reload is not available and remains
+out of scope.
 
-Foot has no safe config-file reload. Do not enable OSC updates by default until
-there is a reliable way to address Foot-owned terminals without affecting other
-applications or interrupting shells.
+Foot has no config-file reload. Live updates are implemented by writing OSC
+color sequences (foreground, background, cursor, selection, and the 16-color
+palette) to the pty of each running Foot terminal's child process, which Foot
+consumes without interrupting the shell or foreground application.
+
+### Completion Notes
+
+Implemented on `feat/theme-live-reload`. Mako
+reloads with `makoctl reload` when the daemon is available. Hyprland reloads
+with `hyprctl reload config-only`, which was verified to re-evaluate the Lua
+palette live in both directions. `swaybg` moved from an unmanaged `dotfiles.lua`
+startup command to the session-scoped `swaybg.service` user unit, started with
+`hyprland-session.target` and restarted by `theme-set`; wallpaper resolution
+now lives in the `swaybg-current` wrapper. Neovim gained an explicit
+`:ReloadTheme` command that re-applies the selected `nvim.lua` fragment, plus a
+focus/enter/idle auto-reapply that detects a switched fragment by its resolved
+target and mtime. Foot
+live updates are handled by `foot-reload`, which sends OSC color sequences to
+each running Foot terminal's pty.
+Each reload is independent and best-effort; failures warn without reverting the
+selection. Remote reload for running Neovim instances remains deferred because
+the installed Neovim lacks `clientserver`.
 
 ### Acceptance Criteria
 

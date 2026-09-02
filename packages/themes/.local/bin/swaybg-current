@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# swaybg-current — start swaybg for the selected theme.
+#
+# Reads the active theme's wallpaper name and fallback color from the runtime
+# `current` state and starts swaybg with fill mode, or with the fallback color
+# when no wallpaper image exists. Intended to run under swaybg.service so
+# theme-set can restart it to switch the background live.
+
+set -euo pipefail
+
+theme_state="$HOME/.local/state/dotfiles/theme/current"
+wallpaper_dir="$HOME/Pictures/Wallpapers"
+
+name=""
+color=""
+if [[ -r "$theme_state/wallpaper-name" ]]; then
+  name="$(<"$theme_state/wallpaper-name")"
+fi
+if [[ -r "$theme_state/swaybg-color" ]]; then
+  color="$(<"$theme_state/swaybg-color")"
+fi
+
+image=""
+if [[ -n "$name" ]]; then
+  for ext in png jpg jpeg; do
+    candidate="$wallpaper_dir/$name.$ext"
+    if [[ -f "$candidate" ]]; then
+      image="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -n "$image" ]]; then
+  exec swaybg -i "$image" -m fill
+fi
+exec swaybg -c "${color:-#000000}"

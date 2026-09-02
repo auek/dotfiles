@@ -23,9 +23,9 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
-| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set` |
+| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set`, `foot-reload`, and `swaybg-current` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
-| `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, systemd session target) |
+| `hypr` | Hyprland Lua configuration (keybindings, theme-driven styling, wallpaper, idle policy, clipboard history, `hyprland-session.target`, and `swaybg.service`) |
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |
 | `wofi` | Wofi application launcher (compact layout, theme-driven palette) |
 | `mako` | Mako notifications (theme-driven colors, urgency states, compact geometry) |
@@ -141,9 +141,15 @@ verifies the checked-in fragments are current. The command validates the pack
 before switching and replaces the `current` symlink atomically; invalid or
 incomplete packs never change the selection.
 
-The command updates tmux and Waybar immediately. Hyprland picks up the palette
-at its next reload, and Wofi, Mako, and new Foot and Neovim instances use the
-selected theme when launched. Static theme packs live under
+The command updates tmux, Waybar, Mako, and Hyprland immediately, starts a
+replacement `swaybg` instance before stopping the previous one to switch the
+background without a blank frame, and repaints running
+Foot terminals via OSC color updates. Each reload is
+independent and best-effort: a missing application or failed reload warns
+without reverting the selection. Wofi and new Foot instances pick up the theme
+when launched, and running Neovim instances re-apply it with `:ReloadTheme` or
+automatically on focus.
+Static theme packs live under
 `~/.local/share/dotfiles/themes`, while the local `current` symlink lives under
 `~/.local/state/dotfiles/theme` so switching themes does not modify the Git
 worktree.

@@ -8,6 +8,15 @@ No active backlog items.
 
 ## Later
 
+### Flash-free wallpaper transitions
+
+`theme-set` currently starts a replacement `swaybg` layer before stopping the
+previous one, but Hyprland can still expose its fallback background during the
+final layer teardown. Replace the restart-based approach with a persistent
+renderer that can transition images in place. Evaluate an Omarchy-style
+Quickshell background service or `swww`/`awww`, while retaining per-theme
+wallpaper lookup and color fallback.
+
 ### Verify Neovim external-change auto-reload
 
 - confirm the existing `autoread` and `checktime` autocmd notices external file

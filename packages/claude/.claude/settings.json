@@ -35,12 +35,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-rm-rf.sh",
+            "command": "$HOME/.claude/hooks/safe-rm-rf.sh",
             "shell": "bash"
           },
           {
             "type": "command",
-            "command": "/home/august/code/dotfiles/claude/.claude/hooks/safe-push.sh",
+            "command": "$HOME/.claude/hooks/safe-push.sh",
             "shell": "bash"
           }
         ]

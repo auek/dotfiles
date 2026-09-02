@@ -30,6 +30,8 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `wofi` | Wofi application launcher (compact layout, theme-driven palette) |
 | `mako` | Mako notifications (theme-driven colors, urgency states, compact geometry) |
 | `opencode` | OpenCode AI and TUI config (agents, models, watcher settings) |
+| `claude` | Claude Code permissions, hooks, and MCP configuration |
+| `espanso` | Espanso text expansion configuration |
 
 ## Prerequisites
 
@@ -104,14 +106,19 @@ This keeps the base layout as `US` while putting `å`, `ö`, and `ä` on
 
 ## Makefile
 
+Stow packages are stored under `packages/`; their contents still mirror the
+paths expected below `$HOME`.
+
 | Target | Description |
 |---|---|
 | `make stow` | Symlink the default workstation packages to `$HOME` |
 | `make stow-server` | Symlink only the server profile dotfiles to `$HOME` |
 | `make stow-gtk` | Symlink the opt-in Everforest GTK settings after installing the external theme |
+| `make stow-foot` | Symlink the Foot configuration and shared theme assets to `$HOME` |
 | `make unstow` | Remove the default workstation package symlinks |
 | `make unstow-server` | Remove only the server profile symlinks |
 | `make unstow-gtk` | Remove only the Everforest GTK settings symlinks |
+| `make unstow-foot` | Remove only the Foot configuration, retaining shared theme assets |
 | `make restow` | Ensure default workstation package links exist after adding files without removing live configuration |
 
 ## Theme switching

@@ -48,7 +48,7 @@ dotfiles/
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
-    ├── opencode/.config/opencode/
+    ├── opencode/.config/opencode/  # Commands (/pr), agents, MCP, permissions, watcher
     ├── claude/.claude/
     └── espanso/.config/espanso/
 ```

@@ -21,3 +21,14 @@ services:
     # Keep container running
     tty: true
     stdin_open: true
+  dotfiles-arch:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.arch
+    image: auek/dotfiles:arch
+    container_name: dotfiles-arch
+    volumes:
+      - ../:/home/devuser/code/dotfiles:Z
+    # Keep container running
+    tty: true
+    stdin_open: true

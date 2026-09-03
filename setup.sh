@@ -79,7 +79,7 @@ case "$ID" in
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-clients sqlite fastfetch"
+    PKG_OPTIONAL="eza fd-find fzf htop bat neovim ripgrep openssh-clients sqlite fastfetch"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
@@ -90,8 +90,16 @@ case "$ID" in
     PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3 fastfetch"
     info "Detected: $PRETTY_NAME"
     ;;
+  arch)
+    PKG_MANAGER="pacman"
+    PKG_INSTALL="sudo pacman -S --needed --noconfirm"
+    PKG_SERVER="curl git make stow tmux vim"
+    PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh"
+    PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite fastfetch"
+    info "Detected: $PRETTY_NAME"
+    ;;
   *)
-    die "Unsupported distro: $ID. Only Fedora and Ubuntu/Debian are supported."
+    die "Unsupported distro: $ID. Supported distros are Arch, Fedora, and Ubuntu/Debian."
     ;;
 esac
 
@@ -119,6 +127,17 @@ case "$PKG_MANAGER" in
     ;;
   apt)
     sudo apt-get update -y
+    if [ "$PROFILE" = "server" ]; then
+      info "Profile: server — installing minimal server packages"
+      $PKG_INSTALL $PKG_SERVER
+    else
+      $PKG_INSTALL $PKG_COMMON
+    fi
+    ;;
+  pacman)
+    if [ "$DO_UPDATE" -eq 1 ]; then
+      sudo pacman -Syu --noconfirm
+    fi
     if [ "$PROFILE" = "server" ]; then
       info "Profile: server — installing minimal server packages"
       $PKG_INSTALL $PKG_SERVER
@@ -271,29 +290,35 @@ step "11/12 — Installing dev tools"
 
 if [ "$PROFILE" = "full" ]; then
 
-  # bob-nvim → stable neovim
-  if command -v bob &>/dev/null; then
-    info "bob already installed"
-  else
-    info "Installing bob-nvim"
-    cargo install bob-nvim || {
-      # Fallback: install cargo first if not present
-      if ! command -v cargo &>/dev/null; then
-        info "cargo not found — installing rust toolchain"
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-        # shellcheck source=/dev/null
-        . "$HOME/.cargo/env"
-      fi
-      cargo install bob-nvim
-    }
-    success "bob-nvim installed"
-  fi
+  if [ "$PKG_MANAGER" = "apt" ]; then
+    mkdir -p "$HOME/.local/state/bob"
 
-  if command -v nvim &>/dev/null; then
-    info "neovim already installed"
+    # Ubuntu/Debian LTS Neovim can be substantially behind upstream stable.
+    if command -v bob &>/dev/null; then
+      info "bob already installed"
+    else
+      info "Installing bob-nvim"
+      cargo install bob-nvim || {
+        # Fallback: install cargo first if not present
+        if ! command -v cargo &>/dev/null; then
+          info "cargo not found — installing rust toolchain"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+          # shellcheck source=/dev/null
+          . "$HOME/.cargo/env"
+        fi
+        cargo install bob-nvim
+      }
+      success "bob-nvim installed"
+    fi
+
+    if command -v nvim &>/dev/null; then
+      info "neovim already installed"
+    else
+      bob use stable
+      success "neovim stable installed via bob"
+    fi
   else
-    bob use stable
-    success "neovim stable installed via bob"
+    info "Using Neovim from the system package manager"
   fi
 
   # nvm

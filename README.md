@@ -22,6 +22,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `tmux` | tmux config (switchable theme, vi keys, Wayland session environment, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
+| `bob` | Bob Neovim version-manager configuration and runtime paths |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
 | `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set`, `foot-reload`, and `swaybg-current` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
@@ -35,7 +36,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 
 ## Prerequisites
 
-- Fedora 42+ or Ubuntu 22.04+
+- Arch Linux, Fedora 42+, or Ubuntu 22.04+
 - `git`
 - Docker / Podman (optional, for container-based testing)
 
@@ -86,7 +87,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 |---|---|
 | `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, minimal Vim config, server tmux config |
 | `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
-| `--full` | Everything in slim + Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, bob-nvim (stable), nvm, node LTS, uv, tldr, llm |
+| `--full` | Everything in slim + Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, native Neovim on Arch/Fedora, Bob stable Neovim on Ubuntu/Debian, nvm, node LTS, uv, tldr, llm |
 
 After installation, restart your shell:
 
@@ -156,7 +157,7 @@ worktree.
 
 ## Docker testing
 
-A Fedora and Ubuntu 24.04 container are available for testing the setup
+A Fedora, Ubuntu 24.04, and Arch container are available for testing the setup
 in a clean environment without touching your host.
 
 ```bash
@@ -168,10 +169,20 @@ bash docker/run.sh -d ubuntu -t slim
 
 # Run full setup in a Fedora container
 bash docker/run.sh -d fedora -t full
+
+# Run server setup in an Arch container
+bash docker/run.sh -d arch -t server
 ```
 
 `docker/run.sh` starts the selected container, runs `setup.sh` with the chosen
 profile, and then drops you into a shell inside the configured environment.
+
+Use `docker/test.sh` to recreate a selected container, run a profile twice, and
+assert its commands, login shell, and Stow links:
+
+```bash
+bash docker/test.sh -d arch -p server
+```
 
 Equivalent manual commands inside the container:
 
@@ -187,6 +198,7 @@ bash /home/devuser/code/dotfiles/setup.sh --full --update
 # Connect to a running container
 docker compose -f docker/compose.yml exec dotfiles-fedora bash
 docker compose -f docker/compose.yml exec dotfiles-ubuntu bash
+docker compose -f docker/compose.yml exec dotfiles-arch bash
 
 # Stop and remove containers
 docker compose -f docker/compose.yml down
@@ -194,6 +206,7 @@ docker compose -f docker/compose.yml down
 # Remove images
 docker rmi auek/dotfiles:fedora
 docker rmi auek/dotfiles:ubuntu
+docker rmi auek/dotfiles:arch
 ```
 
 See `docs/setup_wsl.md` for WSL2-specific setup notes and workarounds.

@@ -1,7 +1,8 @@
 # Implementation Plan: Arch Linux container support
 
-Status: in progress. The container harness is being consolidated under
-`docker/`; Arch support and an Arch container test are not implemented yet.
+Status: in progress. Arch detection, the container service, and the repeatable
+test runner are implemented. Arch `server`, `slim`, and `full` profiles have
+been verified in the container; Fedora and Ubuntu regression tests remain.
 
 ## Goal
 
@@ -19,14 +20,10 @@ The container test should answer:
 
 ## Current state
 
-The repository already has Fedora and Ubuntu test images, Compose services, and
-`docker/run.sh` support. Arch cannot currently use that harness:
-
-- `setup.sh` accepts only Fedora and Ubuntu/Debian.
-- Package names and installation branches are hard-coded for DNF and APT.
-- `docker/run.sh` accepts only `fedora` and `ubuntu`.
-- `docker/compose.yml` has no Arch service.
-- There is no `docker/Dockerfile.arch`.
+The repository has Fedora, Ubuntu, and Arch test images, Compose services, and
+`docker/run.sh` support. `setup.sh` detects Arch and installs profile packages
+with Pacman. `docker/test.sh` recreates a selected service, runs its profile
+twice, and checks commands, login shell, and Stow links.
 
 The `Makefile` and Stow package layout are distro-neutral. Most configuration
 files can therefore be exercised on Arch once the required packages exist.
@@ -67,8 +64,8 @@ arch)
   PKG_MANAGER="pacman"
   PKG_INSTALL="sudo pacman -S --needed --noconfirm"
   PKG_SERVER="curl git make stow tmux vim"
-  PKG_COMMON="curl github-cli git gcc libatomic make python-pipx python-pip stow tmux unzip zsh"
-  PKG_OPTIONAL="eza fd fzf htop bat ripgrep openssh sqlite fastfetch"
+  PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh"
+  PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite fastfetch"
   info "Detected: Arch Linux"
   ;;
 ```
@@ -82,7 +79,7 @@ The Arch package names above were verified against the official repositories on
 | pipx | `python-pipx` |
 | pip | `python-pip` |
 | `fd` | `fd` |
-| SSH client | `openssh` |
+| SSH client and `ssh-agent` plugin | `openssh` |
 | SQLite CLI | `sqlite` |
 
 ### Pacman update policy
@@ -221,7 +218,7 @@ Verify:
 
 - optional package commands such as `eza`, `fd`, `fzf`, `htop`, `bat`, `rg`,
   `ssh`, `sqlite3`, and `fastfetch` exist
-- Bob installs a working stable Neovim
+- the native Neovim package starts headlessly with the managed configuration
 - NVM and Node LTS install
 - `uv`, `tldr`, and `llm` are discoverable in the effective login-shell `PATH`
 - Neovim starts headlessly with the managed configuration
@@ -279,7 +276,7 @@ Fedora remains available throughout as the known-good fallback.
 - `docker/run.sh`
 - `README.md`
 - `AGENTS.md`
-- `scripts/` test helper (new, if assertions are not added to the runner)
+- `docker/test.sh`
 
 ## Exit criteria
 

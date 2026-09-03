@@ -36,7 +36,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 
 ## Prerequisites
 
-- Arch Linux, Fedora 42+, or Ubuntu 22.04+
+- Arch Linux, Fedora 42+, or Ubuntu 24.04+
 - `git`
 - Docker / Podman (optional, for container-based testing)
 
@@ -75,7 +75,7 @@ bash setup.sh --full --update   # first-time bootstrap: also upgrades all system
 
 ## Supported environments
 
-- Native Fedora 42+ and Ubuntu 22.04+
+- Native Fedora 42+ and Ubuntu 24.04+
 - Fedora 42+ under WSL2
 
 WSL-specific behavior should only apply when runtime detection confirms WSL.

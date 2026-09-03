@@ -5,7 +5,7 @@ Technical reference for AI coding assistants working in this repository.
 ## Purpose
 
 This repo bootstraps a personal development environment on Arch Linux, Fedora
-42+, and Ubuntu 22.04+. It uses GNU Stow for dotfile symlinking and a single Bash
+42+, and Ubuntu 24.04+. It uses GNU Stow for dotfile symlinking and a single Bash
 script (`setup.sh`) for installation.
 
 It supports both native Linux and WSL2 environments. The base install flow is

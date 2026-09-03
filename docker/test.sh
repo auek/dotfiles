@@ -63,7 +63,7 @@ else
   run 'test -d "$HOME/.local/share" && test ! -L "$HOME/.local/share"'
   run 'test -L "$HOME/.local/bin/theme-set"'
   run 'test -f "$HOME/.local/share/dotfiles/themes/everforest/foot.ini"'
-  run 'command -v gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh'
+  run 'command -v fastfetch gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh'
   run 'test "$(readlink -f "$(getent passwd devuser | cut -d: -f7)")" = "$(readlink -f "$(command -v zsh)")"'
   run 'test "$(readlink -f "$HOME/.zshrc")" = /home/devuser/code/dotfiles/packages/zshrc/.zshrc'
   run 'zsh -lic exit'

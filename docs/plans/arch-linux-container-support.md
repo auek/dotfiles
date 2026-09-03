@@ -64,8 +64,8 @@ arch)
   PKG_MANAGER="pacman"
   PKG_INSTALL="sudo pacman -S --needed --noconfirm"
   PKG_SERVER="curl git make stow tmux vim"
-  PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh"
-  PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite fastfetch"
+  PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh fastfetch"
+  PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite"
   info "Detected: Arch Linux"
   ;;
 ```

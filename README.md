@@ -86,7 +86,7 @@ Native Linux should not inherit WSL-only settings or workarounds.
 | Flag | What it installs |
 |---|---|
 | `--server` | curl, git, make, stow, tmux, vim, minimal Bash config, minimal Vim config, server tmux config |
-| `--slim` | curl, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
+| `--slim` | curl, fastfetch, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, native Neovim on Arch/Fedora, Bob stable Neovim on Ubuntu/Debian, nvm, node LTS, uv, tldr, llm |
 
 After installation, restart your shell:

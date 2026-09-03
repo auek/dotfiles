@@ -78,24 +78,24 @@ case "$ID" in
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat neovim ripgrep openssh-clients sqlite fastfetch"
+    PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh fastfetch"
+    PKG_OPTIONAL="eza fd-find fzf htop bat neovim ripgrep openssh-clients sqlite"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3 fastfetch"
+    PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh fastfetch"
+    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3"
     info "Detected: $PRETTY_NAME"
     ;;
   arch)
     PKG_MANAGER="pacman"
     PKG_INSTALL="sudo pacman -S --needed --noconfirm"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite fastfetch"
+    PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh fastfetch"
+    PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite"
     info "Detected: $PRETTY_NAME"
     ;;
   *)

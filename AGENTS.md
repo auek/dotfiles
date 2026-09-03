@@ -18,10 +18,11 @@ live in `docs/setup_wsl.md`.
 dotfiles/
 ├── setup.sh                  # Main bootstrap script
 ├── Makefile                  # Stow link/unlink targets
-├── docker-run.sh             # Drop into a test container
-├── docker-compose.yml        # Fedora 42+ + Ubuntu 24.04 test containers
-├── Dockerfile.fedora
-├── Dockerfile.ubuntu
+├── docker/                   # Container test harness
+│   ├── compose.yml           # Fedora 42+ + Ubuntu 24.04 test containers
+│   ├── Dockerfile.fedora
+│   ├── Dockerfile.ubuntu
+│   └── run.sh                # Drop into a test container
 ├── docs/                     # Project documentation and backlog
 │   ├── INBOX.md              # Triage intake — process and clear regularly
 │   ├── backlog.md            # Deferred ideas and planned features
@@ -145,8 +146,8 @@ templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
 Use the provided Docker/Podman containers for clean environment testing:
 
 ```bash
-bash docker-run.sh -d fedora   # drop into Fedora container
-bash docker-run.sh -d ubuntu   # drop into Ubuntu 24.04 container
+bash docker/run.sh -d fedora   # drop into Fedora container
+bash docker/run.sh -d ubuntu   # drop into Ubuntu 24.04 container
 ```
 
 Primary test target is **Fedora 42+**. See `docs/setup_wsl.md` for WSL2-specific notes.

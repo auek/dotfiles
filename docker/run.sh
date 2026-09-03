@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE_FILE="$SCRIPT_DIR/compose.yml"
+
 # Default values for options
 distro="ubuntu"
 profile="slim"
@@ -68,8 +71,8 @@ if [ "$distro" == "" ]; then
 fi
 
 if [ "$distro" == "ubuntu" ] || [ "$distro" == "fedora" ]; then
-  docker compose up -d "dotfiles-$distro" &&
-    docker compose exec "dotfiles-$distro" bash -lc "bash /home/devuser/code/dotfiles/setup.sh --$profile && exec bash"
+  docker compose -f "$COMPOSE_FILE" up -d "dotfiles-$distro" &&
+    docker compose -f "$COMPOSE_FILE" exec "dotfiles-$distro" bash -lc "bash /home/devuser/code/dotfiles/setup.sh --$profile && exec bash"
 else
   printf "Invalid distro: %s. Please use 'ubuntu' or 'fedora'.\n" "$distro"
   exit 1

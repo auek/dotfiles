@@ -161,16 +161,16 @@ in a clean environment without touching your host.
 
 ```bash
 # Run server setup in a Fedora container
-bash docker-run.sh -d fedora -t server
+bash docker/run.sh -d fedora -t server
 
 # Run slim setup in an Ubuntu container
-bash docker-run.sh -d ubuntu -t slim
+bash docker/run.sh -d ubuntu -t slim
 
 # Run full setup in a Fedora container
-bash docker-run.sh -d fedora -t full
+bash docker/run.sh -d fedora -t full
 ```
 
-`docker-run.sh` starts the selected container, runs `setup.sh` with the chosen
+`docker/run.sh` starts the selected container, runs `setup.sh` with the chosen
 profile, and then drops you into a shell inside the configured environment.
 
 Equivalent manual commands inside the container:
@@ -185,11 +185,11 @@ bash /home/devuser/code/dotfiles/setup.sh --full --update
 
 ```bash
 # Connect to a running container
-docker compose exec dotfiles-fedora bash
-docker compose exec dotfiles-ubuntu bash
+docker compose -f docker/compose.yml exec dotfiles-fedora bash
+docker compose -f docker/compose.yml exec dotfiles-ubuntu bash
 
 # Stop and remove containers
-docker compose down
+docker compose -f docker/compose.yml down
 
 # Remove images
 docker rmi auek/dotfiles:fedora

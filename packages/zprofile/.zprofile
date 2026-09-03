@@ -1,7 +1,14 @@
 #!/usr/bin/env zsh
 #
 # PATH
-export PATH="$HOME/.local/state/bob/nvim-bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Bob supplies current Neovim on Ubuntu/Debian; other supported distros use
+# their native Neovim package.
+if [[ -x "$HOME/.local/state/bob/nvim-bin/nvim" ]] && \
+    grep -qE '^ID=(ubuntu|debian)$' /etc/os-release 2>/dev/null; then
+  export PATH="$HOME/.local/state/bob/nvim-bin:$PATH"
+fi
 
 # Preferred editor
 if command -v nvim >/dev/null 2>&1; then

@@ -44,15 +44,32 @@ run() {
   compose exec -T "$SERVICE" bash -lc "$1"
 }
 
+require_commands() {
+  local command_name
+
+  for command_name in "$@"; do
+    run "command -v $command_name >/dev/null"
+  done
+}
+
+require_zsh_commands() {
+  local command_name
+
+  for command_name in "$@"; do
+    run "zsh -lic 'command -v $command_name >/dev/null'"
+  done
+}
+
 compose rm -sf "$SERVICE" >/dev/null 2>&1 || true
 compose up -d --build "$SERVICE"
 
 run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE"
 run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE"
 
-run 'command -v curl git make stow tmux vim'
+require_commands curl git make stow tmux
 
 if [ "$PROFILE" = "server" ]; then
+  require_commands vim
   run 'test "$(getent passwd devuser | cut -d: -f7)" = /bin/bash'
   run 'test "$(readlink -f "$HOME/.bashrc")" = /home/devuser/code/dotfiles/packages/bashrc-server/.bashrc'
   run 'test "$(readlink -f "$HOME/.vimrc")" = /home/devuser/code/dotfiles/packages/vim-server/.vimrc'
@@ -63,15 +80,21 @@ else
   run 'test -d "$HOME/.local/share" && test ! -L "$HOME/.local/share"'
   run 'test -L "$HOME/.local/bin/theme-set"'
   run 'test -f "$HOME/.local/share/dotfiles/themes/everforest/foot.ini"'
-  run 'command -v fastfetch gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh'
+  require_commands gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh
+  if [ "$DISTRO" != "ubuntu" ]; then
+    require_commands fastfetch
+  fi
   run 'test "$(readlink -f "$(getent passwd devuser | cut -d: -f7)")" = "$(readlink -f "$(command -v zsh)")"'
   run 'test "$(readlink -f "$HOME/.zshrc")" = /home/devuser/code/dotfiles/packages/zshrc/.zshrc'
   run 'zsh -lic exit'
 fi
 
 if [ "$PROFILE" = "full" ]; then
-  run 'command -v eza fd fzf htop bat rg ssh sqlite3 fastfetch nvim'
-  run 'zsh -lic "command -v node npm npx uv tldr llm"'
+  require_commands eza fd fzf htop bat rg ssh sqlite3 nvim
+  if [ "$DISTRO" != "ubuntu" ]; then
+    require_commands fastfetch
+  fi
+  require_zsh_commands node npm npx uv tldr llm
 fi
 
 echo "[test] $DISTRO $PROFILE passed"

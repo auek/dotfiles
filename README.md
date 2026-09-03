@@ -89,6 +89,9 @@ Native Linux should not inherit WSL-only settings or workarounds.
 | `--slim` | curl, fastfetch, gh, git, gcc, make, stow, tmux, zsh, Oh My Zsh, zsh-autosuggestions, dotfiles |
 | `--full` | Everything in slim + Podman + Docker-compatible CLI on native Fedora, eza, fzf, ripgrep, bat, htop, native Neovim on Arch/Fedora, Bob stable Neovim on Ubuntu/Debian, nvm, node LTS, uv, tldr, llm |
 
+`fastfetch` is installed from the distro package manager on Arch and Fedora; it
+is not available in the Ubuntu 24.04 repositories and is skipped there.
+
 After installation, restart your shell:
 
 ```bash

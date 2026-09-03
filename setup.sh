@@ -86,7 +86,7 @@ case "$ID" in
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh fastfetch"
+    PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3"
     info "Detected: $PRETTY_NAME"
     ;;

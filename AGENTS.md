@@ -71,7 +71,7 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
-`wofi`, `mako`, `opencode`, `claude`, and `espanso`. Server packages use
+`wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.
 

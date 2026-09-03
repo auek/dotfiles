@@ -1,8 +1,9 @@
 # Theme Switching Follow-ups
 
 Status: complete. Started 2026-08-31. Milestone 1 merged via PR #56,
-milestone 2 via PR #57, and milestone 3 via PR #61. Remote Neovim reload
-remains deferred, blocked on a Neovim build with `clientserver`. Flash-free
+milestone 2 via PR #57, and milestone 3 via PR #61. Remote Neovim reload via
+Vim's `clientserver` model or Neovim RPC is deliberately out of scope: the
+local `:ReloadTheme` command and focus-based reload are sufficient. Flash-free
 wallpaper transitions require a persistent renderer and remain in the backlog.
 
 ## Goal
@@ -177,9 +178,11 @@ process matching.
 Do not send Unix signals to arbitrary Neovim processes. `:ReloadTheme` safely
 reapplies the colorscheme and dependent plugin configuration in one instance;
 the focus-based auto-reapply uses the same path and only fires when the
-fragment's resolved target or mtime changes. This Neovim build lacks
-`clientserver`, so remote `--remote-send` reload is not available and remains
-out of scope.
+fragment's resolved target or mtime changes. Remote control through Vim's
+`clientserver` model or Neovim RPC (for example, `--server` and
+`--remote-send`) is intentionally not implemented. It would require managing
+and discovering per-instance server sockets for little benefit in this personal
+configuration.
 
 Foot has no config-file reload. Live updates are implemented by writing OSC
 color sequences (foreground, background, cursor, selection, and the 16-color
@@ -202,8 +205,9 @@ target and mtime. Foot
 live updates are handled by `foot-reload`, which sends OSC color sequences to
 each running Foot terminal's pty.
 Each reload is independent and best-effort; failures warn without reverting the
-selection. Remote reload for running Neovim instances remains deferred because
-the installed Neovim lacks `clientserver`.
+selection. Remote reload for running Neovim instances remains intentionally
+unimplemented: `:ReloadTheme` and focus-based reload cover the useful cases
+without per-instance RPC socket management.
 
 ### Acceptance Criteria
 

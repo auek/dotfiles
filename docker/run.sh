@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE_FILE="$SCRIPT_DIR/compose.yml"
+
 # Default values for options
 distro="ubuntu"
 profile="slim"
@@ -11,7 +14,7 @@ usage() {
   echo
   echo "Options:"
   echo "  -h, --help              Show this help message"
-  echo "  -d, --distro <distro>   Specify distribution (ubuntu|fedora)"
+  echo "  -d, --distro <distro>   Specify distribution (arch|fedora|ubuntu)"
   echo "                          Default: ubuntu"
   echo "  -t, --tags <profile>    Specify installation profile:"
   echo "                          - server: Minimal remote/headless server install"
@@ -20,6 +23,7 @@ usage() {
   echo
   echo "Examples:"
   echo "  $0                      # Run slim setup in ubuntu container"
+  echo "  $0 -d arch              # Run slim setup in Arch container"
   echo "  $0 -d fedora            # Run slim setup in fedora container"
   echo "  $0 -d fedora -t server  # Run server setup in fedora container"
   echo "  $0 -d ubuntu -t full    # Run full setup in ubuntu container"
@@ -63,14 +67,14 @@ fi
 
 # Validate distro
 if [ "$distro" == "" ]; then
-  printf "Please provide a distro argument. Use 'ubuntu' or 'fedora'.\n"
+  printf "Please provide a distro argument. Use 'arch', 'fedora', or 'ubuntu'.\n"
   exit 1
 fi
 
-if [ "$distro" == "ubuntu" ] || [ "$distro" == "fedora" ]; then
-  docker compose up -d "dotfiles-$distro" &&
-    docker compose exec "dotfiles-$distro" bash -lc "bash /home/devuser/code/dotfiles/setup.sh --$profile && exec bash"
+if [ "$distro" == "arch" ] || [ "$distro" == "ubuntu" ] || [ "$distro" == "fedora" ]; then
+  docker compose -f "$COMPOSE_FILE" up -d "dotfiles-$distro" &&
+    docker compose -f "$COMPOSE_FILE" exec "dotfiles-$distro" bash -lc "bash /home/devuser/code/dotfiles/setup.sh --$profile && exec bash"
 else
-  printf "Invalid distro: %s. Please use 'ubuntu' or 'fedora'.\n" "$distro"
+  printf "Invalid distro: %s. Please use 'arch', 'fedora', or 'ubuntu'.\n" "$distro"
   exit 1
 fi

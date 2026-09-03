@@ -1,7 +1,8 @@
 # Implementation Plan: Arch Linux container support
 
-Status: later. Retained without a current implementation commitment; no Arch
-support or container test has been implemented yet.
+Status: in progress. Arch detection, the container service, and the repeatable
+test runner are implemented. Arch `server`, `slim`, and `full` profiles have
+been verified in the container; Fedora and Ubuntu regression tests remain.
 
 ## Goal
 
@@ -19,14 +20,10 @@ The container test should answer:
 
 ## Current state
 
-The repository already has Fedora and Ubuntu test images, Compose services, and
-`docker-run.sh` support. Arch cannot currently use that harness:
-
-- `setup.sh` accepts only Fedora and Ubuntu/Debian.
-- Package names and installation branches are hard-coded for DNF and APT.
-- `docker-run.sh` accepts only `fedora` and `ubuntu`.
-- `docker-compose.yml` has no Arch service.
-- There is no `Dockerfile.arch`.
+The repository has Fedora, Ubuntu, and Arch test images, Compose services, and
+`docker/run.sh` support. `setup.sh` detects Arch and installs profile packages
+with Pacman. `docker/test.sh` recreates a selected service, runs its profile
+twice, and checks commands, login shell, and Stow links.
 
 The `Makefile` and Stow package layout are distro-neutral. Most configuration
 files can therefore be exercised on Arch once the required packages exist.
@@ -39,7 +36,7 @@ files can therefore be exercised on Arch once the required packages exist.
 - Pacman package mappings for all three profiles
 - correct Arch full-upgrade behavior without partial upgrades
 - an Arch test image and Compose service
-- Arch support in `docker-run.sh`
+- Arch support in `docker/run.sh`
 - clean-install and idempotency tests for `server`, `slim`, and `full`
 - explicit assertions for installed commands, login shell, and Stow links
 - documentation updates for Arch support and container commands
@@ -67,8 +64,8 @@ arch)
   PKG_MANAGER="pacman"
   PKG_INSTALL="sudo pacman -S --needed --noconfirm"
   PKG_SERVER="curl git make stow tmux vim"
-  PKG_COMMON="curl github-cli git gcc libatomic make python-pipx python-pip stow tmux unzip zsh"
-  PKG_OPTIONAL="eza fd fzf htop bat ripgrep openssh sqlite fastfetch"
+  PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh fastfetch"
+  PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite"
   info "Detected: Arch Linux"
   ;;
 ```
@@ -82,7 +79,7 @@ The Arch package names above were verified against the official repositories on
 | pipx | `python-pipx` |
 | pip | `python-pip` |
 | `fd` | `fd` |
-| SSH client | `openssh` |
+| SSH client and `ssh-agent` plugin | `openssh` |
 | SQLite CLI | `sqlite` |
 
 ### Pacman update policy
@@ -116,7 +113,7 @@ Docker container cannot meaningfully validate rootless Podman integration.
 Update the unsupported-distro error so it lists Arch, Fedora, and
 Ubuntu/Debian.
 
-### 2. Add `Dockerfile.arch`
+### 2. Add `docker/Dockerfile.arch`
 
 Base the image on `archlinux:base` and follow the existing Fedora image's user
 model:
@@ -134,10 +131,10 @@ must perform that work so the test exercises the real bootstrap path.
 
 ### 3. Extend Compose and the runner
 
-Add `dotfiles-arch` to `docker-compose.yml` with the same repository bind mount
+Add `dotfiles-arch` to `docker/compose.yml` with the same repository bind mount
 and interactive settings as the Fedora and Ubuntu services.
 
-Extend `docker-run.sh` so:
+Extend `docker/run.sh` so:
 
 - help and examples list `arch`
 - validation accepts `arch`
@@ -147,9 +144,9 @@ Extend `docker-run.sh` so:
 Example target commands:
 
 ```bash
-bash docker-run.sh -d arch -t server
-bash docker-run.sh -d arch -t slim
-bash docker-run.sh -d arch -t full
+bash docker/run.sh -d arch -t server
+bash docker/run.sh -d arch -t slim
+bash docker/run.sh -d arch -t full
 ```
 
 ### 4. Add repeatable assertions
@@ -164,7 +161,7 @@ run. Add a small noninteractive test path or script that can:
 - run the same profile again to test idempotency
 - return a non-zero status when an assertion fails
 
-Keep manual interactive access in `docker-run.sh`; do not replace it with the
+Keep manual interactive access in `docker/run.sh`; do not replace it with the
 test-only path.
 
 ## Test protocol
@@ -175,7 +172,7 @@ Run before container tests:
 
 ```bash
 bash -n setup.sh
-bash -n docker-run.sh
+bash -n docker/run.sh
 ```
 
 Run ShellCheck as well if it is already available on the host. Do not make a new
@@ -221,7 +218,7 @@ Verify:
 
 - optional package commands such as `eza`, `fd`, `fzf`, `htop`, `bat`, `rg`,
   `ssh`, `sqlite3`, and `fastfetch` exist
-- Bob installs a working stable Neovim
+- the native Neovim package starts headlessly with the managed configuration
 - NVM and Node LTS install
 - `uv`, `tldr`, and `llm` are discoverable in the effective login-shell `PATH`
 - Neovim starts headlessly with the managed configuration
@@ -274,12 +271,12 @@ Fedora remains available throughout as the known-good fallback.
 ## Files expected to change
 
 - `setup.sh`
-- `Dockerfile.arch` (new)
-- `docker-compose.yml`
-- `docker-run.sh`
+- `docker/Dockerfile.arch` (new)
+- `docker/compose.yml`
+- `docker/run.sh`
 - `README.md`
 - `AGENTS.md`
-- `scripts/` test helper (new, if assertions are not added to the runner)
+- `docker/test.sh`
 
 ## Exit criteria
 

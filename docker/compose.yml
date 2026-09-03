@@ -1,0 +1,34 @@
+services:
+  dotfiles-ubuntu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ubuntu
+    image: auek/dotfiles:ubuntu
+    container_name: dotfiles-ubuntu
+    volumes:
+      - ../:/home/devuser/code/dotfiles:Z
+    # Keep container running
+    tty: true
+    stdin_open: true
+  dotfiles-fedora:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.fedora
+    image: auek/dotfiles:fedora
+    container_name: dotfiles-fedora
+    volumes:
+      - ../:/home/devuser/code/dotfiles:Z
+    # Keep container running
+    tty: true
+    stdin_open: true
+  dotfiles-arch:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.arch
+    image: auek/dotfiles:arch
+    container_name: dotfiles-arch
+    volumes:
+      - ../:/home/devuser/code/dotfiles:Z
+    # Keep container running
+    tty: true
+    stdin_open: true

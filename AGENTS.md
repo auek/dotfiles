@@ -4,8 +4,8 @@ Technical reference for AI coding assistants working in this repository.
 
 ## Purpose
 
-This repo bootstraps a personal development environment on Fedora 42+ and
-Ubuntu 22.04+. It uses GNU Stow for dotfile symlinking and a single Bash
+This repo bootstraps a personal development environment on Arch Linux, Fedora
+42+, and Ubuntu 24.04+. It uses GNU Stow for dotfile symlinking and a single Bash
 script (`setup.sh`) for installation.
 
 It supports both native Linux and WSL2 environments. The base install flow is
@@ -18,10 +18,13 @@ live in `docs/setup_wsl.md`.
 dotfiles/
 ├── setup.sh                  # Main bootstrap script
 ├── Makefile                  # Stow link/unlink targets
-├── docker-run.sh             # Drop into a test container
-├── docker-compose.yml        # Fedora 42+ + Ubuntu 24.04 test containers
-├── Dockerfile.fedora
-├── Dockerfile.ubuntu
+├── docker/                   # Container test harness
+│   ├── compose.yml           # Arch, Fedora 42+, and Ubuntu 24.04 test containers
+│   ├── Dockerfile.arch
+│   ├── Dockerfile.fedora
+│   ├── Dockerfile.ubuntu
+│   ├── run.sh                # Drop into a test container
+│   └── test.sh               # Recreate and validate a setup profile
 ├── docs/                     # Project documentation and backlog
 │   ├── INBOX.md              # Triage intake — process and clear regularly
 │   ├── backlog.md            # Deferred ideas and planned features
@@ -41,6 +44,7 @@ dotfiles/
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
+    ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs plus theme-set, swaybg-current, and foot-reload commands
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
@@ -67,7 +71,7 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
-`wofi`, `mako`, `opencode`, `claude`, and `espanso`. Server packages use
+`wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.
 
@@ -145,8 +149,9 @@ templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
 Use the provided Docker/Podman containers for clean environment testing:
 
 ```bash
-bash docker-run.sh -d fedora   # drop into Fedora container
-bash docker-run.sh -d ubuntu   # drop into Ubuntu 24.04 container
+bash docker/test.sh -d arch -p server  # validate Arch server setup twice
+bash docker/run.sh -d fedora            # drop into Fedora container
+bash docker/run.sh -d ubuntu            # drop into Ubuntu 24.04 container
 ```
 
 Primary test target is **Fedora 42+**. See `docs/setup_wsl.md` for WSL2-specific notes.

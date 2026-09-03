@@ -70,10 +70,10 @@ export DOCKER_HOST=unix:///run/user/${UID}/podman/podman.sock
 ### Verify everything works
 ```bash
 curl --unix-socket /run/user/${UID}/podman/podman.sock http://localhost/version
-bash docker-run.sh -d fedora
+bash docker/run.sh -d fedora
 ```
 
-The curl should return a JSON version response. The docker-run.sh should drop
+The curl should return a JSON version response. The docker runner should drop
 you into a container shell as `devuser`.
 
 ---

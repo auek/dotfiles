@@ -1,10 +1,11 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim foot themes hypr waybar wofi mako opencode claude espanso
+STOW_PACKAGES = zshrc zprofile tmux nvim foot themes hypr waybar wofi mako opencode claude espanso bob
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
 STOW_PACKAGES_FOOT = foot
 STOW_DIR = $(CURDIR)/packages
 STOW_TARGET = $(HOME)
-STOW = stow --dir=$(STOW_DIR) --target=$(STOW_TARGET)
+# Keep shared XDG directories writable for tools such as uv and pipx.
+STOW = stow --no-folding --dir=$(STOW_DIR) --target=$(STOW_TARGET)
 
 .PHONY: stow unstow restow stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check
 

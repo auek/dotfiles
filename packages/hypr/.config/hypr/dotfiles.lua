@@ -128,6 +128,10 @@ hl.config({
     kb_layout = "se",
     kb_variant = "us",
   },
+  cursor = {
+    no_warps = true,
+    hide_on_key_press = true,
+  },
   general = {
     gaps_in = 4,
     gaps_out = 8,

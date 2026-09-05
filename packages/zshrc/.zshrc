@@ -47,6 +47,8 @@ bindkey "\e\e[D" backward-word
 bindkey "\e\e[C" forward-word
 
 ### Functions ###
+# Retained for occasional commands that need a scoped secrets environment.
+# No current aliases or functions depend on it.
 with_secrets() {
   local secrets_file=~/.secrets/secrets_general
 
@@ -328,12 +330,12 @@ $payload"
   fi
   if (( accept_mode )); then
     if (( has_staged )); then
-      with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | git commit -F -
+      llm -s "$prompt" "$payload" | tee /dev/tty | git commit -F -
     else
-      with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | git commit -a -F -
+      llm -s "$prompt" "$payload" | tee /dev/tty | git commit -a -F -
     fi
   else
-    with_secrets llm -s "$prompt" "$payload" | tee /dev/tty | _copy
+    llm -s "$prompt" "$payload" | tee /dev/tty | _copy
   fi
 }
 
@@ -370,9 +372,6 @@ alias gco="git checkout"
 alias gcb="git checkout -b"
 alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
-
-# Secrets-wrapped commands
-alias llm='with_secrets llm'
 
 # SSH
 if [[ -z "$SSH_AUTH_SOCK" ]]; then

@@ -5,7 +5,7 @@ Windows support or Windows VM test has been implemented yet.
 
 ## Goal
 
-Create a disposable Windows 11 virtual machine on the Fedora host and use it to
+Create a disposable Windows 11 virtual machine on the Arch Linux host and use it to
 determine which dotfiles can reliably support a native-Windows, non-WSL Git
 Bash environment:
 
@@ -33,18 +33,18 @@ The experiment should answer:
 The repository officially supports native Fedora/Ubuntu and WSL2, not native
 Windows. The existing `setup.sh` must not be run from Git Bash.
 
-The Fedora host was checked on 2026-08-30 and is already capable of hosting the
-experiment:
+The Arch Linux host was checked on 2026-09-05 and has the hardware capacity for
+the experiment, but its VM stack has not yet been installed:
 
 | Resource | Available |
 |---|---|
-| Host | Fedora 44 |
+| Host | Arch Linux (rolling) |
 | CPU | Ryzen 5 7600X, 6 cores / 12 threads |
 | Virtualization | AMD-V and `/dev/kvm` available |
 | Memory | 30 GiB total |
-| Home storage | 249 GiB free |
-| VM stack | QEMU/KVM, GNOME Boxes, OVMF, and `swtpm` installed |
-| Optional UI | `virt-manager` not installed |
+| Home storage | 290 GiB free |
+| VM stack | Not installed; QEMU/KVM, libvirt, OVMF, and `swtpm` are available from Arch Extra |
+| VM manager | Not installed; use `virt-manager` |
 
 The target environment obtains tmux by extracting `tmux.exe` from the MSYS2
 `tmux` package and `msys-event-*.dll` from the MSYS2 `libevent` package, then
@@ -59,9 +59,35 @@ a Windows host and do not reproduce the interactive Mintty desktop environment.
 
 ### VM manager
 
-Start with GNOME Boxes because it is already installed. Use `virt-manager`
-instead if the experiment should include explicit control and inspection of
-firmware, TPM, storage controllers, networking, and snapshots.
+Use `virt-manager` with the system libvirt connection (`qemu:///system`). It
+provides the required control and inspection of firmware, TPM, storage
+controllers, networking, and snapshots. GNOME Boxes is not needed for this
+experiment.
+
+### Arch host preparation
+
+Install the host stack from the official repositories:
+
+```bash
+sudo pacman -S --needed qemu-desktop libvirt edk2-ovmf swtpm virt-manager dnsmasq
+```
+
+Start the libvirt and logging daemons, then verify the system connection and
+the default NAT network before creating the guest:
+
+```bash
+sudo systemctl enable --now libvirtd.service
+sudo systemctl start virtlogd.service
+virsh -c qemu:///system list --all
+sudo virsh net-list --all
+sudo virsh net-start default
+sudo virsh net-autostart default
+```
+
+Use standard polkit authentication for the system connection in `virt-manager`;
+confirm a graphical polkit agent is active if authentication cannot be
+completed. Do not weaken libvirt socket permissions or add a passwordless
+authorization rule solely for this disposable experiment.
 
 Suggested guest allocation:
 
@@ -116,7 +142,14 @@ period.
 
 ## Experiment
 
-### 1. Create the baseline VM
+### 1. Prepare the host
+
+1. Install and verify the Arch host stack above.
+2. Confirm `virsh -c qemu:///system list --all` succeeds and the `default` NAT
+   network is active.
+3. Open `virt-manager` and connect to `QEMU/KVM - system`.
+
+### 2. Create the baseline VM
 
 1. Download and verify the official Windows 11 Enterprise evaluation x64 ISO.
 2. Create the VM with the resource allocation above.
@@ -129,7 +162,7 @@ Clone the dotfiles repository inside the guest. Do not mount the Linux checkout
 as the primary working tree; a native clone is needed to expose Windows path,
 line-ending, executable, and symlink behavior.
 
-### 2. Reproduce Git Bash
+### 3. Reproduce Git Bash
 
 Install a pinned Git for Windows release, including Mintty. Record:
 
@@ -143,7 +176,7 @@ type -a bash mintty git
 
 Take a `git-bash-clean` snapshot before adding tmux or dotfiles.
 
-### 3. Reproduce and harden the tmux overlay
+### 4. Reproduce and harden the tmux overlay
 
 First reproduce the baseline installation using pinned package versions. Record
 the package filenames and SHA-256 checksums.
@@ -179,7 +212,7 @@ infocmp tmux-256color
 If `tmux-256color` is unavailable, test `xterm-256color` as the Git Bash-specific
 fallback. Do not change the Linux tmux profile solely for this environment.
 
-### 4. Test NVM lazy loading
+### 5. Test NVM lazy loading
 
 Use `nvm-sh`, not NVM for Windows, to test shell-local NVM behavior. The Bash
 loader should use `unset -f`, not Zsh's `unfunction`, and should wrap at least
@@ -213,7 +246,7 @@ Repeat the tests in:
 The tests must prove that direct `node`, `npm`, and `npx` calls cannot silently
 fall back to an unintended Node installation.
 
-### 5. Test tmux behavior
+### 6. Test tmux behavior
 
 Start with a new server rather than reusing state:
 
@@ -232,7 +265,7 @@ Verify:
 - native Windows CLI programs that require `winpty` are identified individually
 - killing and recreating the tmux server does not expose inherited `PATH` state
 
-### 6. Test upgrade resilience
+### 7. Test upgrade resilience
 
 Take a snapshot, upgrade Git for Windows, and repeat the Bash, tmux, terminfo,
 and NVM test matrix.

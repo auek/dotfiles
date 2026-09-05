@@ -29,27 +29,6 @@ return {
   --     vim.g.copilot_no_tab_map = true
   --   end,
   -- },
-  {
-    "Exafunction/windsurf.vim",
-    config = function()
-      -- disable by filetype
-      vim.g.codeium_filetypes = {
-        env = false,
-      }
-      -- disable by filename pattern (for secrets files)
-      vim.api.nvim_create_autocmd("BufEnter", {
-        pattern = { ".env", ".env.*", ".secrets", "*secret*", "*credential*", "*.pem", "*.key" },
-        callback = function() vim.cmd("CodeiumDisable") end,
-      })
-      vim.api.nvim_create_autocmd("BufLeave", {
-        pattern = { ".env", ".env.*", ".secrets", "*secret*", "*credential*", "*.pem", "*.key" },
-        callback = function() vim.cmd("CodeiumEnable") end,
-      })
-      vim.keymap.set("i", "<C-J>", function()
-        return vim.fn["codeium#Accept"]()
-      end, { expr = true, silent = true })
-    end,
-  },
   -- Comment.nvim
   {
     'numToStr/Comment.nvim',

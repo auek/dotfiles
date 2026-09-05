@@ -198,6 +198,16 @@ above registers the unit after linking the package.
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
 
+`Super+Shift+F` opens Nautilus. On Arch, install it with the Sushi quick
+previewer using:
+
+```bash
+sudo pacman -Syu --needed nautilus sushi
+```
+
+In Nautilus, select an image or supported document and press `Space` to preview
+it with Sushi; press `Space` or `Escape` to close the preview.
+
 The clipboard-history binding is `Super+V`. It opens a fuzzy Wofi picker for
 text and image entries; image entries are listed by type and size and restore
 the original image when selected. Clipboard history is retained only for the

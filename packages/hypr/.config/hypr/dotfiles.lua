@@ -38,7 +38,8 @@ hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 
 hl.on("hyprland.start", function()
-  hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR && systemctl --user start hyprland-session.target")
+  hl.exec_cmd(
+    "systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR && systemctl --user start hyprland-session.target")
   hl.exec_cmd("mako")
   hl.exec_cmd("lxqt-policykit-agent")
   hl.exec_cmd("hypridle")
@@ -130,6 +131,7 @@ hl.config({
   },
   cursor = {
     hide_on_key_press = true,
+    warp_on_change_workspace = 1,
   },
   general = {
     gaps_in = 4,
@@ -144,7 +146,7 @@ hl.config({
     rounding = 6,
     rounding_power = 2,
     active_opacity = 1.0,
-    inactive_opacity = 0.94,
+    inactive_opacity = 0.96,
     shadow = {
       enabled = true,
       range = 6,

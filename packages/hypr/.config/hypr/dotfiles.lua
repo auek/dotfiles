@@ -129,7 +129,6 @@ hl.config({
     kb_variant = "us",
   },
   cursor = {
-    no_warps = true,
     hide_on_key_press = true,
   },
   general = {
@@ -145,7 +144,7 @@ hl.config({
     rounding = 6,
     rounding_power = 2,
     active_opacity = 1.0,
-    inactive_opacity = 1.0,
+    inactive_opacity = 0.94,
     shadow = {
       enabled = true,
       range = 6,

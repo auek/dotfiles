@@ -30,7 +30,7 @@ dotfiles/
 │   ├── backlog.md            # Deferred ideas and planned features
 │   ├── plans/                # Detailed implementation plans
 │   │   └── archive/          # Completed plans kept for reference
-│   ├── setup_hyprland.md     # Fedora Hyprland manual setup
+│   ├── setup_hyprland.md     # Arch Linux Hyprland manual setup
 │   ├── setup_wsl.md          # WSL2-specific setup notes
 ├── scripts/                  # Repo-only utilities: theme generator, palettes, templates, misc scripts
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)

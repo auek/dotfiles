@@ -1,24 +1,19 @@
-# Hyprland Setup (Fedora 44+)
+# Hyprland Setup (Arch Linux)
 
-This is the current manual setup for the Fedora Hyprland workstation. Hyprland
-packages are deliberately not installed by `setup.sh`; a future opt-in
-`--hyprland` profile can automate this list once its scope is defined. Fedora
-44 is the minimum because it packages `cliphist`.
+This is the current manual setup for the Arch Linux Hyprland workstation.
+Hyprland packages are deliberately not installed by `setup.sh`; a future
+opt-in `--hyprland` profile can automate this list once its scope is defined.
 
 ## Install packages
 
-Enable the COPR that supplies the current Hyprland stack, then install the core
-components:
+Arch's official repositories provide the Hyprland stack and all session
+utilities used by the Stow-managed configuration:
 
 ```bash
-sudo dnf copr enable ashbuk/Hyprland-Fedora
-sudo dnf install hyprland hypridle xdg-desktop-portal-hyprland
-```
-
-Install the session utilities used by the Stow-managed configuration:
-
-```bash
-sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard cliphist
+sudo pacman -Syu --needed \
+  hyprland hypridle xdg-desktop-portal-hyprland \
+  foot mako lxqt-policykit waybar wofi swaybg \
+  grim slurp wl-clipboard cliphist nautilus sushi
 ```
 
 | Package | Purpose |
@@ -28,7 +23,7 @@ sudo dnf install foot mako lxpolkit waybar wofi swaybg grim slurp wl-clipboard c
 | `xdg-desktop-portal-hyprland` | Desktop portal backend for Hyprland |
 | `foot` | Default terminal emulator for the Hyprland configuration |
 | `mako` | Notification daemon |
-| `lxpolkit` | Polkit authentication agent |
+| `lxqt-policykit` | Polkit authentication agent (`lxqt-policykit-agent`) |
 | `waybar` | Top status bar with workspaces, window title, audio, network, tray, and clock |
 | `wofi` | Application launcher |
 | `swaybg` | Wallpaper renderer |
@@ -42,15 +37,11 @@ the Hyprland configuration.
 ## Install the GTK theme
 
 The `gtk` Stow package selects the external Everforest GTK theme for GTK3 and
-GTK4 applications. Install its Fedora build and compatibility dependencies:
+GTK4 applications. Install the CSS compiler required by the theme installer:
 
 ```bash
-sudo dnf install sassc gtk-murrine-engine
+sudo pacman -Syu --needed sassc
 ```
-
-The upstream generic requirements mention `gnome-themes-extra`, but Fedora 44
-does not publish that package. Its Fedora-specific requirements are the two
-packages above.
 
 Clone the theme, fetch its GTK3 parser fix from upstream PR #35, and pin the
 reviewed revision:
@@ -155,8 +146,8 @@ Save this as `~/.config/hypr/hyprland.lua`.
 
 The `hypr` Stow package also installs `hyprland-session.target`. The Lua
 configuration starts this user target with Hyprland and stops it during
-shutdown. This activates `graphical-session.target`, which Fedora's desktop
-portal services require. The target also starts `cliphist.service` (which
+shutdown. This activates `graphical-session.target`, which the desktop portal
+services require. The target also starts `cliphist.service` (which
 records text and image clipboard data only while Hyprland is running; its
 database is wiped on startup and shutdown) and `swaybg.service` (the wallpaper
 daemon). After linking the package, reload
@@ -198,15 +189,10 @@ above registers the unit after linking the package.
 The screenshot binding is `Print`. Drag to select a region; the resulting PNG
 is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
 
-`Super+Shift+F` opens Nautilus. On Arch, install it with the Sushi quick
-previewer using:
-
-```bash
-sudo pacman -Syu --needed nautilus sushi
-```
-
-In Nautilus, select an image or supported document and press `Space` to preview
-it with Sushi; press `Space` or `Escape` to close the preview.
+`Super+Shift+F` opens Nautilus. It and the Sushi quick previewer are installed
+by the package command above. In Nautilus, select an image or supported document
+and press `Space` to preview it with Sushi; press `Space` or `Escape` to close
+the preview.
 
 The clipboard-history binding is `Super+V`. It opens a fuzzy Wofi picker for
 text and image entries; image entries are listed by type and size and restore

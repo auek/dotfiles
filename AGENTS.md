@@ -40,7 +40,7 @@ dotfiles/
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
     ├── zshrc/.zshrc          # Zsh config
-    ├── zprofile/.zprofile    # Login shell environment
+    ├── zprofile/.zprofile    # Login shell environment and Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config

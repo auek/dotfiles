@@ -18,7 +18,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `zshrc` | Zsh config (Oh My Zsh, aliases, FZF, dev helpers) |
 | `bashrc-server` | Minimal Bash config for remote/headless server installs |
 | `vim-server` | Minimal Vim config for remote/headless server installs |
-| `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) |
+| `zprofile` | Login shell environment (PATH, NVM, DOCKER_HOST) and Arch tty1 Hyprland autostart |
 | `tmux` | tmux config (switchable theme, vi keys, Wayland session environment, WSL clipboard) |
 | `tmux-server` | tmux config for server installs (C-b prefix, no GUI clipboard assumptions) |
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |

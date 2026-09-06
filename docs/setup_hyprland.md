@@ -34,6 +34,14 @@ Mako's Stow-managed configuration uses the same Everforest colors, compact
 geometry, and urgency states as Waybar and Wofi. It is started automatically by
 the Hyprland configuration.
 
+## Start after login
+
+The Stow-managed `.zprofile` automatically runs `start-hyprland` after the
+user logs in locally on Arch's `tty1`. It does not run for SSH sessions, other
+virtual terminals, or login shells opened inside an existing graphical session.
+Exiting Hyprland returns to the TTY login prompt; use another virtual terminal
+for recovery when needed.
+
 ## Install the GTK theme
 
 The `gtk` Stow package selects the external Everforest GTK theme for GTK3 and

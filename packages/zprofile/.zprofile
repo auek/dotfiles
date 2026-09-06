@@ -19,6 +19,15 @@ elif command -v vim >/dev/null 2>&1; then
   export VISUAL="vim"
 fi
 
+# Start the graphical session after a local Arch login on tty1. The guards keep
+# SSH, other virtual terminals, and shells launched inside Hyprland unchanged.
+if grep -qx 'ID=arch' /etc/os-release 2>/dev/null && \
+    [[ -z "${SSH_CONNECTION:-}" && -z "${WAYLAND_DISPLAY:-}" && -z "${DISPLAY:-}" ]] && \
+    [[ "${XDG_VTNR:-}" == "1" ]] && \
+    command -v start-hyprland >/dev/null 2>&1; then
+  exec start-hyprland
+fi
+
 # Podman rootless socket (WSL2 workaround only)
 if grep -qi microsoft /proc/version 2>/dev/null; then
   [ -S "/run/user/${UID}/podman/podman.sock" ] && \

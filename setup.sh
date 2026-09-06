@@ -93,8 +93,8 @@ case "$ID" in
   arch)
     PKG_MANAGER="pacman"
     PKG_INSTALL="sudo pacman -S --needed --noconfirm"
-    PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl github-cli git gcc libatomic make openssh python-pipx python-pip stow tmux unzip zsh fastfetch"
+    PKG_SERVER="curl git less make stow tmux vim"
+    PKG_COMMON="curl github-cli git gcc libatomic less make openssh python-pipx python-pip stow tmux unzip zsh fastfetch"
     PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite"
     info "Detected: $PRETTY_NAME"
     ;;

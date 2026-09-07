@@ -11,17 +11,22 @@ Bash environment:
 
 ```text
 Windows 11
+├── Windows Terminal
+├── psmux (preferred native multiplexer candidate)
+│   └── Git Bash login shells
 └── Git for Windows
-    ├── Mintty
-    ├── Git Bash
-    ├── Git for Windows' MSYS runtime
-    └── tmux and libevent binaries borrowed from MSYS2
+    ├── Mintty (current-workflow comparison)
+    ├── Git Bash and its MSYS runtime
+    └── optional tmux and libevent binaries borrowed from MSYS2
 ```
 
 The experiment should answer:
 
 - Which Bash and tmux settings work in Git Bash without weakening Linux support?
-- Does transparent NVM lazy loading work in fresh Mintty shells and tmux panes?
+- Can the selected psmux setup from the physical work PC be reproduced with the
+  dotfiles while keeping Git Bash as the interactive shell?
+- Does transparent NVM lazy loading work in fresh Git Bash login shells and
+  psmux panes?
 - Can the MSYS2 tmux overlay be installed reproducibly without modifying the
   Git for Windows installation?
 - Which commands need Windows-specific guards or replacements?
@@ -46,7 +51,7 @@ the experiment, but its VM stack has not yet been installed:
 | VM stack | Not installed; QEMU/KVM, libvirt, OVMF, and `swtpm` are available from Arch Extra |
 | VM manager | Not installed; use `virt-manager` |
 
-The target environment obtains tmux by extracting `tmux.exe` from the MSYS2
+The current Git Bash tmux approach obtains tmux by extracting `tmux.exe` from the MSYS2
 `tmux` package and `msys-event-*.dll` from the MSYS2 `libevent` package, then
 placing them in Git for Windows' `usr/bin` directory. This works because Git for
 Windows already supplies additional dependencies, including its MSYS runtime
@@ -121,6 +126,7 @@ period.
 
 - Windows 11 VM creation and snapshots
 - Git for Windows, Git Bash, and Mintty
+- Windows Terminal and psmux with Git Bash login shells
 - the current MSYS2-derived tmux arrangement
 - a safer user-local tmux overlay experiment
 - Bash startup and NVM lazy-loading behavior
@@ -174,9 +180,36 @@ printf 'MSYSTEM=%s\nSHELL=%s\n' "$MSYSTEM" "$SHELL"
 type -a bash mintty git
 ```
 
-Take a `git-bash-clean` snapshot before adding tmux or dotfiles.
+Take a `git-bash-clean` snapshot before adding a multiplexer or dotfiles.
 
-### 4. Reproduce and harden the tmux overlay
+### 4. Reproduce the selected psmux setup
+
+Validate psmux viability on the physical work PC before starting this VM work.
+The VM does not need to establish whether psmux is a viable multiplexer; it
+reproduces the selected work setup so dotfile changes can be tested safely.
+
+Install the selected psmux release and use Windows Terminal to launch it.
+Configure Git Bash as psmux's default login shell in `~/.psmux.conf`:
+
+```tmux
+set -g default-shell "C:/Program Files/Git/bin/bash.exe" --login
+```
+
+Record the psmux and Git for Windows versions from the work trial. Verify that
+newly created panes and windows start Git Bash in the requested project
+directory, then test the dotfile integration:
+
+- Bash login startup and PATH initialization
+- pane/window navigation and tmux-compatible bindings
+- clipboard, mouse, colors, Unicode, and `$TERM`
+- Git for Windows SSH and interactive terminal tools
+- Node/NVM and Neovim behavior
+
+Treat the existing `.tmux.conf` as a compatibility input, not an assumed
+drop-in configuration. Record unsupported directives or behavior rather than
+weakening Linux tmux settings.
+
+### 5. Reproduce and harden the tmux overlay
 
 First reproduce the baseline installation using pinned package versions. Record
 the package filenames and SHA-256 checksums.
@@ -212,7 +245,7 @@ infocmp tmux-256color
 If `tmux-256color` is unavailable, test `xterm-256color` as the Git Bash-specific
 fallback. Do not change the Linux tmux profile solely for this environment.
 
-### 5. Test NVM lazy loading
+### 6. Test NVM lazy loading
 
 Use `nvm-sh`, not NVM for Windows, to test shell-local NVM behavior. The Bash
 loader should use `unset -f`, not Zsh's `unfunction`, and should wrap at least
@@ -237,42 +270,52 @@ printf 'NVM_DIR=%s\nNVM_BIN=%s\n' "$NVM_DIR" "$NVM_BIN"
 
 Repeat the tests in:
 
-- a new Mintty window with no tmux server
-- the first pane of a new tmux server
-- additional panes created before and after NVM loads
-- a new Mintty process attached to an existing tmux server
+- a fresh psmux session with no existing session state
+- the first pane of a new psmux session
+- additional psmux panes created before and after NVM loads
+- a new Windows Terminal process attached to an existing psmux session
 - a shell with a system or Windows Node installation already on `PATH`
+
+If the MSYS2 tmux overlay is installed for comparison, repeat the equivalent
+cases there.
 
 The tests must prove that direct `node`, `npm`, and `npx` calls cannot silently
 fall back to an unintended Node installation.
 
-### 6. Test tmux behavior
+### 7. Test multiplexer behavior
 
-Start with a new server rather than reusing state:
+Run the NVM and terminal checks in fresh psmux sessions and panes. If the
+MSYS2 tmux overlay is also installed, repeat the equivalent checks there for a
+direct comparison.
+
+Start with a new psmux session rather than reusing state:
 
 ```bash
-tmux -L dotfiles-test -f ~/.tmux.conf new-session
+psmux new-session -s dotfiles-test
 ```
 
 Verify:
 
 - Bash starts without a seven-second NVM delay in every pane
 - the expected Node version is selected on first use in every pane
-- pane and window navigation bindings work in Mintty
-- colors and `$TERM` are correct inside and outside tmux
+- pane and window navigation bindings work in psmux
+- colors and `$TERM` are correct inside and outside psmux
 - clipboard behavior either works or fails with a clear platform guard
 - Git for Windows `ssh` works without an unnecessary `winpty` wrapper
 - native Windows CLI programs that require `winpty` are identified individually
-- killing and recreating the tmux server does not expose inherited `PATH` state
+- killing and recreating the psmux session does not expose inherited `PATH` state
 
-### 7. Test upgrade resilience
+### 8. Test upgrade resilience
 
-Take a snapshot, upgrade Git for Windows, and repeat the Bash, tmux, terminfo,
-and NVM test matrix.
+Take a snapshot, upgrade Git for Windows and psmux, and repeat the Bash,
+multiplexer, terminfo, and NVM test matrix.
 
 The experiment fails the user-local overlay approach if a routine Git upgrade
 silently changes the Node selection, breaks DLL loading, or requires copying
 untracked files back into the Git installation directory.
+
+The psmux path fails if a routine Git for Windows or psmux upgrade breaks Git
+Bash startup, project-directory pane creation, or the tested terminal workflow.
 
 ## Expected repository design
 
@@ -280,7 +323,8 @@ Do not implement these changes until the experiment establishes the required
 guards and file layout. Likely follow-up work includes:
 
 - a dedicated `bashrc-git-bash` package or shared portable Bash fragment
-- a dedicated `tmux-git-bash` package derived from `tmux-server`
+- a Git-Bash psmux configuration, or a dedicated `tmux-git-bash` package
+  derived from `tmux-server` only if psmux is not viable
 - a repo-only Git Bash bootstrap script separate from `setup.sh`
 - pinned MSYS2 tmux/libevent package versions and checksums
 - static Bash syntax tests and optional Windows GitHub Actions coverage
@@ -294,11 +338,14 @@ clone may be more reliable than pretending the Linux Stow workflow is portable.
 
 The experiment is complete when:
 
-1. A clean VM can reproduce the target non-WSL Git Bash and tmux environment.
-2. tmux is installed from pinned, verified artifacts outside the Git install.
-3. Fresh shells and fresh tmux servers pass the NVM first-command matrix.
-4. Terminal capabilities and keybindings work without weakening Linux configs.
-5. A Git for Windows upgrade does not break the tested environment.
+1. A clean VM can reproduce the target non-WSL Git Bash and selected
+   multiplexer environment.
+2. The work trial has selected psmux or the MSYS2 tmux overlay, and the VM
+   reproduces that multiplexer with Git Bash login shells.
+3. Fresh shells and fresh psmux sessions pass the NVM first-command matrix.
+4. Terminal capabilities, keybindings, and project-directory pane creation
+   work without weakening Linux configs.
+5. A Git for Windows or psmux upgrade does not break the selected environment.
 6. The portable dotfile subset and required platform guards are documented.
 7. A follow-up implementation scope can be stated without guessing.
 

@@ -9,6 +9,11 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"
 
+if command -v less >/dev/null 2>&1; then
+  export PAGER=less
+  export LESS='-R'
+fi
+
 # NVM
 export NVM_DIR="$HOME/.nvm"
 [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"

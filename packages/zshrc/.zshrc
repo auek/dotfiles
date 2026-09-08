@@ -3,7 +3,7 @@
 ### Environment ###
 HISTFILE=~/.zsh_history
 HISTSIZE=500000
-SAVEHIST=500000
+SAVEHIST=400000
 
 export PATH="$HOME/.opencode/bin:$PATH"
 export PIP_REQUIRE_VIRTUALENV=true
@@ -20,8 +20,7 @@ export NVM_DIR="$HOME/.nvm"
 [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
 
 ### Shell Behavior ###
-setopt append_history
-setopt inc_append_history
+# Append commands immediately and import history from other shells.
 setopt share_history
 unsetopt beep
 unsetopt auto_cd

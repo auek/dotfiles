@@ -13,7 +13,7 @@ utilities used by the Stow-managed configuration:
 sudo pacman -Syu --needed \
   hyprland hypridle xdg-desktop-portal-hyprland \
   foot mako lxqt-policykit waybar wofi swaybg \
-  grim slurp wl-clipboard cliphist nautilus sushi
+  grim slurp wl-clipboard cliphist nautilus sushi playerctl
 ```
 
 | Package | Purpose |
@@ -29,6 +29,7 @@ sudo pacman -Syu --needed \
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
 | `cliphist` | Session-only clipboard history for text and images |
+| `playerctl` | Media-key controls and the `playerctld` daemon for most-recently-active player selection |
 
 Mako's Stow-managed configuration uses the same Everforest colors, compact
 geometry, and urgency states as Waybar and Wofi. It is started automatically by

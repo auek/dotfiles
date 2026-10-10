@@ -24,7 +24,7 @@ WSL-specific path documented in `docs/setup_wsl.md`.
 | `nvim` | Neovim config (switchable theme, Lazy.nvim, LSP, Treesitter, completion) |
 | `bob` | Bob Neovim version-manager configuration and runtime paths |
 | `foot` | Default Foot terminal configuration (zsh shell, switchable palette) |
-| `themes` | Gruvbox and Everforest packs (Foot, tmux, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set`, `foot-reload`, and `swaybg-current` |
+| `themes` | Gruvbox and Everforest packs (Foot, tmux including selectors, copy mode, menus and popups, Neovim, Waybar, Hyprland, Wofi, Mako, swaybg fallback, wallpaper) plus `theme-set`, `foot-reload`, and `swaybg-current` |
 | `gtk` | Opt-in GTK3/GTK4 settings and libadwaita imports for the external Everforest theme |
 | `hypr` | Hyprland Lua configuration (keybindings, activity-based media controls via playerctl/playerctld, theme-driven styling, wallpaper, idle policy, clipboard history, `hyprland-session.target`, and `swaybg.service`) |
 | `waybar` | Switchable Waybar status bar (Hyprland workspaces, window title, audio, network, tray, clock) |

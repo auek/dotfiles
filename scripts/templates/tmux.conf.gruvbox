@@ -13,6 +13,27 @@ set-option -g display-panes-colour "#$tmux_border"
 set-window-option -g clock-mode-colour "#$tmux_clock"
 set-window-option -g window-status-bell-style bg=#$tmux_bell_bg,fg=#$tmux_bell_fg
 
+# Explicit palette colours keep modes independent of tmux's built-in themes.
+set-window-option -g mode-style bg=#$tmux_current_fmt_bg,fg=#$tmux_selection_fg
+set-window-option -gq tree-mode-selection-style "#{E:mode-style}"
+set-window-option -gq tree-mode-border-style bg=#$background,fg=#$tmux_border
+set-window-option -gq tree-mode-preview-style "fg=#{?#{||:#{&&:#{pane_format},#{pane_active}},#{&&:#{window_format},#{window_active}}},#$tmux_accent,#$tmux_border}"
+set-window-option -gq copy-mode-match-style bg=#$regular6,fg=#$background
+set-window-option -gq copy-mode-current-match-style bg=#$regular5,fg=#$background
+set-window-option -gq copy-mode-mark-style bg=#$warning,fg=#$background
+set-window-option -gq copy-mode-line-number-style fg=#$muted
+set-window-option -gq copy-mode-current-line-number-style fg=#$accent
+set-window-option -gq switch-mode-match-style bg=#$regular6,fg=#$background
+set-window-option -gq menu-style bg=#$surface,fg=#$foreground
+set-window-option -gq menu-selected-style bg=#$tmux_current_fmt_bg,fg=#$tmux_selection_fg
+set-window-option -gq menu-border-style bg=#$surface,fg=#$border
+set-window-option -gq popup-style bg=#$surface,fg=#$foreground
+set-window-option -gq popup-border-style bg=#$surface,fg=#$border
+set-window-option -gq display-panes-border-style bg=#$background,fg=#$tmux_border
+set-window-option -gq pane-scrollbars-style bg=#$surface,fg=#$muted
+# The inside/outside fill format is only supported with tmux 3.8's tree styles.
+if-shell -F '#{!=:#{tree-mode-selection-style},}' 'set-window-option -g fill-character "#{?is_inside,#[bg=#$background] ,#[fg=#$muted]#[acs]~}"'
+
 set-option -g status-justify "left"
 set-option -g status-left-style none
 set-option -g status-left-length "80"

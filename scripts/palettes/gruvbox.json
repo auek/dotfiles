@@ -44,6 +44,7 @@
     "bright6": "8ec07c",
     "bright7": "fbf1c7",
     "tmux_panel_fg": "ebdbb2",
+    "tmux_selection_fg": "282828",
     "tmux_activity_bg": "282828",
     "tmux_activity_fg": "a89984",
     "tmux_current_bg": "d65d0e",

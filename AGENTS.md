@@ -46,7 +46,7 @@ dotfiles/
     ├── nvim/.config/nvim/    # Neovim config
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
-    ├── themes/.local/        # Theme packs plus theme-set, swaybg-current, and foot-reload commands
+    ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
     ├── hypr/.config/         # Hyprland Lua config, activity-based media controls, and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/
@@ -71,7 +71,8 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
-`wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. The `hypr` media
+`wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. The `themes` package
+also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media
 bindings use `playerctl` and `playerctld` to control the most recently active
 player. Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via

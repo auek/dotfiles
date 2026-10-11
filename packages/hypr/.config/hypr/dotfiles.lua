@@ -131,7 +131,9 @@ hl.animation({ leaf = "fadeOut", enabled = true, speed = 4, bezier = "easeInOutC
 hl.config({
   input = {
     kb_layout = "se",
+    kb_model = "pc105",
     kb_variant = "us",
+    kb_file = os.getenv("HOME") .. "/.config/hypr/keyboard.xkb",
   },
   cursor = {
     hide_on_key_press = true,

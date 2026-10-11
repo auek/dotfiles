@@ -48,7 +48,7 @@ dotfiles/
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
-    ├── hypr/.config/         # Hyprland Lua config, activity-based media controls, and session systemd units (cliphist, swaybg)
+    ├── hypr/.config/         # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
@@ -74,7 +74,8 @@ The default workstation packages are stowed to `$HOME` via `make stow`:
 `wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. The `themes` package
 also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media
 bindings use `playerctl` and `playerctld` to control the most recently active
-player. Server packages use
+player. The `hypr` package also supplies a Swedish (US) keymap with
+`Right Alt + E` for é and `Right Alt + Shift + E` for É. Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.
 

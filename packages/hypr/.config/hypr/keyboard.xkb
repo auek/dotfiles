@@ -1,0 +1,11 @@
+// Swedish (US), with Right Alt + E for é and Right Alt + Shift + E for É.
+xkb_keymap {
+    xkb_keycodes { include "evdev+aliases(qwerty)" };
+    xkb_types { include "complete" };
+    xkb_compatibility { include "complete" };
+    xkb_symbols {
+        include "pc+se(us)+inet(evdev)"
+        name[Group1] = "Swedish (US, accented E)";
+        key <AD03> { [ e, E, eacute, Eacute ] };
+    };
+};

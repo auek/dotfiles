@@ -7,9 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$SCRIPT_DIR/compose.yml"
 DISTRO="arch"
 PROFILE="server"
+HYPRLAND=""
 
 usage() {
-  echo "Usage: $0 [-d arch|fedora|ubuntu] [-p server|slim|full]"
+  echo "Usage: $0 [-d arch|fedora|ubuntu] [-p server|slim|full] [--hyprland]"
   exit 1
 }
 
@@ -26,6 +27,10 @@ while [ "$#" -gt 0 ]; do
     -h|--help)
       usage
       ;;
+    --hyprland)
+      HYPRLAND="--hyprland"
+      shift
+      ;;
     *)
       usage
       ;;
@@ -34,6 +39,9 @@ done
 
 case "$DISTRO" in arch|fedora|ubuntu) ;; *) usage ;; esac
 case "$PROFILE" in server|slim|full) ;; *) usage ;; esac
+if [ -n "$HYPRLAND" ] && { [ "$DISTRO" != "arch" ] || [ "$PROFILE" = "server" ]; }; then
+  usage
+fi
 
 SERVICE="dotfiles-$DISTRO"
 compose() {
@@ -63,8 +71,12 @@ require_zsh_commands() {
 compose rm -sf "$SERVICE" >/dev/null 2>&1 || true
 compose up -d --build "$SERVICE"
 
-run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE"
-run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE"
+run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE $HYPRLAND"
+if [ -n "$HYPRLAND" ]; then
+  # Seed a local customization to verify that a repeat bootstrap preserves it.
+  run 'printf "\n-- local customization\n" >> "$HOME/.config/hypr/hyprland.lua"'
+fi
+run "bash /home/devuser/code/dotfiles/setup.sh --$PROFILE $HYPRLAND"
 
 require_commands curl git make stow tmux
 
@@ -89,6 +101,18 @@ else
   run 'zsh -lic exit'
 fi
 
+if [ -n "$HYPRLAND" ]; then
+  require_commands Hyprland start-hyprland hypridle foot mako waybar wofi swaybg grim slurp wl-copy cliphist playerctl
+  run 'test -f "$HOME/.config/hypr/hyprland.lua" && test ! -L "$HOME/.config/hypr/hyprland.lua"'
+  run 'grep -qx -- "-- local customization" "$HOME/.config/hypr/hyprland.lua"'
+  run 'test -f "$HOME/.local/state/dotfiles/hyprland/autostart"'
+  run 'test -L "$HOME/.config/hypr/dotfiles.lua"'
+  run 'test -L "$HOME/.config/systemd/user/hyprland-session.target"'
+elif [ "$PROFILE" != "server" ]; then
+  run 'test ! -e "$HOME/.config/hypr/dotfiles.lua"'
+  run 'test ! -e "$HOME/.local/state/dotfiles/hyprland/autostart"'
+fi
+
 if [ "$PROFILE" = "full" ]; then
   require_commands eza fd fzf htop bat rg ssh sqlite3 nvim
   if [ "$DISTRO" != "ubuntu" ]; then
@@ -97,4 +121,4 @@ if [ "$PROFILE" = "full" ]; then
   require_zsh_commands node npm npx uv tldr llm
 fi
 
-echo "[test] $DISTRO $PROFILE passed"
+echo "[test] $DISTRO $PROFILE $HYPRLAND passed (bootstrap only; no graphical session)"

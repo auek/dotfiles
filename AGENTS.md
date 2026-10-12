@@ -208,8 +208,10 @@ zsh -n packages/zprofile/.zprofile
 make themes-check
 ```
 
-The Python checks use disposable homes and mocked commands under `/tmp/opencode`;
-they do not execute host setup, Stow, or service-manager operations.
+The Python checks use disposable homes and mocked commands in the system
+temporary directory; they do not execute host setup, Stow, or service-manager
+operations. Python's `tempfile` manages creation and cleanup, with no dependency
+on an agent-specific directory.
 
 `docker/run.sh -d <distro> -t <server|slim|full>` runs setup and opens a shell.
 For an already-running test container:

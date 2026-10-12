@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class BootstrapTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="hyprland-check-", dir="/tmp/opencode")
+        self.temp = tempfile.TemporaryDirectory(prefix="hyprland-check-")
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
         self.bin = self.home / "bin"

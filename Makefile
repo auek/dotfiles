@@ -1,4 +1,5 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim foot themes hypr waybar wofi mako opencode claude espanso bob
+STOW_PACKAGES = zshrc zprofile tmux nvim themes opencode claude espanso bob
+STOW_PACKAGES_HYPRLAND = foot hypr waybar wofi mako
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
 STOW_PACKAGES_FOOT = foot
@@ -7,7 +8,7 @@ STOW_TARGET = $(HOME)
 # Keep shared XDG directories writable for tools such as uv and pipx.
 STOW = stow --no-folding --dir=$(STOW_DIR) --target=$(STOW_TARGET)
 
-.PHONY: stow unstow restow stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check
+.PHONY: stow unstow restow stow-hyprland unstow-hyprland stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check
 
 themes-generate:
 	python3 scripts/generate-themes.py generate
@@ -26,6 +27,12 @@ unstow:
 	$(STOW) --delete $(STOW_PACKAGES)
 
 restow: stow
+
+stow-hyprland: stow
+	$(STOW) $(STOW_PACKAGES_HYPRLAND)
+
+unstow-hyprland:
+	$(STOW) --delete $(STOW_PACKAGES_HYPRLAND)
 
 stow-server:
 	$(STOW) --restow $(STOW_PACKAGES_SERVER)

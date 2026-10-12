@@ -30,17 +30,19 @@ dotfiles/
 │   ├── backlog.md            # Deferred ideas and planned features
 │   ├── plans/                # Detailed implementation plans
 │   │   └── archive/          # Completed plans kept for reference
-│   ├── setup_hyprland.md     # Arch Linux Hyprland manual setup
+│   ├── setup_hyprland.md     # Arch desktop setup, migration, and customization
 │   ├── setup_wsl.md          # WSL2-specific setup notes
 ├── scripts/                  # Repo-only utilities: theme generator, palettes, templates, misc scripts
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
+│   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
+│   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
     ├── zshrc/.zshrc          # Zsh config
-    ├── zprofile/.zprofile    # Login shell environment and Arch tty1 Hyprland autostart
+    ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
@@ -70,8 +72,11 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `foot`, `themes`, `hypr`, `waybar`,
-`wofi`, `mako`, `opencode`, `claude`, `espanso`, and `bob`. The `themes` package
+`zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
+and `bob`. `make stow-hyprland` additionally links the desktop group: `foot`,
+`hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
+autostart; `setup.sh --hyprland` handles those steps. General Stow operations
+do not remove existing desktop links. The `themes` package
 also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media
 bindings use `playerctl` and `playerctld` to control the most recently active
 player. The `hypr` package also supplies a Swedish (US) keymap with
@@ -96,14 +101,27 @@ templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
 `make themes-generate` after editing a palette or template and
 `make themes-check` to verify checked-in fragments are current.
 
+Theme reloads are independent and best-effort. tmux, Waybar, Mako, Hyprland,
+wallpaper, and running Foot terminals update immediately where available;
+Wofi and new Foot instances load the selection at launch. Neovim reloads on
+focus or with `:ReloadTheme`. A failed application reload does not revert the
+validated selection.
+
 ## setup.sh design principles
 
-- **Single entrypoint**: `bash setup.sh [--server | --slim | --full]`
+- **Single entrypoint**: `bash setup.sh [--server | --slim | --full] [--hyprland] [--update]`
 - **Idempotent**: Every step is guarded with `command -v`, `[ -d ]`, or `[ -f ]` checks. Safe to run multiple times.
-- **OS detection**: Detects Fedora (dnf) or Ubuntu/Debian (apt) via `/etc/os-release`. Fails clearly on unsupported distros.
-- **WSL2 awareness**: Detects WSL2 via `/proc/version` for informational logging only. No WSL-specific install logic in `setup.sh`.
+- **OS detection**: Detects Arch (pacman), Fedora (dnf), or Ubuntu/Debian (apt) via `/etc/os-release`. Fails clearly on unsupported distros.
+- **WSL2 awareness**: Detects WSL2 via `/proc/version` for logging, native-only desktop validation, and the existing Fedora container-tooling guard. No WSL-specific package installation branches.
 - **Server profile**: `--server` is Bash-first and intended for remote/headless systems. It installs only minimal operational tooling and server-specific dotfiles.
 - **Non-fatal optional packages**: Each optional package in `--full` is installed with `|| warning` so a single missing package does not abort the run.
+
+Full native Fedora installs Podman, Docker-compatible CLI support, and Compose;
+WSL Fedora's container setup remains documented in `docs/setup_wsl.md`.
+Arch/Fedora use native Neovim; Ubuntu/Debian use Bob stable. `fastfetch` is
+installed on Arch/Fedora and skipped on Ubuntu 24.04. GNOME keybindings are
+applied only when supported, including the Swedish (US) layout (`se+us`):
+Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
 
 ## Environment policy
 
@@ -116,10 +134,19 @@ templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
 
 ## Hyprland policy
 
-- Hyprland and related desktop components remain under evaluation and are not
-  installed by any `setup.sh` profile.
-- Keep manual Hyprland setup requirements and package installation instructions
-  in `docs/setup_hyprland.md`.
+- Native Arch Hyprland is supported through opt-in `--hyprland`, combined with
+  slim/full. Reject server, non-Arch, and WSL combinations before installation.
+- Hardware preparation belongs to the user: never provision GPU drivers,
+  firmware, kernel modules, boot settings, or audio/Bluetooth system stacks.
+- Keep shared configs hardware-neutral. Machine-specific GPU and monitor
+  overrides belong in the local `~/.config/hypr/hyprland.lua` entrypoint.
+- `scripts/configure-hyprland.sh` preserves existing entrypoints, creates the
+  local `~/.local/state/dotfiles/hyprland/autostart` marker, and attempts a user
+  daemon reload. It must not start a desktop or session services during setup.
+- `.zprofile` requires that marker for guarded Arch tty1 autostart. Unlinking
+  packages does not remove local preferences; re-running `--hyprland` opts in.
+- Keep startup, migration, customization, and optional GTK theme instructions
+  in `docs/setup_hyprland.md`. External GTK installation is not automated.
 
 ## Repository visibility
 
@@ -150,12 +177,49 @@ templates in `scripts/templates/` with `scripts/generate-themes.py`. Use
 
 ## Testing
 
+Hyprland verification status: isolated checks pass, and migration on the
+existing Arch workstation has been smoke-tested through a logout/login.
+Neither a fresh `setup.sh --hyprland` installation nor its Arch container
+installation check has been run. Fresh-install verification is deferred until
+the next Arch installation. Do not describe the full bootstrap as validated
+based on the existing-session migration check.
+
 Use the provided Docker/Podman containers for clean environment testing:
 
 ```bash
 bash docker/test.sh -d arch -p server  # validate Arch server setup twice
+bash docker/test.sh -d arch -p slim --hyprland # desktop bootstrap twice, no compositor
 bash docker/run.sh -d fedora            # drop into Fedora container
 bash docker/run.sh -d ubuntu            # drop into Ubuntu 24.04 container
 ```
 
-Primary test target is **Fedora 42+**. See `docs/setup_wsl.md` for WSL2-specific notes.
+`docker/test.sh` recreates the selected container and validates commands, login
+shell, and Stow links after two setup runs. The Hyprland path also checks local
+entrypoint preservation and the autostart marker. It does not test GPU support,
+a graphical session, or portal functionality. Do not run it on the host as a
+substitute for the container.
+
+Run the lightweight isolated checks with:
+
+```bash
+python3 scripts/test-hyprland-bootstrap.py
+bash -n setup.sh scripts/configure-hyprland.sh docker/test.sh
+zsh -n packages/zprofile/.zprofile
+make themes-check
+```
+
+The Python checks use disposable homes and mocked commands in the system
+temporary directory; they do not execute host setup, Stow, or service-manager
+operations. Python's `tempfile` manages creation and cleanup, with no dependency
+on an agent-specific directory.
+
+`docker/run.sh -d <distro> -t <server|slim|full>` runs setup and opens a shell.
+For an already-running test container:
+
+```bash
+docker compose -f docker/compose.yml exec dotfiles-arch bash
+```
+
+Use `docker compose -f docker/compose.yml down` to remove the test containers.
+Primary general test target is **Fedora 42+**; desktop bootstrap targets Arch.
+See `docs/setup_wsl.md` for WSL2-specific notes.

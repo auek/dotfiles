@@ -1,13 +1,37 @@
 # Hyprland Setup (Arch Linux)
 
-This is the current manual setup for the Arch Linux Hyprland workstation.
-Hyprland packages are deliberately not installed by `setup.sh`; a future
-opt-in `--hyprland` profile can automate this list once its scope is defined.
+The native Arch Hyprland workstation is a supported, opt-in setup target.
+Install Arch manually or with `archinstall`, then configure graphics drivers,
+networking, audio/Bluetooth support, firmware, and any required boot settings.
+These machine-specific prerequisites remain user-managed.
+
+From the repository, run:
+
+```bash
+bash setup.sh --full --hyprland
+```
+
+`--hyprland` also works with `--slim`. It rejects the server profile, other
+distributions, and WSL before installation. Setup installs the package list
+below, links the workstation and desktop packages, creates the local Lua
+entrypoint if absent, registers user units when possible, and opts into tty1
+autostart. It does not start Hyprland or change drivers or boot settings.
+
+## Verification status
+
+- Existing-workstation migration has been smoke-tested: after adding the local
+  autostart marker and NVIDIA overrides, exiting Hyprland and logging in again
+  produced a working desktop.
+- Isolated bootstrap checks and script syntax checks pass.
+- **Fresh installation with `setup.sh --hyprland` has not yet been tested.**
+  The Arch container installation check has not been run either. Fresh-install
+  verification is deferred until the next Arch installation; the migration
+  result does not establish that all packages and setup steps work from scratch.
 
 ## Install packages
 
-Arch's official repositories provide the Hyprland stack and all session
-utilities used by the Stow-managed configuration:
+For reference or manual installation, Arch's official repositories provide the
+Hyprland stack and session utilities used by the configuration:
 
 ```bash
 sudo pacman -Syu --needed \
@@ -37,11 +61,22 @@ the Hyprland configuration.
 
 ## Start after login
 
-The Stow-managed `.zprofile` automatically runs `start-hyprland` after the
-user logs in locally on Arch's `tty1`. It does not run for SSH sessions, other
-virtual terminals, or login shells opened inside an existing graphical session.
+With the local opt-in marker created by `setup.sh --hyprland`, the Stow-managed
+`.zprofile` runs `start-hyprland` after a local Arch `tty1` login. General setup
+and `make stow-hyprland` alone do not enable autostart. It does not run for SSH
+sessions, other virtual terminals, or login shells opened inside an existing
+graphical session.
 Exiting Hyprland returns to the TTY login prompt; use another virtual terminal
 for recovery when needed.
+
+Disable autostart by removing the local marker:
+
+```bash
+rm ~/.local/state/dotfiles/hyprland/autostart
+```
+
+You can still start the desktop manually with `start-hyprland`. Re-running
+`setup.sh --hyprland` enables autostart again.
 
 ## Install the GTK theme
 
@@ -151,7 +186,49 @@ worktree:
 require("dotfiles")
 ```
 
-Save this as `~/.config/hypr/hyprland.lua`.
+Setup creates this file only when absent. Existing files (including symlinks)
+are preserved; ensure yours loads `dotfiles` if you want the shared config.
+
+### Hardware-specific overrides
+
+The shared configuration does not select GPU drivers or acceleration backends.
+Put settings specific to your machine in the local entrypoint, after
+`require("dotfiles")`. Monitor output, mode, and scaling overrides also belong
+here; the shared default uses the preferred mode, automatic placement, and
+scale 1.
+
+If your NVIDIA setup needs the overrides used by the earlier shared config,
+keep them locally:
+
+```lua
+require("dotfiles")
+hl.env("LIBVA_DRIVER_NAME", "nvidia")
+hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+```
+
+Use these only when appropriate to your installed graphics stack. Setup neither
+detects nor installs GPU drivers.
+
+### Existing installations
+
+The former default workstation group included all desktop packages and enabled
+Arch tty1 autostart without an explicit preference. Existing desktop links are
+not removed by general setup, but new general installs no longer create them.
+Use `make stow-hyprland` when maintaining desktop links.
+
+Before the next login or config reload, retain any needed NVIDIA settings in
+your local entrypoint as above. To retain tty1 autostart without re-running the
+installer, explicitly create its local marker:
+
+```bash
+mkdir -p ~/.local/state/dotfiles/hyprland
+touch ~/.local/state/dotfiles/hyprland/autostart
+```
+
+These are migration commands for you to run when ready; changing the repository
+does not itself perform them.
+
+### Session services
 
 The `hypr` Stow package also installs `hyprland-session.target`. The Lua
 configuration starts this user target with Hyprland and stops it during
@@ -165,6 +242,9 @@ user units once:
 ```bash
 systemctl --user daemon-reload
 ```
+
+Setup attempts this reload without starting services. In a container or a shell
+without a user service manager, it reports the deferred command instead.
 
 After the next Hyprland login, verify the session and portal services:
 

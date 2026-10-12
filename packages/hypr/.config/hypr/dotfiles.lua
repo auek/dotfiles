@@ -34,8 +34,6 @@ hl.monitor({
 })
 
 hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. os.getenv("PATH"))
-hl.env("LIBVA_DRIVER_NAME", "nvidia")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 
 hl.on("hyprland.start", function()
   hl.exec_cmd(

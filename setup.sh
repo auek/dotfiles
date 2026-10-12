@@ -2,11 +2,12 @@
 #
 # setup.sh — Bootstrap development environment
 #
-# Usage: setup.sh [--server | --slim | --full] [--update]
+# Usage: setup.sh [--server | --slim | --full] [--hyprland] [--update]
 #   --server  Install minimal remote server tooling (bash, tmux, vim)
 #   --slim    Install common packages, dotfiles, shell (default)
 #   --full    All of the above + dev tools (nvim, nvm, node, tldr, llm)
 #   --update  Run a full system package upgrade before installing (for first-time bootstrap)
+#   --hyprland  Add the Arch desktop and opt into tty1 autostart
 
 set -euo pipefail
 
@@ -15,6 +16,7 @@ set -euo pipefail
 USER="${USER:-$(whoami)}"
 PROFILE="slim"
 DO_UPDATE=0
+INSTALL_HYPRLAND=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
 NVM_VERSION="v0.40.1"
@@ -29,9 +31,10 @@ for arg in "$@"; do
     --slim)   PROFILE="slim" ;;
     --full)   PROFILE="full" ;;
     --update) DO_UPDATE=1 ;;
+    --hyprland) INSTALL_HYPRLAND=1 ;;
     *)
       echo "Unknown argument: $arg"
-      echo "Usage: $0 [--server | --slim | --full] [--update]"
+      echo "Usage: $0 [--server | --slim | --full] [--hyprland] [--update]"
       exit 1
       ;;
   esac
@@ -109,6 +112,12 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
   info "Running under WSL2"
 fi
 
+if [ "$INSTALL_HYPRLAND" -eq 1 ]; then
+  [ "$ID" = "arch" ] || die "--hyprland is supported only on Arch Linux"
+  [ "$PROFILE" != "server" ] || die "--hyprland cannot be combined with --server"
+  [ "$IS_WSL" -eq 0 ] || die "--hyprland requires native Arch Linux, not WSL"
+fi
+
 # ─── Step 2: Install common packages ─────────────────────────────────────────
 
 step "2/12 — Installing packages"
@@ -148,6 +157,13 @@ case "$PKG_MANAGER" in
 esac
 
 success "Packages installed"
+
+if [ "$INSTALL_HYPRLAND" -eq 1 ]; then
+  info "Installing the Arch Hyprland desktop (hardware setup remains user-managed)"
+  $PKG_INSTALL hyprland hypridle xdg-desktop-portal-hyprland \
+    foot mako lxqt-policykit waybar wofi swaybg \
+    grim slurp wl-clipboard cliphist nautilus sushi playerctl
+fi
 
 # ─── Step 3: Install Fedora container tooling ────────────────────────────────
 
@@ -216,7 +232,7 @@ step "6/12 — Symlinking repo to ~/.dotfiles"
 # Ensure required directories exist
 mkdir -p "$HOME/.ssh" "$HOME/.config"
 
-if [ -L "$DOTFILES_LINK" ] && [ "$(readlink "$DOTFILES_LINK")" = "$REPO_DIR" ]; then
+if [ "$DOTFILES_LINK" -ef "$REPO_DIR" ]; then
   info "~/.dotfiles already points to $REPO_DIR"
 elif [ -e "$DOTFILES_LINK" ]; then
   die "~/.dotfiles already exists and is not a symlink to $REPO_DIR — remove it manually"
@@ -231,6 +247,8 @@ step "7/12 — Stowing dotfiles"
 
 if [ "$PROFILE" = "server" ]; then
   STOW_TARGET_NAME="stow-server"
+elif [ "$INSTALL_HYPRLAND" -eq 1 ]; then
+  STOW_TARGET_NAME="stow-hyprland"
 else
   STOW_TARGET_NAME="stow"
 fi
@@ -239,6 +257,11 @@ if make -C "$REPO_DIR" "$STOW_TARGET_NAME"; then
   success "Dotfiles stowed"
 else
   die "Stow failed. Resolve any conflicting files in $HOME, then rerun setup.sh. Use 'make -C $REPO_DIR unstow' only for links managed by this repo."
+fi
+
+# Keep machine-specific configuration outside the Stow package and worktree.
+if [ "$INSTALL_HYPRLAND" -eq 1 ]; then
+  bash "$REPO_DIR/scripts/configure-hyprland.sh"
 fi
 
 # ─── Step 8: Configure GNOME keybindings ─────────────────────────────────────
@@ -378,6 +401,12 @@ step "12/12 — Done"
 
 echo
 echo "  Setup complete (profile: $PROFILE)"
+if [ "$INSTALL_HYPRLAND" -eq 1 ]; then
+  echo "  Hyprland is configured to start on your next local Arch tty1 login."
+  echo "  Ensure graphics drivers are configured before starting Hyprland."
+  echo "  Local overrides: ~/.config/hypr/hyprland.lua"
+  echo "  Disable tty1 autostart: remove ~/.local/state/dotfiles/hyprland/autostart"
+fi
 echo "  Restart your shell to apply all changes:"
 echo
 if [ "$PROFILE" = "server" ]; then

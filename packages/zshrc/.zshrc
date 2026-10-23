@@ -328,6 +328,11 @@ if command -v nvim >/dev/null 2>&1; then
   alias vim="nvim"
 fi
 
+if command -v lazygit >/dev/null 2>&1; then
+  alias lg="lazygit"
+fi
+
+
 # Git
 alias gst="git status --short"
 alias gb="git branch --sort=-committerdate"

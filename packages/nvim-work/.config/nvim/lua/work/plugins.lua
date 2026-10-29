@@ -38,6 +38,12 @@ local function configure()
   require("lazy").setup({
     { "folke/lazy.nvim", branch = "main", commit = lazy_commit },
     {
+      "christoomey/vim-tmux-navigator",
+      commit = "e41c431a0c7b7388ae7ba341f01a0d217eb3a432",
+      lazy = false,
+      init = function() vim.g.tmux_navigator_save_on_switch = 0 end,
+    },
+    {
       "neovim/nvim-lspconfig",
       commit = "4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
       lazy = false,
@@ -86,10 +92,14 @@ local function configure()
       lazy = true,
       dependencies = {
         { "nvim-lua/plenary.nvim", commit = "74b06c6c75e4eeb3108ec01852001636d85a932b" },
+        {
+          "nvim-telescope/telescope-fzf-native.nvim",
+          commit = "b25b749b9db64d375d782094e2b9dce53ad53a40",
+          build = "make",
+        },
       },
       opts = {
         defaults = {
-          file_sorter = function() return require("work.file_sorter").new() end,
           -- Include project dotfiles, while respecting ignores and excluding Git metadata.
           vimgrep_arguments = {
             "rg", "--color=never", "--no-heading", "--with-filename",
@@ -98,7 +108,16 @@ local function configure()
           file_ignore_patterns = { "^%.git/" },
         },
         pickers = { find_files = { hidden = true } },
+        extensions = { fzf = { case_mode = "smart_case" } },
       },
+      config = function(_, opts)
+        require("telescope").setup(opts)
+        local ok, err = pcall(require("telescope").load_extension, "fzf")
+        if not ok then
+          vim.notify("FZF sorter unavailable; run :Lazy build telescope-fzf-native.nvim\n"
+            .. tostring(err), vim.log.levels.WARN)
+        end
+      end,
     },
   }, {
     root = root,

@@ -78,7 +78,10 @@ and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no home or theme packages. Basic editing works
 without plugins; Lazy bootstraps on first launch and installs pinned Telescope
-and Plenary plus nvim-tree, Everforest, Gruvbox, Mason, and nvim-lspconfig. Use standard `:Lazy`
+and Plenary plus nvim-tree, Everforest, Gruvbox, Mason, nvim-lspconfig,
+telescope-fzf-native (built with Make and GCC/Clang), and vim-tmux-navigator.
+The work profile shares the existing tmux navigation bindings and never saves
+buffers automatically on pane switches. Use standard `:Lazy`
 commands afterward. Work colors follow the existing `theme-set` runtime
 selection, defaulting to Everforest without the optional `themes` package. Plugin files and Lazy
 state/lockfile are separate from the home profile. Text search needs `rg`.
@@ -220,7 +223,7 @@ UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
 not validate the real Windows clipboard or the home plugin profile. An optional
 second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
 `plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
-and `nvim-lspconfig` fixture
+`nvim-lspconfig`, built `telescope-fzf-native.nvim`, and `vim-tmux-navigator` fixture
 directories to check real Telescope file/text search (requires `rg`), including
 space-separated path terms and incremental query edits, tree
 opening, theme selection/reloading, and offline startup with plugins installed.

@@ -27,8 +27,14 @@ local map = function(mode, lhs, rhs)
   vim.keymap.set(mode, lhs, rhs, { silent = true })
 end
 map("i", "jj", "<Esc>")
-for _, direction in ipairs({ "h", "j", "k", "l" }) do
-  map("n", "<C-" .. direction .. ">", "<C-w>" .. direction)
+for direction, name in pairs({ h = "Left", j = "Down", k = "Up", l = "Right" }) do
+  map("n", "<C-" .. direction .. ">", function()
+    if vim.fn.exists(":TmuxNavigate" .. name) == 2 then
+      vim.cmd("TmuxNavigate" .. name)
+    else
+      vim.cmd.wincmd(direction)
+    end
+  end)
 end
 map("n", "<leader>w", "<cmd>write<CR>")
 map("n", "<leader>q", "<cmd>quit<CR>")

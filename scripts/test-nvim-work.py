@@ -187,8 +187,8 @@ if vim.env.SCENARIO == "native-plugins" then
   results(" ff")
   results(" fg", "needle")
   for _, app in ipairs({"foo", "bar", "baz", "qux"}) do
-    vim.fn.mkdir(project .. "/" .. app .. "-app/src", "p")
-    vim.fn.writefile({"export default null;"}, project .. "/" .. app .. "-app/src/File.tsx")
+    vim.fn.mkdir(project .. "/" .. app .. "-app/src/long/path/to/stuff", "p")
+    vim.fn.writefile({"export default null;"}, project .. "/" .. app .. "-app/src/long/path/to/stuff/File.tsx")
   end
   vim.fn.writefile({"export default null;"}, project .. "/foo-app/src/Other.tsx")
   vim.fn.maparg(" ff", "n", false, true).callback()
@@ -196,15 +196,16 @@ if vim.env.SCENARIO == "native-plugins" then
   local file_picker = require("telescope.actions.state").get_current_picker(file_prompt)
   local file_complete = false
   file_picker:register_completion_callback(function() file_complete = true end)
-  local foo_file = {"foo-app/src/File.tsx"}
+  local foo_file = {"foo-app/src/long/path/to/stuff/File.tsx"}
   for _, case in ipairs({
-    {"foo", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
-    {"foo ", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
-    {"foo F", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}}, {"foo Fi", foo_file}, {"foo File", foo_file},
-    {"foo Fl", foo_file}, {"missing File", {}},
-    {"foo", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
+    {"foo", {"foo-app/src/Other.tsx", "foo-app/src/long/path/to/stuff/File.tsx"}},
+    {"foo ", {"foo-app/src/Other.tsx", "foo-app/src/long/path/to/stuff/File.tsx"}},
+    {"foo F", foo_file}, {"foo Fi", foo_file}, {"foo File", foo_file},
+    {"foo Fl", foo_file}, {"missing File", {}}, {"foo long path to", foo_file},
+    {"foo !Other", foo_file},
+    {"foo", {"foo-app/src/Other.tsx", "foo-app/src/long/path/to/stuff/File.tsx"}},
     {"File foo", foo_file}, {"  foo   File ", foo_file},
-    {"baz File", {"baz-app/src/File.tsx"}},
+    {"baz File", {"baz-app/src/long/path/to/stuff/File.tsx"}},
   }) do
     file_complete = false
     file_picker:set_prompt(case[1])
@@ -214,10 +215,21 @@ if vim.env.SCENARIO == "native-plugins" then
     table.sort(files)
     assert(vim.deep_equal(files, case[2]), case[1] .. ": " .. vim.inspect(files))
   end
-  local positions = file_picker.sorter:highlighter("foo File", "foo-app/src/File.tsx")
-  assert(vim.deep_equal(positions, {1,2,3,13,14,15,16}), vim.inspect(positions))
+  local positions = file_picker.sorter:highlighter("foo File", "foo-app/src/long/path/to/stuff/File.tsx")
+  table.sort(positions)
+  assert(vim.deep_equal(positions, {1,2,3,32,33,34,35}), vim.inspect(positions))
+  assert(package.loaded["fzf_lib"] and not package.loaded["work.file_sorter"])
   require("telescope.actions").close(file_prompt)
 
+  -- Outside tmux the navigator still moves between editor splits safely.
+  assert(vim.fn.exists(":TmuxNavigateRight") == 2)
+  vim.cmd("set splitright | vsplit | wincmd h")
+  local left_window = vim.api.nvim_get_current_win()
+  vim.cmd.TmuxNavigateRight()
+  assert(vim.api.nvim_get_current_win() ~= left_window)
+  vim.cmd.TmuxNavigateLeft()
+  assert(vim.api.nvim_get_current_win() == left_window)
+  vim.cmd.close()
   assert(not package.loaded["nvim-tree"])
   vim.cmd.edit(project .. "/code.txt")
   assert(vim.fn.maparg(" fe", "n", false, true).desc == "Toggle file tree")

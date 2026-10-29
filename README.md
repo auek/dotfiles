@@ -85,7 +85,8 @@ plain options and mappings is copied from the home profile so this package
 stands alone without loading the home plugin collection. The `themes` Stow
 package is optional; without a saved selection the editor uses Everforest.
 Mason manages explicitly installed language servers. This profile adds no
-completion framework, format-on-save, or native build steps.
+completion framework or format-on-save. Telescope's fzf-native sorter builds
+locally with Make and GCC/Clang.
 First launch needs Git and network access to bootstrap Lazy and install plugins.
 Once installed, the editor works offline.
 
@@ -112,9 +113,9 @@ nvim
 ```
 
 Lazy bootstraps on first launch and installs the missing plugins. Use the
-standard `:Lazy` interface afterward (`I` installs, `S` syncs). The eight
-repositories are pinned: Lazy, Telescope 0.1.8, Plenary, nvim-tree,
-Everforest, Gruvbox, Mason, and nvim-lspconfig. Installation
+standard `:Lazy` interface afterward (`I` installs, `S` syncs). The ten
+repositories are pinned: Lazy, Telescope 0.1.8, Plenary, telescope-fzf-native,
+vim-tmux-navigator, nvim-tree, Everforest, Gruvbox, Mason, and nvim-lspconfig. Installation
 requires Git and GitHub access through your existing network configuration;
 it installs no OS packages. Plugins live under
 `stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
@@ -135,16 +136,30 @@ remains available; fix Git/network access and restart Neovim to retry.
 | Space f h | Help tags |
 
 Pickers use the current working directory; start `nvim` from the project root
-or use `:cd`. File queries match every space-separated term against the full
-path using Telescope's bundled Lua fuzzy matcher. For example, `foo File`
-finds `foo-app/src/File.tsx` while excluding the same filename under `bar-app`.
-Terms are case-insensitive and can appear in either order (`File foo` works).
-This needs no extra plugin or native build. Space f f searches paths; Space f g
-searches file contents. File finding uses an available `rg`, `fd`, or standard `find`.
-Text search requires `rg` on PATH and reports a clear message if it is missing.
-File navigation needs no fzf, Node, Nerd Fonts, or compiler. Node/npm are
-required for the language servers below. If plugins are absent,
-these keys point to `:Lazy`; basic editing remains available.
+or use `:cd`. Telescope uses the standard fzf-native extension for file and
+generic sorting. Space-separated terms match the full path, e.g. `foo File`
+or `foo long path to`; terms can appear in either order. Smart case means a
+lowercase term ignores case while a term containing capitals respects case.
+fzf query operators such as `!`, `'`, `^`, `$`, and `|` are supported.
+Space f f searches paths; Space f g searches file contents. File finding uses
+an available `rg`, `fd`, or standard `find`. Text search requires `rg` on PATH
+and reports a clear message if it is missing.
+
+Lazy runs `make` to build fzf-native on installation/updates. Make and GCC or
+Clang must already be available; no separate `fzf` executable is needed.
+If the build fails, use `:Lazy build telescope-fzf-native.nvim` after resolving
+the compiler issue. A warning is shown and Telescope's default sorter remains
+available. Node/npm are required for the language servers below. Nerd Fonts
+are optional.
+
+Ctrl+h/j/k/l uses the same `vim-tmux-navigator` plugin as the home profile:
+it moves between Neovim splits and crosses into tmux panes at editor edges.
+Outside tmux it still navigates Neovim splits. The `tmux` and `tmux-server`
+packages already contain the matching bindings; no tmux config changes are
+needed. If the active tmux session predates those bindings, reload its config
+with `tmux source-file "$HOME/.tmux.conf"`. Navigation never automatically
+saves modified buffers. Ctrl+\ toggles the previous pane/window through the
+plugin's default mapping.
 
 The file tree shows dotfiles but hides `.git`. Its optional icon dependency
 and Git integration are disabled, keeping this step focused on navigation.
@@ -239,7 +254,8 @@ python3 scripts/test-nvim-work.py /absolute/path/to/nvim /path/to/plugin-fixture
 
 The optional fixture directory must contain `lazy.nvim`, `telescope.nvim`,
 `plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
-and `nvim-lspconfig` at the commits in `lua/work/plugins.lua`; integration checks
+`nvim-lspconfig`, `telescope-fzf-native.nvim` (already built), and
+`vim-tmux-navigator` at the commits in `lua/work/plugins.lua`; integration checks
 copy them into disposable XDG data and require `rg`. Checks never install
 plugins into your real home. Real WSL clipboard/terminal behavior remains a
 manual check; the reported `åäö` issue is deferred. An optional third argument

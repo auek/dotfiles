@@ -165,6 +165,12 @@ The workstation tmux config declares RGB support for Foot and `xterm-256color`
 (used by Windows Terminal), keeping Neovim's background colors accurate.
 After changing terminal features, detach and reattach existing tmux clients.
 
+In both tmux profiles, prefix + `c` (new window), `%` (side-by-side split), and
+`"` (stacked split) start in the active pane's current directory. The prefix
+is Ctrl+s. Reload an existing server with `tmux source-file "$HOME/.tmux.conf"`
+after pulling binding changes. Direct `tmux new-window` / `split-window`
+commands still need `-c` when a particular working directory is wanted.
+
 The file tree shows dotfiles but hides `.git`. Its optional icon dependency
 and Git integration are disabled, keeping this step focused on navigation.
 `nvim .`, `nvim /path/to/directory`, and `:edit directory` open nvim-tree.

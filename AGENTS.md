@@ -43,8 +43,8 @@ dotfiles/
     ├── vim-server/.vimrc     # Minimal Vim config for servers
     ├── zshrc/.zshrc          # Zsh config
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
-    ├── tmux-server/.tmux.conf # tmux config for server installs
-    ├── tmux/.tmux.conf       # tmux config, including Foot/xterm-256color RGB
+    ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
+    ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
     ├── nvim/.config/nvim/    # Neovim config
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
     ├── bob/.config/bob/      # Bob Neovim version-manager config

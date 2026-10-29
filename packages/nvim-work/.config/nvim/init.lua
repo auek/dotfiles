@@ -1,4 +1,4 @@
--- A standalone, built-in-only alternative to the home nvim package.
+-- A standalone alternative to the home nvim package.
 vim.g.mapleader = " "
 local opt = vim.opt
 opt.guicursor = "i:ver100-iCursor"
@@ -124,3 +124,5 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.opt_local.linebreak = true
   end,
 })
+
+require("work.plugins").setup()

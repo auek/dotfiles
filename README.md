@@ -43,7 +43,7 @@ been tested; verification is deferred until the next Arch installation.
 | Stow packages | Contents |
 |---|---|
 | `zshrc`, `zprofile` | Shell configuration and login environment |
-| `nvim-work` | Opt-in, built-in-only Neovim work profile (alternative to `nvim`) |
+| `nvim-work` | Opt-in, minimal Neovim work profile with Lazy/Telescope navigation |
 | `tmux`, `nvim`, `bob` | Terminal multiplexer, editor, and Neovim version-manager settings |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -79,11 +79,12 @@ theme-set            # show current selection
 
 ## Minimal Neovim work profile
 
-With Neovim already installed, `nvim-work` provides an offline editor using
-built-in syntax, filetype indentation, and the Habamax colorscheme. It needs
-no plugins, theme package, language servers, or additional tools. A small set
-of plain options and mappings is copied from the home profile so this package
-can stand alone without loading the home plugin bootstrap.
+`nvim-work` uses built-in syntax, filetype indentation, and the Habamax
+colorscheme, plus a small Lazy/Telescope setup for navigation. A small set of
+plain options and mappings is copied from the home profile so this package
+stands alone without loading the home plugin collection or theme packages.
+It adds no language servers, completion, formatters, or native build steps.
+Basic editing starts offline even before plugins are installed.
 
 `nvim` and `nvim-work` are alternative profiles targeting `~/.config/nvim`.
 **Do not stow both.** Default `make stow` and setup profiles still select the
@@ -98,6 +99,37 @@ stow --simulate --verbose --no-folding --dir=packages --target="$HOME" nvim-work
 stow --no-folding --dir=packages --target="$HOME" nvim-work
 nvim
 ```
+
+After first activation (or after pulling new package files), restow this
+package to link its Lua module, then start Neovim:
+
+```bash
+stow --restow --no-folding --dir=packages --target="$HOME" nvim-work
+nvim
+```
+
+Run `:WorkPluginsInstall` once in Neovim. This explicitly downloads three
+pinned repositories: Lazy, Telescope 0.1.8, and Plenary. It requires Git and
+GitHub access through your existing network configuration. It installs no OS
+packages. Plugins live under `stdpath("data")/nvim-work/lazy`; Lazy's runtime
+lockfile lives under `stdpath("state")/nvim-work`, outside the Stow checkout.
+No downloads, missing-plugin installs, or update checks run at normal startup.
+Telescope loads only when a picker is used. `:Lazy` opens the plugin manager
+after installation; plugin versions are pinned in the work configuration.
+
+| Key | Navigation |
+|---|---|
+| Space f f | Find project files, including dotfiles, respecting ignores |
+| Space f g | Search project text with ripgrep (`rg`) |
+| Space f o | Recent files |
+| Space l s | Open buffers |
+| Space f h | Help tags |
+
+Pickers use the current working directory; start `nvim` from the project root
+or use `:cd`. File finding uses an available `rg`, `fd`, or standard `find`.
+Text search requires `rg` on PATH and reports a clear message if it is missing.
+fzf, Node, Nerd Fonts, and a compiler are not required. If plugins are absent,
+these keys explain how to install them; basic editing remains available.
 
 Space is the leader. `jj` leaves insert mode, Ctrl+h/j/k/l moves between
 windows, Ctrl+n/p cycles buffers, and leader+w/q writes/quits. Leader+b closes
@@ -132,7 +164,15 @@ For isolated developer checks (Neovim and Stow must already be on PATH):
 
 ```bash
 python3 scripts/test-nvim-work.py /absolute/path/to/nvim
+# Also exercise real Telescope file/text search using pre-fetched, pinned repos:
+python3 scripts/test-nvim-work.py /absolute/path/to/nvim /path/to/plugin-fixtures
 ```
+
+The optional fixture directory must contain `lazy.nvim`, `telescope.nvim`,
+and `plenary.nvim` at the commits in `lua/work/plugins.lua`; integration checks
+copy them into disposable XDG data and require `rg`. Checks never install
+plugins into your real home. Real WSL clipboard/terminal behavior remains a
+manual check; the reported `åäö` issue is deferred.
 
 ## Further details
 

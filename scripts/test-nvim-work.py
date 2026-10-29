@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Smoke-test the real stowed work profile; requires nvim, stow, and Python 3.
 
-Usage: python3 scripts/test-nvim-work.py /absolute/path/to/nvim
+Usage: python3 scripts/test-nvim-work.py /absolute/path/to/nvim [plugin-fixtures]
 All HOME/XDG state and clipboard processes are disposable fixtures.
 """
 import os
@@ -29,7 +29,10 @@ with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
     # Copy only this package: the unstowed home configuration cannot be borrowed.
     packages = base / "arbitrary checkout" / "packages"
     shutil.copytree(ROOT / "packages/nvim-work", packages / "nvim-work")
-    for scenario in ("native", "wsl-missing", "wsl"):
+    scenarios = ["native", "wsl-missing", "wsl"]
+    if len(sys.argv) > 2:
+        scenarios.append("native-plugins")
+    for scenario in scenarios:
         home = base / scenario
         home.mkdir()
         bin_dir = home / "bin"
@@ -40,6 +43,9 @@ with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
                "XDG_STATE_HOME": str(home / ".state"),
                "XDG_CACHE_HOME": str(home / ".cache"),
                "SCENARIO": scenario}
+        if scenario == "native-plugins":
+            shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/nvim-work/lazy")
+            env["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
         env.pop("NVIM_APPNAME", None)
         env.pop("VIMINIT", None)
         env.pop("EXINIT", None)
@@ -60,11 +66,12 @@ else:
         before = home / "before.lua"
         before.write_text('''local has = vim.fn.has
 vim.fn.has = function(feature)
-  if feature == "wsl" then return os.getenv("SCENARIO") == "native" and 0 or 1 end
+  if feature == "wsl" then return os.getenv("SCENARIO"):match("^native") and 0 or 1 end
   return has(feature)
 end
 _G.real_system = vim.system
 _G.real_spawn = vim.uv.spawn
+_G.real_jobstart = vim.fn.jobstart
 local function forbidden() error("Unexpected startup subprocess") end
 vim.system = forbidden
 vim.fn.system = forbidden
@@ -77,8 +84,16 @@ vim.uv.spawn = forbidden
 local function read(path) return vim.fn.readfile(path, "b") end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
 assert(vim.g.colors_name == "habamax")
-assert(not package.loaded.lazy and not package.loaded["mason"])
-assert(vim.fn.isdirectory(vim.fn.stdpath("data") .. "/lazy") == 0)
+assert(not package.loaded["mason"] and not package.loaded["telescope.builtin"])
+if vim.env.SCENARIO ~= "native-plugins" then
+  assert(not package.loaded.lazy)
+  local notifications = {}
+  local notify = vim.notify
+  vim.notify = function(message) table.insert(notifications, message) end
+  vim.fn.maparg(" ff", "n", false, true).callback()
+  assert(notifications[1]:find("WorkPluginsInstall"))
+  vim.notify = notify
+end
 assert(vim.fn.filereadable(vim.env.HOME .. "/calls") == 0)
 if vim.env.SCENARIO == "wsl" then
   assert(vim.g.clipboard.name == "WSL Windows clipboard")
@@ -114,6 +129,48 @@ if vim.env.SCENARIO == "wsl" then
   end
 else
   assert(vim.g.clipboard == nil)
+end
+if vim.env.SCENARIO == "native-plugins" then
+  assert(package.loaded.lazy)
+  vim.system = _G.real_system
+  vim.uv.spawn = _G.real_spawn
+  vim.fn.jobstart = _G.real_jobstart
+  local project = vim.env.HOME .. "/project"
+  vim.fn.mkdir(project .. "/.git", "p")
+  vim.fn.writefile({"needle in code"}, project .. "/code.txt")
+  vim.fn.writefile({"needle hidden"}, project .. "/.hidden")
+  vim.fn.writefile({"ignored.txt"}, project .. "/.ignore")
+  vim.fn.writefile({"needle ignored"}, project .. "/ignored.txt")
+  vim.fn.writefile({"needle metadata"}, project .. "/.git/HEAD")
+  vim.cmd.cd(project)
+  local function results(key, query)
+    vim.fn.maparg(key, "n", false, true).callback()
+    local state = require("telescope.actions.state")
+    local prompt = vim.api.nvim_get_current_buf()
+    local picker = state.get_current_picker(prompt)
+    local complete = false
+    picker:register_completion_callback(function()
+      complete = picker.manager and picker.manager:num_results() >= 2
+    end)
+    if query then picker:set_prompt(query) end
+    assert(vim.wait(5000, function() return complete end))
+    local found = {}
+    for entry in picker.manager:iter() do found[entry.filename or entry.value] = true end
+    require("telescope.actions").close(prompt)
+    assert(found["code.txt"] and found[".hidden"], vim.inspect(found))
+    assert(not found["ignored.txt"] and not found[".git/HEAD"])
+  end
+  results(" ff")
+  results(" fg", "needle")
+  local executable = vim.fn.executable
+  vim.fn.executable = function(cmd) return cmd == "rg" and 0 or executable(cmd) end
+  local warning
+  local notify = vim.notify
+  vim.notify = function(message) warning = message end
+  vim.fn.maparg(" fg", "n", false, true).callback()
+  assert(warning:find("requires ripgrep"))
+  vim.notify = notify
+  vim.fn.executable = executable
 end
 local path = vim.env.HOME .. "/external.txt"
 vim.fn.writefile({"original"}, path)
@@ -158,4 +215,6 @@ assert(#vim.api.nvim_get_autocmds({group = "NvimWorkReload"}) == count)
         assert (packages / "nvim-work/.config/nvim/init.lua").read_bytes() == (
             ROOT / "packages/nvim-work/.config/nvim/init.lua").read_bytes()
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
+        if scenario == "native-plugins":
+            print("PASS: real Telescope finds files/text, respects ignores, and guards missing rg")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

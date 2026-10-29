@@ -46,7 +46,7 @@ dotfiles/
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
-    ├── nvim-work/.config/nvim/ # Opt-in, built-in-only alternative editor profile
+    ├── nvim-work/.config/nvim/ # Opt-in, minimal editor with Lazy/Telescope navigation
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
@@ -76,8 +76,10 @@ The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
 and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
-together with it. It requires only an installed Neovim, with no home or theme
-packages. Default package selection remains unchanged. `make stow-hyprland`
+together with it. It needs no home or theme packages. Basic editing works
+without plugins; `:WorkPluginsInstall` explicitly installs pinned Lazy,
+Telescope, and Plenary using Git. Text search needs `rg`. Normal startup does
+not install plugins or check for updates. Default package selection remains unchanged. `make stow-hyprland`
 additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations
@@ -208,7 +210,10 @@ Run `python3 scripts/test-nvim-work.py /absolute/path/to/nvim` to validate the
 work profile through Stow in disposable homes (requires GNU Stow and Neovim).
 It checks subprocess-free startup, native/mocked WSL clipboard selection and
 UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
-not validate the real Windows clipboard or the home plugin profile.
+not validate the real Windows clipboard or the home plugin profile. An optional
+second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`, and
+`plenary.nvim` fixture directories to check real Telescope file/text search
+(requires `rg`) and offline startup with plugins installed.
 
 Run the lightweight isolated checks with:
 

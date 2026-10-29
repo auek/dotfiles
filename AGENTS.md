@@ -44,7 +44,7 @@ dotfiles/
     ├── zshrc/.zshrc          # Zsh config
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # tmux config for server installs
-    ├── tmux/.tmux.conf       # tmux config
+    ├── tmux/.tmux.conf       # tmux config, including Foot/xterm-256color RGB
     ├── nvim/.config/nvim/    # Neovim config
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
     ├── bob/.config/bob/      # Bob Neovim version-manager config

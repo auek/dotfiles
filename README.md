@@ -161,6 +161,10 @@ with `tmux source-file "$HOME/.tmux.conf"`. Navigation never automatically
 saves modified buffers. Ctrl+\ toggles the previous pane/window through the
 plugin's default mapping.
 
+The workstation tmux config declares RGB support for Foot and `xterm-256color`
+(used by Windows Terminal), keeping Neovim's background colors accurate.
+After changing terminal features, detach and reattach existing tmux clients.
+
 The file tree shows dotfiles but hides `.git`. Its optional icon dependency
 and Git integration are disabled, keeping this step focused on navigation.
 The built-in directory browser remains available until nvim-tree is loaded.

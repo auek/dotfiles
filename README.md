@@ -121,8 +121,8 @@ it installs no OS packages. Plugins live under
 `stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
 live under `stdpath("state")/nvim-work`, separate from the home profile and
 outside the Stow checkout. Project-local `.lazy.lua` specs are disabled.
-Telescope loads only when a picker is used; nvim-tree loads on its command
-or keybinding. Startup checks for missing
+Telescope loads only when a picker is used; nvim-tree loads when opening a
+directory or using its command/keybinding. Startup checks for missing
 plugins but does not check for updates. If bootstrap fails, basic editing
 remains available; fix Git/network access and restart Neovim to retry.
 
@@ -167,7 +167,8 @@ After changing terminal features, detach and reattach existing tmux clients.
 
 The file tree shows dotfiles but hides `.git`. Its optional icon dependency
 and Git integration are disabled, keeping this step focused on navigation.
-The built-in directory browser remains available until nvim-tree is loaded.
+`nvim .`, `nvim /path/to/directory`, and `:edit directory` open nvim-tree.
+Netrw is disabled for this profile; ordinary file startup keeps nvim-tree lazy.
 
 Colors follow `theme-set` via
 `~/.local/state/dotfiles/theme/current/nvim.lua`, using the same dark, hard

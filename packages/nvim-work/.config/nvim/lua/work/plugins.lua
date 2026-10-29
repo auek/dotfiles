@@ -73,6 +73,20 @@ local function configure()
       keys = {
         { "<leader>fe", "<cmd>NvimTreeFindFileToggle<CR>", desc = "Toggle file tree" },
       },
+      init = function()
+        vim.g.loaded_netrw = 1
+        vim.g.loaded_netrwPlugin = 1
+        local group = vim.api.nvim_create_augroup("NvimWorkDirectory", { clear = true })
+        vim.api.nvim_create_autocmd("BufEnter", {
+          group = group,
+          callback = function(event)
+            local path = vim.api.nvim_buf_get_name(event.buf)
+            if vim.fn.isdirectory(path) == 1 then
+              require("nvim-tree.api").tree.open({ path = path })
+            end
+          end,
+        })
+      end,
       opts = {
         git = { enable = false },
         filters = { dotfiles = false, custom = { "^\\.git$" } },

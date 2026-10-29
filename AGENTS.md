@@ -46,6 +46,7 @@ dotfiles/
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
+    ├── nvim-work/.config/nvim/ # Opt-in, built-in-only alternative editor profile
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
@@ -73,7 +74,11 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-and `bob`. `make stow-hyprland` additionally links the desktop group: `foot`,
+and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
+targets the same `~/.config/nvim` location as `nvim` and must not be stowed
+together with it. It requires only an installed Neovim, with no home or theme
+packages. Default package selection remains unchanged. `make stow-hyprland`
+additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations
 do not remove existing desktop links. The `themes` package
@@ -198,6 +203,12 @@ shell, and Stow links after two setup runs. The Hyprland path also checks local
 entrypoint preservation and the autostart marker. It does not test GPU support,
 a graphical session, or portal functionality. Do not run it on the host as a
 substitute for the container.
+
+Run `python3 scripts/test-nvim-work.py /absolute/path/to/nvim` to validate the
+work profile through Stow in disposable homes (requires GNU Stow and Neovim).
+It checks subprocess-free startup, native/mocked WSL clipboard selection and
+UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
+not validate the real Windows clipboard or the home plugin profile.
 
 Run the lightweight isolated checks with:
 

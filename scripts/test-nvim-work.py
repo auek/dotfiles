@@ -91,7 +91,7 @@ if vim.env.SCENARIO ~= "native-plugins" then
   local notify = vim.notify
   vim.notify = function(message) table.insert(notifications, message) end
   vim.fn.maparg(" ff", "n", false, true).callback()
-  assert(notifications[1]:find("WorkPluginsInstall"))
+  assert(notifications[1]:find(":Lazy", 1, true))
   vim.notify = notify
 end
 assert(vim.fn.filereadable(vim.env.HOME .. "/calls") == 0)
@@ -132,6 +132,15 @@ else
 end
 if vim.env.SCENARIO == "native-plugins" then
   assert(package.loaded.lazy)
+  assert(vim.fn.exists(":Lazy") == 2 and vim.fn.exists(":WorkPluginsInstall") == 0)
+  local config = require("lazy.core.config")
+  local isolated = vim.fn.stdpath("state") .. "/nvim-work/"
+  for _, path in ipairs({config.options.lockfile, config.options.state,
+      config.options.pkg.cache, config.options.readme.root}) do
+    assert(path:sub(1, #isolated) == isolated, path)
+  end
+  assert(config.options.root == vim.fn.stdpath("data") .. "/nvim-work/lazy")
+  assert(config.options.local_spec == false)
   vim.system = _G.real_system
   vim.uv.spawn = _G.real_spawn
   vim.fn.jobstart = _G.real_jobstart

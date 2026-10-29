@@ -4,9 +4,34 @@ local manager = root .. "/lazy.nvim"
 local lazy_commit = "85c7ff3711b730b4030d03144f6db6375044ae82"
 local configured = false
 
+local function bootstrap()
+  if vim.uv.fs_stat(manager .. "/lua/lazy/init.lua") then return true end
+  if vim.fn.executable("git") ~= 1 then
+    vim.notify("Lazy bootstrap requires Git; basic editing is still available", vim.log.levels.WARN)
+    return false
+  end
+  vim.fn.mkdir(root, "p")
+  local staging = assert(vim.uv.fs_mkdtemp(root .. "/.lazy-install-XXXXXX"))
+  local result = vim.system({
+    "git", "clone", "--filter=blob:none", "--branch=stable",
+    "https://github.com/folke/lazy.nvim.git", staging,
+  }, { text = true }):wait()
+  if result.code == 0 then
+    result = vim.system({ "git", "-C", staging, "checkout", lazy_commit }, { text = true }):wait()
+  end
+  if result.code ~= 0 then
+    vim.fn.delete(staging, "rf")
+    vim.notify("Lazy bootstrap failed; check Git/network access and restart Neovim:\n"
+      .. (result.stderr or ""), vim.log.levels.WARN)
+    return false
+  end
+  assert(vim.uv.fs_rename(staging, manager))
+  return true
+end
+
 local function configure()
   if configured then return true end
-  if not vim.uv.fs_stat(manager .. "/lua/lazy/init.lua") then return false end
+  if not bootstrap() then return false end
   vim.opt.rtp:prepend(manager)
   local state = vim.fn.stdpath("state") .. "/nvim-work"
   vim.fn.mkdir(state, "p")
@@ -34,7 +59,10 @@ local function configure()
   }, {
     root = root,
     lockfile = state .. "/lazy-lock.json",
-    install = { missing = false },
+    local_spec = false,
+    state = state .. "/lazy-state.json",
+    pkg = { cache = state .. "/pkg-cache.lua" },
+    readme = { root = state .. "/readme" },
     checker = { enabled = false },
     change_detection = { enabled = false },
     rocks = { enabled = false },
@@ -43,39 +71,7 @@ local function configure()
   return true
 end
 
-local function install()
-  if vim.fn.executable("git") ~= 1 then
-    vim.notify("WorkPluginsInstall requires Git", vim.log.levels.WARN)
-    return
-  end
-  if not vim.uv.fs_stat(manager) then
-    vim.fn.mkdir(root, "p")
-    local staging = assert(vim.uv.fs_mkdtemp(root .. "/.lazy-install-XXXXXX"))
-    local result = vim.system({
-      "git", "clone", "--filter=blob:none", "--branch=stable",
-      "https://github.com/folke/lazy.nvim.git", staging,
-    }, { text = true }):wait()
-    if result.code == 0 then
-      result = vim.system({ "git", "-C", staging, "checkout", lazy_commit }, { text = true }):wait()
-    end
-    if result.code ~= 0 then
-      vim.fn.delete(staging, "rf")
-      vim.notify("Lazy installation failed: " .. (result.stderr or ""), vim.log.levels.ERROR)
-      return
-    end
-    assert(vim.uv.fs_rename(staging, manager))
-  end
-  if configure() then
-    require("lazy").install({ wait = true })
-  else
-    vim.notify("Incomplete Lazy installation at " .. manager, vim.log.levels.ERROR)
-  end
-end
-
 function M.setup()
-  vim.api.nvim_create_user_command("WorkPluginsInstall", install, {
-    desc = "Install the work profile's pinned Lazy, Telescope, and Plenary",
-  })
   configure()
   local pickers = {
     ["<leader>ff"] = { "find_files", "Find project files" },
@@ -86,9 +82,9 @@ function M.setup()
   }
   for key, picker in pairs(pickers) do
     vim.keymap.set("n", key, function()
-      if not configure() or not vim.uv.fs_stat(root .. "/telescope.nvim/lua/telescope/init.lua")
+      if not configured or not vim.uv.fs_stat(root .. "/telescope.nvim/lua/telescope/init.lua")
           or not vim.uv.fs_stat(root .. "/plenary.nvim/lua/plenary/init.lua") then
-        vim.notify("Run :WorkPluginsInstall to install the work navigation plugins", vim.log.levels.WARN)
+        vim.notify("Use :Lazy to install missing plugins; if Lazy is unavailable, check Git/network access and restart", vim.log.levels.WARN)
         return
       end
       if picker[1] == "live_grep" and vim.fn.executable("rg") ~= 1 then

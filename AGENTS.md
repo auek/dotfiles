@@ -77,9 +77,10 @@ The default workstation packages are stowed to `$HOME` via `make stow`:
 and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no home or theme packages. Basic editing works
-without plugins; `:WorkPluginsInstall` explicitly installs pinned Lazy,
-Telescope, and Plenary using Git. Text search needs `rg`. Normal startup does
-not install plugins or check for updates. Default package selection remains unchanged. `make stow-hyprland`
+without plugins; Lazy bootstraps on first launch and installs pinned Telescope
+and Plenary. Use standard `:Lazy` commands afterward. Plugin files and Lazy
+state/lockfile are separate from the home profile. Text search needs `rg`.
+Startup installs missing plugins but does not check for updates. Default package selection remains unchanged. `make stow-hyprland`
 additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations

@@ -84,7 +84,8 @@ colorscheme, plus a small Lazy/Telescope setup for navigation. A small set of
 plain options and mappings is copied from the home profile so this package
 stands alone without loading the home plugin collection or theme packages.
 It adds no language servers, completion, formatters, or native build steps.
-Basic editing starts offline even before plugins are installed.
+First launch needs Git and network access to bootstrap Lazy and install plugins.
+Once installed, the editor works offline.
 
 `nvim` and `nvim-work` are alternative profiles targeting `~/.config/nvim`.
 **Do not stow both.** Default `make stow` and setup profiles still select the
@@ -108,14 +109,17 @@ stow --restow --no-folding --dir=packages --target="$HOME" nvim-work
 nvim
 ```
 
-Run `:WorkPluginsInstall` once in Neovim. This explicitly downloads three
-pinned repositories: Lazy, Telescope 0.1.8, and Plenary. It requires Git and
-GitHub access through your existing network configuration. It installs no OS
-packages. Plugins live under `stdpath("data")/nvim-work/lazy`; Lazy's runtime
-lockfile lives under `stdpath("state")/nvim-work`, outside the Stow checkout.
-No downloads, missing-plugin installs, or update checks run at normal startup.
-Telescope loads only when a picker is used. `:Lazy` opens the plugin manager
-after installation; plugin versions are pinned in the work configuration.
+Lazy bootstraps on first launch and installs the missing plugins. Use the
+standard `:Lazy` interface afterward (`I` installs, `S` syncs). The three
+repositories are pinned: Lazy, Telescope 0.1.8, and Plenary. Installation
+requires Git and GitHub access through your existing network configuration;
+it installs no OS packages. Plugins live under
+`stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
+live under `stdpath("state")/nvim-work`, separate from the home profile and
+outside the Stow checkout. Project-local `.lazy.lua` specs are disabled.
+Telescope loads only when a picker is used. Startup checks for missing
+plugins but does not check for updates. If bootstrap fails, basic editing
+remains available; fix Git/network access and restart Neovim to retry.
 
 | Key | Navigation |
 |---|---|
@@ -129,7 +133,7 @@ Pickers use the current working directory; start `nvim` from the project root
 or use `:cd`. File finding uses an available `rg`, `fd`, or standard `find`.
 Text search requires `rg` on PATH and reports a clear message if it is missing.
 fzf, Node, Nerd Fonts, and a compiler are not required. If plugins are absent,
-these keys explain how to install them; basic editing remains available.
+these keys point to `:Lazy`; basic editing remains available.
 
 Space is the leader. `jj` leaves insert mode, Ctrl+h/j/k/l moves between
 windows, Ctrl+n/p cycles buffers, and leader+w/q writes/quits. Leader+b closes

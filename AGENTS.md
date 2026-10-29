@@ -46,7 +46,7 @@ dotfiles/
     ├── tmux-server/.tmux.conf # tmux config for server installs
     ├── tmux/.tmux.conf       # tmux config
     ├── nvim/.config/nvim/    # Neovim config
-    ├── nvim-work/.config/nvim/ # Opt-in, minimal editor with Lazy/Telescope navigation
+    ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
@@ -78,7 +78,9 @@ and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no home or theme packages. Basic editing works
 without plugins; Lazy bootstraps on first launch and installs pinned Telescope
-and Plenary. Use standard `:Lazy` commands afterward. Plugin files and Lazy
+and Plenary plus nvim-tree, Everforest, and Gruvbox. Use standard `:Lazy`
+commands afterward. Work colors follow the existing `theme-set` runtime
+selection, defaulting to Everforest without the optional `themes` package. Plugin files and Lazy
 state/lockfile are separate from the home profile. Text search needs `rg`.
 Startup installs missing plugins but does not check for updates. Default package selection remains unchanged. `make stow-hyprland`
 additionally links the desktop group: `foot`,
@@ -212,9 +214,10 @@ work profile through Stow in disposable homes (requires GNU Stow and Neovim).
 It checks subprocess-free startup, native/mocked WSL clipboard selection and
 UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
 not validate the real Windows clipboard or the home plugin profile. An optional
-second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`, and
-`plenary.nvim` fixture directories to check real Telescope file/text search
-(requires `rg`) and offline startup with plugins installed.
+second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
+`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, and `gruvbox.nvim` fixture
+directories to check real Telescope file/text search (requires `rg`), tree
+opening, theme selection/reloading, and offline startup with plugins installed.
 
 Run the lightweight isolated checks with:
 

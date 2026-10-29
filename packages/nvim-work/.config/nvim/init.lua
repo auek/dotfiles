@@ -21,7 +21,7 @@ opt.termguicolors = true
 opt.clipboard = ""
 vim.cmd("filetype plugin indent on")
 vim.cmd("syntax enable")
-vim.cmd.colorscheme("habamax")
+if not package.loaded["work.theme"] then vim.cmd.colorscheme("habamax") end
 
 local map = function(mode, lhs, rhs)
   vim.keymap.set(mode, lhs, rhs, { silent = true })

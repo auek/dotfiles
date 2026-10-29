@@ -38,6 +38,36 @@ local function configure()
   require("lazy").setup({
     { "folke/lazy.nvim", branch = "main", commit = lazy_commit },
     {
+      "neanias/everforest-nvim",
+      commit = "a0e9edc57379e8feafc6ba207c26dbb12fc1b6d8",
+      lazy = false,
+      priority = 1000,
+      dependencies = {
+        { "ellisonleao/gruvbox.nvim", commit = "154eb5ff5b96d0641307113fa385eaf0d36d9796" },
+      },
+      config = function() require("work.theme").setup() end,
+    },
+    {
+      "nvim-tree/nvim-tree.lua",
+      commit = "96b6d0ea594a1e519abd58fd8b60a39a9dec1869",
+      cmd = { "NvimTreeToggle", "NvimTreeFindFileToggle" },
+      keys = {
+        { "<leader>fe", "<cmd>NvimTreeFindFileToggle<CR>", desc = "Toggle file tree" },
+      },
+      opts = {
+        git = { enable = false },
+        filters = { dotfiles = false, custom = { "^\\.git$" } },
+        renderer = {
+          icons = {
+            show = {
+              file = false, folder = false, folder_arrow = false, git = false,
+              modified = false, diagnostics = false, bookmarks = false,
+            },
+          },
+        },
+      },
+    },
+    {
       "nvim-telescope/telescope.nvim",
       commit = "a0bbec21143c7bc5f8bb02e0005fa0b982edc026", -- 0.1.8
       lazy = true,

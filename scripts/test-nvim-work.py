@@ -46,6 +46,11 @@ with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
         if scenario == "native-plugins":
             shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/nvim-work/lazy")
             env["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
+            for name in ("everforest", "gruvbox"):
+                theme = home / ".local/state/dotfiles/theme" / name
+                theme.mkdir(parents=True)
+                shutil.copy(ROOT / "packages/themes/.local/share/dotfiles/themes" / name / "nvim.lua",
+                            theme / "nvim.lua")
         env.pop("NVIM_APPNAME", None)
         env.pop("VIMINIT", None)
         env.pop("EXINIT", None)
@@ -83,7 +88,7 @@ vim.uv.spawn = forbidden
         checks.write_text(r'''
 local function read(path) return vim.fn.readfile(path, "b") end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
-assert(vim.g.colors_name == "habamax")
+assert(vim.g.colors_name == (vim.env.SCENARIO == "native-plugins" and "everforest" or "habamax"))
 assert(not package.loaded["mason"] and not package.loaded["telescope.builtin"])
 if vim.env.SCENARIO ~= "native-plugins" then
   assert(not package.loaded.lazy)
@@ -171,6 +176,30 @@ if vim.env.SCENARIO == "native-plugins" then
   end
   results(" ff")
   results(" fg", "needle")
+  assert(not package.loaded["nvim-tree"])
+  vim.cmd.edit(project .. "/code.txt")
+  assert(vim.fn.maparg(" fe", "n", false, true).desc == "Toggle file tree")
+  vim.cmd.NvimTreeFindFileToggle()
+  assert(vim.bo.filetype == "NvimTree")
+  local tree = require("nvim-tree.api")
+  assert(tree.tree.is_visible())
+  local listing = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+  assert(listing:find("code.txt", 1, true) and listing:find(".hidden", 1, true), listing)
+  assert(not listing:find("HEAD", 1, true))
+  tree.tree.close()
+  assert(not tree.tree.is_visible())
+  local themes = vim.env.HOME .. "/.local/state/dotfiles/theme/"
+  assert(vim.g.colors_name == "everforest") -- no selection exists yet
+  assert(vim.uv.fs_symlink(themes .. "gruvbox", themes .. "current"))
+  vim.api.nvim_exec_autocmds("FocusGained", {})
+  assert(vim.g.colors_name == "gruvbox" and vim.g.dotfiles_theme == "gruvbox")
+  assert(vim.uv.fs_unlink(themes .. "current"))
+  assert(vim.uv.fs_symlink(themes .. "everforest", themes .. "current"))
+  vim.cmd.ReloadTheme()
+  assert(vim.g.colors_name == "everforest")
+  local theme_count = #vim.api.nvim_get_autocmds({group = "NvimWorkThemeReload"})
+  require("work.theme").setup()
+  assert(#vim.api.nvim_get_autocmds({group = "NvimWorkThemeReload"}) == theme_count)
   local executable = vim.fn.executable
   vim.fn.executable = function(cmd) return cmd == "rg" and 0 or executable(cmd) end
   local warning
@@ -214,9 +243,16 @@ assert(#vim.api.nvim_list_wins() == 2 and not vim.api.nvim_buf_is_valid(buf))
 local count = #vim.api.nvim_get_autocmds({group = "NvimWorkReload"})
 dofile(vim.fn.stdpath("config") .. "/init.lua")
 assert(#vim.api.nvim_get_autocmds({group = "NvimWorkReload"}) == count)
+if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everforest") end
 ''')
         result = run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                       "-c", f"luafile {checks}", "-c", "qa!"], env)
+        if scenario == "native-plugins":
+            selection = home / ".local/state/dotfiles/theme/current"
+            selection.unlink()
+            selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)
+            run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                 "-c", 'lua assert(vim.g.colors_name == "gruvbox")', "-c", "qa!"], env)
         run([STOW, "--delete", "--no-folding", f"--dir={packages}", f"--target={home}",
              "nvim-work"], {**os.environ})
         assert not (home / ".config/nvim/init.lua").exists()
@@ -225,5 +261,5 @@ assert(#vim.api.nvim_get_autocmds({group = "NvimWorkReload"}) == count)
             ROOT / "packages/nvim-work/.config/nvim/init.lua").read_bytes()
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
         if scenario == "native-plugins":
-            print("PASS: real Telescope finds files/text, respects ignores, and guards missing rg")
+            print("PASS: Telescope search, nvim-tree, Everforest default, theme selection/reload")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

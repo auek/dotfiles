@@ -43,7 +43,7 @@ been tested; verification is deferred until the next Arch installation.
 | Stow packages | Contents |
 |---|---|
 | `zshrc`, `zprofile` | Shell configuration and login environment |
-| `nvim-work` | Opt-in, minimal Neovim work profile with Lazy/Telescope navigation |
+| `nvim-work` | Opt-in Neovim work profile with Telescope, nvim-tree, and selected theme |
 | `tmux`, `nvim`, `bob` | Terminal multiplexer, editor, and Neovim version-manager settings |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -79,10 +79,11 @@ theme-set            # show current selection
 
 ## Minimal Neovim work profile
 
-`nvim-work` uses built-in syntax, filetype indentation, and the Habamax
-colorscheme, plus a small Lazy/Telescope setup for navigation. A small set of
+`nvim-work` uses built-in syntax and filetype indentation, Lazy/Telescope
+navigation, nvim-tree, and the existing Everforest/Gruvbox theme selection. A small set of
 plain options and mappings is copied from the home profile so this package
-stands alone without loading the home plugin collection or theme packages.
+stands alone without loading the home plugin collection. The `themes` Stow
+package is optional; without a saved selection the editor uses Everforest.
 It adds no language servers, completion, formatters, or native build steps.
 First launch needs Git and network access to bootstrap Lazy and install plugins.
 Once installed, the editor works offline.
@@ -110,19 +111,22 @@ nvim
 ```
 
 Lazy bootstraps on first launch and installs the missing plugins. Use the
-standard `:Lazy` interface afterward (`I` installs, `S` syncs). The three
-repositories are pinned: Lazy, Telescope 0.1.8, and Plenary. Installation
+standard `:Lazy` interface afterward (`I` installs, `S` syncs). The six
+repositories are pinned: Lazy, Telescope 0.1.8, Plenary, nvim-tree,
+Everforest, and Gruvbox. Installation
 requires Git and GitHub access through your existing network configuration;
 it installs no OS packages. Plugins live under
 `stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
 live under `stdpath("state")/nvim-work`, separate from the home profile and
 outside the Stow checkout. Project-local `.lazy.lua` specs are disabled.
-Telescope loads only when a picker is used. Startup checks for missing
+Telescope loads only when a picker is used; nvim-tree loads on its command
+or keybinding. Startup checks for missing
 plugins but does not check for updates. If bootstrap fails, basic editing
 remains available; fix Git/network access and restart Neovim to retry.
 
 | Key | Navigation |
 |---|---|
+| Space f e | Toggle nvim-tree and reveal the current file |
 | Space f f | Find project files, including dotfiles, respecting ignores |
 | Space f g | Search project text with ripgrep (`rg`) |
 | Space f o | Recent files |
@@ -134,6 +138,18 @@ or use `:cd`. File finding uses an available `rg`, `fd`, or standard `find`.
 Text search requires `rg` on PATH and reports a clear message if it is missing.
 fzf, Node, Nerd Fonts, and a compiler are not required. If plugins are absent,
 these keys point to `:Lazy`; basic editing remains available.
+
+The file tree shows dotfiles but hides `.git`. Its optional icon dependency
+and Git integration are disabled, keeping this step focused on navigation.
+The built-in directory browser remains available until nvim-tree is loaded.
+
+Colors follow `theme-set` via
+`~/.local/state/dotfiles/theme/current/nvim.lua`, using the same dark, hard
+Everforest palette and non-italic settings as the home profile. Existing
+`theme-set everforest` / `theme-set gruvbox` commands switch the selection;
+Neovim reloads it on focus, buffer entry, or idle. `:ReloadTheme` applies it
+immediately. No selection defaults to Everforest; Habamax remains the fallback
+when the theme plugins are not installed. The home Neovim config is unchanged.
 
 Space is the leader. `jj` leaves insert mode, Ctrl+h/j/k/l moves between
 windows, Ctrl+n/p cycles buffers, and leader+w/q writes/quits. Leader+b closes
@@ -173,7 +189,8 @@ python3 scripts/test-nvim-work.py /absolute/path/to/nvim /path/to/plugin-fixture
 ```
 
 The optional fixture directory must contain `lazy.nvim`, `telescope.nvim`,
-and `plenary.nvim` at the commits in `lua/work/plugins.lua`; integration checks
+`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, and `gruvbox.nvim` at the
+commits in `lua/work/plugins.lua`; integration checks
 copy them into disposable XDG data and require `rg`. Checks never install
 plugins into your real home. Real WSL clipboard/terminal behavior remains a
 manual check; the reported `åäö` issue is deferred.

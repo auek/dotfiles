@@ -38,6 +38,19 @@ local function configure()
   require("lazy").setup({
     { "folke/lazy.nvim", branch = "main", commit = lazy_commit },
     {
+      "neovim/nvim-lspconfig",
+      commit = "4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
+      lazy = false,
+      dependencies = {
+        {
+          "mason-org/mason.nvim",
+          commit = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
+          opts = { install_root_dir = vim.fn.stdpath("data") .. "/nvim-work/mason" },
+        },
+      },
+      config = function() require("work.lsp").setup() end,
+    },
+    {
       "neanias/everforest-nvim",
       commit = "a0e9edc57379e8feafc6ba207c26dbb12fc1b6d8",
       lazy = false,

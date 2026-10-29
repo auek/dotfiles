@@ -84,7 +84,8 @@ navigation, nvim-tree, and the existing Everforest/Gruvbox theme selection. A sm
 plain options and mappings is copied from the home profile so this package
 stands alone without loading the home plugin collection. The `themes` Stow
 package is optional; without a saved selection the editor uses Everforest.
-It adds no language servers, completion, formatters, or native build steps.
+Mason manages explicitly installed language servers. This profile adds no
+completion framework, format-on-save, or native build steps.
 First launch needs Git and network access to bootstrap Lazy and install plugins.
 Once installed, the editor works offline.
 
@@ -111,9 +112,9 @@ nvim
 ```
 
 Lazy bootstraps on first launch and installs the missing plugins. Use the
-standard `:Lazy` interface afterward (`I` installs, `S` syncs). The six
+standard `:Lazy` interface afterward (`I` installs, `S` syncs). The eight
 repositories are pinned: Lazy, Telescope 0.1.8, Plenary, nvim-tree,
-Everforest, and Gruvbox. Installation
+Everforest, Gruvbox, Mason, and nvim-lspconfig. Installation
 requires Git and GitHub access through your existing network configuration;
 it installs no OS packages. Plugins live under
 `stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
@@ -136,7 +137,8 @@ remains available; fix Git/network access and restart Neovim to retry.
 Pickers use the current working directory; start `nvim` from the project root
 or use `:cd`. File finding uses an available `rg`, `fd`, or standard `find`.
 Text search requires `rg` on PATH and reports a clear message if it is missing.
-fzf, Node, Nerd Fonts, and a compiler are not required. If plugins are absent,
+File navigation needs no fzf, Node, Nerd Fonts, or compiler. Node/npm are
+required for the language servers below. If plugins are absent,
 these keys point to `:Lazy`; basic editing remains available.
 
 The file tree shows dotfiles but hides `.git`. Its optional icon dependency
@@ -150,6 +152,48 @@ Everforest palette and non-italic settings as the home profile. Existing
 Neovim reloads it on focus, buffer entry, or idle. `:ReloadTheme` applies it
 immediately. No selection defaults to Everforest; Habamax remains the fallback
 when the theme plugins are not installed. The home Neovim config is unchanged.
+
+Language support uses Neovim's built-in LSP with nvim-lspconfig and Mason.
+Lazy installs the editor plugins; it does **not** install language servers.
+Launch Neovim from a shell where `node` and `npm` work, then use `:Mason`
+to install these three packages (or run the standard command below):
+
+```vim
+:MasonInstall typescript-language-server css-lsp yaml-language-server
+```
+
+| Mason package | LSP name | Scope |
+|---|---|---|
+| `typescript-language-server` | `ts_ls` | TypeScript, JavaScript, React/TSX |
+| `css-lsp` | `cssls` | CSS, SCSS, Less, CSS Modules stylesheet contents |
+| `yaml-language-server` | `yamlls` | YAML and Azure Pipelines schemas |
+
+Mason's package installation and executables live under
+`stdpath("data")/nvim-work/mason`, separate from the home profile's Mason.
+Available servers start on matching files, including files opened before a
+Mason installation finishes. Missing servers do not cause startup failures.
+No Mason bridge plugin or automatic server installation list is needed.
+CSS Modules import navigation and a completion UI are later additions.
+Project TypeScript settings come from the project's tsconfig/jsconfig.
+
+In attached buffers: `gd` goes to definition, `gh` shows hover documentation,
+`grr` lists references (Neovim's built-in mapping), Space c r renames,
+Space c a offers code actions, Space d shows a diagnostic, and `[d` / `]d`
+move between diagnostics. No buffer is formatted automatically.
+
+Azure schema matching applies to `azure-pipelines*.yml` / `.yaml` and files
+under `.azure-pipelines/`. For templates elsewhere, add a YAML modeline:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
+```
+
+The Azure schema is fetched when needed from Microsoft's upstream repository;
+YAML SchemaStore auto-discovery is disabled. Existing project modelines may
+select other schemas. Registry refresh, npm packages, and schema downloads
+must be reachable through the existing proxy/trust configuration. If installation
+fails, inspect `:MasonLog` and `:checkhealth mason`; `:checkhealth vim.lsp`
+shows enabled clients. This configuration does not alter proxy or CA settings.
 
 Space is the leader. `jj` leaves insert mode, Ctrl+h/j/k/l moves between
 windows, Ctrl+n/p cycles buffers, and leader+w/q writes/quits. Leader+b closes
@@ -189,11 +233,15 @@ python3 scripts/test-nvim-work.py /absolute/path/to/nvim /path/to/plugin-fixture
 ```
 
 The optional fixture directory must contain `lazy.nvim`, `telescope.nvim`,
-`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, and `gruvbox.nvim` at the
-commits in `lua/work/plugins.lua`; integration checks
+`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
+and `nvim-lspconfig` at the commits in `lua/work/plugins.lua`; integration checks
 copy them into disposable XDG data and require `rg`. Checks never install
 plugins into your real home. Real WSL clipboard/terminal behavior remains a
-manual check; the reported `åäö` issue is deferred.
+manual check; the reported `åäö` issue is deferred. An optional third argument
+supplies a preinstalled Mason fixture (preserve symlinks, and include Microsoft's
+`azure-schema.json` at its root) to exercise real TS definition/type diagnostics,
+CSS Modules diagnostics, Less attachment, and Azure YAML schema validation.
+Those checks copy the fixture and do not install servers into the real home.
 
 ## Further details
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Smoke-test the real stowed work profile; requires nvim, stow, and Python 3.
 
-Usage: python3 scripts/test-nvim-work.py /absolute/path/to/nvim [plugin-fixtures]
+Usage: python3 scripts/test-nvim-work.py /absolute/path/to/nvim [plugin-fixtures [mason-fixture]]
 All HOME/XDG state and clipboard processes are disposable fixtures.
 """
 import os
@@ -20,7 +20,8 @@ def run(args, env):
     result = subprocess.run(args, env=env, text=True, capture_output=True, timeout=30, cwd=env.get("HOME"))
     assert result.returncode == 0, result.stdout + result.stderr
     # Neovim can print Lua/startup errors yet exit zero after :qa!.
-    assert "Error" not in result.stderr, result.stderr
+    lsp_log = Path(env.get("XDG_STATE_HOME", "/tmp")) / "nvim/lsp.log"
+    assert "Error" not in result.stderr, result.stderr + (lsp_log.read_text()[:1500] + lsp_log.read_text()[-500:] if lsp_log.exists() else "")
     return result
 
 
@@ -46,6 +47,9 @@ with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
         if scenario == "native-plugins":
             shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/nvim-work/lazy")
             env["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
+            if len(sys.argv) > 3:
+                shutil.copytree(Path(sys.argv[3]), home / ".data/nvim/nvim-work/mason", symlinks=True)
+                env["LSP_FIXTURE"] = "1"
             for name in ("everforest", "gruvbox"):
                 theme = home / ".local/state/dotfiles/theme" / name
                 theme.mkdir(parents=True)
@@ -89,7 +93,8 @@ vim.uv.spawn = forbidden
 local function read(path) return vim.fn.readfile(path, "b") end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
 assert(vim.g.colors_name == (vim.env.SCENARIO == "native-plugins" and "everforest" or "habamax"))
-assert(not package.loaded["mason"] and not package.loaded["telescope.builtin"])
+assert(not package.loaded["telescope.builtin"])
+if vim.env.SCENARIO ~= "native-plugins" then assert(not package.loaded["mason"]) end
 if vim.env.SCENARIO ~= "native-plugins" then
   assert(not package.loaded.lazy)
   local notifications = {}
@@ -137,6 +142,11 @@ else
 end
 if vim.env.SCENARIO == "native-plugins" then
   assert(package.loaded.lazy)
+  assert(require("mason.settings").current.install_root_dir == vim.fn.stdpath("data") .. "/nvim-work/mason")
+  assert(#require("mason-registry").get_installed_package_names() == (vim.env.LSP_FIXTURE == "1" and 3 or 0))
+  for server, executable in pairs({ts_ls="typescript-language-server", cssls="vscode-css-language-server", yamlls="yaml-language-server"}) do
+    if vim.fn.executable(executable) == 0 then assert(not vim.lsp.is_enabled(server)) end
+  end
   assert(vim.fn.exists(":Lazy") == 2 and vim.fn.exists(":WorkPluginsInstall") == 0)
   local config = require("lazy.core.config")
   local isolated = vim.fn.stdpath("state") .. "/nvim-work/"
@@ -210,6 +220,50 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.notify = notify
   vim.fn.executable = executable
 end
+if vim.env.LSP_FIXTURE == "1" then
+  local project = vim.env.HOME .. "/languages"
+  vim.fn.mkdir(project .. "/.git", "p")
+  vim.fn.writefile({'{"compilerOptions":{"strict":true}}'}, project .. "/tsconfig.json")
+  vim.fn.writefile({'{"name":"fixture"}'}, project .. "/package.json")
+  vim.fn.writefile({"export const answer = 42;"}, project .. "/dep.ts")
+  vim.fn.writefile({'import { answer } from "./dep";', 'const value: number = "wrong";', "console.log(answer);"}, project .. "/main.ts")
+  vim.fn.writefile({"a { color: red; invalid-property: 1; }"}, project .. "/test.module.css")
+  vim.fn.writefile({"@color: red;", "a { color: @color; }"}, project .. "/test.less")
+  vim.fn.writefile({"trigger: none", "pool: 123", "steps:", "- script: echo hello"}, project .. "/azure-pipelines.yml")
+  local yaml = vim.lsp.config.yamlls
+  local remote = "https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json"
+  assert(yaml.settings.yaml.schemas[remote][1] == "azure-pipelines*.yml")
+  assert(yaml.settings.yaml.schemaStore.enable == false)
+  -- Same official schema, served from a fixture so this test needs no network.
+  yaml.settings.yaml.schemas = {
+    [vim.uri_from_fname(vim.fn.stdpath("data") .. "/nvim-work/mason/azure-schema.json")] = "azure-pipelines.yml",
+  }
+  local function open(file, server, expect_diagnostic)
+    vim.cmd.edit(project .. "/" .. file)
+    local buf = vim.api.nvim_get_current_buf()
+    assert(vim.wait(10000, function() return #vim.lsp.get_clients({bufnr=buf, name=server}) > 0 end), "no client: " .. file)
+    local client = vim.lsp.get_clients({bufnr=buf, name=server})[1]
+    assert(vim.wait(10000, function() return client.initialized end), "not initialized: " .. file)
+    if expect_diagnostic then
+      assert(vim.wait(15000, function() return #vim.diagnostic.get(buf) > 0 end), "no diagnostic: " .. file)
+    end
+    assert(vim.fn.maparg("gd", "n", false, true).buffer == 1)
+    return client, buf
+  end
+  local client, buf = open("main.ts", "ts_ls", true)
+  local result = client:request_sync("textDocument/definition", {
+    textDocument={uri=vim.uri_from_bufnr(buf)}, position={line=0, character=10},
+  }, 10000, buf)
+  assert(result and result.result and #result.result > 0, vim.inspect(result))
+  local definition = result.result[1]
+  assert((definition.uri or definition.targetUri):find("dep.ts", 1, true))
+  open("test.module.css", "cssls", true)
+  open("test.less", "cssls", false)
+  open("azure-pipelines.yml", "yamlls", true)
+  assert(vim.bo.modified == false)
+  for _, active in ipairs(vim.lsp.get_clients()) do active:stop(true) end
+  print("PASS: real TS definition/type diagnostics, CSS Modules diagnostics, Less attachment, Azure YAML schema diagnostics")
+end
 local path = vim.env.HOME .. "/external.txt"
 vim.fn.writefile({"original"}, path)
 vim.cmd.edit(path)
@@ -262,4 +316,6 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
         if scenario == "native-plugins":
             print("PASS: Telescope search, nvim-tree, Everforest default, theme selection/reload")
+            if env.get("LSP_FIXTURE"):
+                print("PASS: real TS definition/type diagnostics, CSS diagnostics, Less attachment, Azure schema validation")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

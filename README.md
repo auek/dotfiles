@@ -135,7 +135,12 @@ remains available; fix Git/network access and restart Neovim to retry.
 | Space f h | Help tags |
 
 Pickers use the current working directory; start `nvim` from the project root
-or use `:cd`. File finding uses an available `rg`, `fd`, or standard `find`.
+or use `:cd`. File queries match every space-separated term against the full
+path using Telescope's bundled Lua fuzzy matcher. For example, `foo File`
+finds `foo-app/src/File.tsx` while excluding the same filename under `bar-app`.
+Terms are case-insensitive and can appear in either order (`File foo` works).
+This needs no extra plugin or native build. Space f f searches paths; Space f g
+searches file contents. File finding uses an available `rg`, `fd`, or standard `find`.
 Text search requires `rg` on PATH and reports a clear message if it is missing.
 File navigation needs no fzf, Node, Nerd Fonts, or compiler. Node/npm are
 required for the language servers below. If plugins are absent,

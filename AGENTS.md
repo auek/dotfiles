@@ -221,7 +221,8 @@ not validate the real Windows clipboard or the home plugin profile. An optional
 second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
 `plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
 and `nvim-lspconfig` fixture
-directories to check real Telescope file/text search (requires `rg`), tree
+directories to check real Telescope file/text search (requires `rg`), including
+space-separated path terms and incremental query edits, tree
 opening, theme selection/reloading, and offline startup with plugins installed.
 An optional third argument supplies a Mason server fixture plus a local copy of
 the Azure Pipelines schema to test real LSP behavior without network access.

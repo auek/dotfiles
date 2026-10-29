@@ -186,6 +186,38 @@ if vim.env.SCENARIO == "native-plugins" then
   end
   results(" ff")
   results(" fg", "needle")
+  for _, app in ipairs({"foo", "bar", "baz", "qux"}) do
+    vim.fn.mkdir(project .. "/" .. app .. "-app/src", "p")
+    vim.fn.writefile({"export default null;"}, project .. "/" .. app .. "-app/src/File.tsx")
+  end
+  vim.fn.writefile({"export default null;"}, project .. "/foo-app/src/Other.tsx")
+  vim.fn.maparg(" ff", "n", false, true).callback()
+  local file_prompt = vim.api.nvim_get_current_buf()
+  local file_picker = require("telescope.actions.state").get_current_picker(file_prompt)
+  local file_complete = false
+  file_picker:register_completion_callback(function() file_complete = true end)
+  local foo_file = {"foo-app/src/File.tsx"}
+  for _, case in ipairs({
+    {"foo", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
+    {"foo ", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
+    {"foo F", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}}, {"foo Fi", foo_file}, {"foo File", foo_file},
+    {"foo Fl", foo_file}, {"missing File", {}},
+    {"foo", {"foo-app/src/File.tsx", "foo-app/src/Other.tsx"}},
+    {"File foo", foo_file}, {"  foo   File ", foo_file},
+    {"baz File", {"baz-app/src/File.tsx"}},
+  }) do
+    file_complete = false
+    file_picker:set_prompt(case[1])
+    assert(vim.wait(5000, function() return file_complete end))
+    local files = {}
+    for entry in file_picker.manager:iter() do table.insert(files, entry.value) end
+    table.sort(files)
+    assert(vim.deep_equal(files, case[2]), case[1] .. ": " .. vim.inspect(files))
+  end
+  local positions = file_picker.sorter:highlighter("foo File", "foo-app/src/File.tsx")
+  assert(vim.deep_equal(positions, {1,2,3,13,14,15,16}), vim.inspect(positions))
+  require("telescope.actions").close(file_prompt)
+
   assert(not package.loaded["nvim-tree"])
   vim.cmd.edit(project .. "/code.txt")
   assert(vim.fn.maparg(" fe", "n", false, true).desc == "Toggle file tree")
@@ -315,7 +347,7 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
             ROOT / "packages/nvim-work/.config/nvim/init.lua").read_bytes()
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
         if scenario == "native-plugins":
-            print("PASS: Telescope search, nvim-tree, Everforest default, theme selection/reload")
+            print("PASS: Telescope path tokens/incremental edits/search, nvim-tree, theme selection/reload")
             if env.get("LSP_FIXTURE"):
                 print("PASS: real TS definition/type diagnostics, CSS diagnostics, Less attachment, Azure schema validation")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

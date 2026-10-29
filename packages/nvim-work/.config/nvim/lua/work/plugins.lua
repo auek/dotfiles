@@ -89,6 +89,7 @@ local function configure()
       },
       opts = {
         defaults = {
+          file_sorter = function() return require("work.file_sorter").new() end,
           -- Include project dotfiles, while respecting ignores and excluding Git metadata.
           vimgrep_arguments = {
             "rg", "--color=never", "--no-heading", "--with-filename",

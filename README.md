@@ -43,6 +43,7 @@ been tested; verification is deferred until the next Arch installation.
 | Stow packages | Contents |
 |---|---|
 | `zshrc`, `zprofile` | Shell configuration and login environment |
+| `nvim-work` | Opt-in Neovim work profile with Telescope, nvim-tree, and selected theme |
 | `tmux`, `nvim`, `bob` | Terminal multiplexer, editor, and Neovim version-manager settings |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -75,6 +76,197 @@ theme-set gruvbox
 theme-set everforest
 theme-set            # show current selection
 ```
+
+## Minimal Neovim work profile
+
+`nvim-work` uses built-in syntax and filetype indentation, Lazy/Telescope
+navigation, nvim-tree, and the existing Everforest/Gruvbox theme selection. A small set of
+plain options and mappings is copied from the home profile so this package
+stands alone without loading the home plugin collection. The `themes` Stow
+package is optional; without a saved selection the editor uses Everforest.
+Mason manages explicitly installed language servers. This profile adds no
+completion framework or format-on-save. Telescope's fzf-native sorter builds
+locally with Make and GCC/Clang.
+First launch needs Git and network access to bootstrap Lazy and install plugins.
+Once installed, the editor works offline.
+
+`nvim` and `nvim-work` are alternative profiles targeting `~/.config/nvim`.
+**Do not stow both.** Default `make stow` and setup profiles still select the
+home `nvim` package. Unstow your previous profile before switching. If Stow
+reports existing files, resolve the conflict yourself; do not overwrite,
+`--adopt`, or automatically delete them.
+
+From the repository root, activate only this package:
+
+```bash
+stow --simulate --verbose --no-folding --dir=packages --target="$HOME" nvim-work
+stow --no-folding --dir=packages --target="$HOME" nvim-work
+nvim
+```
+
+After first activation (or after pulling new package files), restow this
+package to link its Lua module, then start Neovim:
+
+```bash
+stow --restow --no-folding --dir=packages --target="$HOME" nvim-work
+nvim
+```
+
+Lazy bootstraps on first launch and installs the missing plugins. Use the
+standard `:Lazy` interface afterward (`I` installs, `S` syncs). The ten
+repositories are pinned: Lazy, Telescope 0.1.8, Plenary, telescope-fzf-native,
+vim-tmux-navigator, nvim-tree, Everforest, Gruvbox, Mason, and nvim-lspconfig. Installation
+requires Git and GitHub access through your existing network configuration;
+it installs no OS packages. Plugins live under
+`stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
+live under `stdpath("state")/nvim-work`, separate from the home profile and
+outside the Stow checkout. Project-local `.lazy.lua` specs are disabled.
+Telescope loads only when a picker is used; nvim-tree loads on its command
+or keybinding. Startup checks for missing
+plugins but does not check for updates. If bootstrap fails, basic editing
+remains available; fix Git/network access and restart Neovim to retry.
+
+| Key | Navigation |
+|---|---|
+| Space f e | Toggle nvim-tree and reveal the current file |
+| Space f f | Find project files, including dotfiles, respecting ignores |
+| Space f g | Search project text with ripgrep (`rg`) |
+| Space f o | Recent files |
+| Space l s | Open buffers |
+| Space f h | Help tags |
+
+Pickers use the current working directory; start `nvim` from the project root
+or use `:cd`. Telescope uses the standard fzf-native extension for file and
+generic sorting. Space-separated terms match the full path, e.g. `foo File`
+or `foo long path to`; terms can appear in either order. Smart case means a
+lowercase term ignores case while a term containing capitals respects case.
+fzf query operators such as `!`, `'`, `^`, `$`, and `|` are supported.
+Space f f searches paths; Space f g searches file contents. File finding uses
+an available `rg`, `fd`, or standard `find`. Text search requires `rg` on PATH
+and reports a clear message if it is missing.
+
+Lazy runs `make` to build fzf-native on installation/updates. Make and GCC or
+Clang must already be available; no separate `fzf` executable is needed.
+If the build fails, use `:Lazy build telescope-fzf-native.nvim` after resolving
+the compiler issue. A warning is shown and Telescope's default sorter remains
+available. Node/npm are required for the language servers below. Nerd Fonts
+are optional.
+
+Ctrl+h/j/k/l uses the same `vim-tmux-navigator` plugin as the home profile:
+it moves between Neovim splits and crosses into tmux panes at editor edges.
+Outside tmux it still navigates Neovim splits. The `tmux` and `tmux-server`
+packages already contain the matching bindings; no tmux config changes are
+needed. If the active tmux session predates those bindings, reload its config
+with `tmux source-file "$HOME/.tmux.conf"`. Navigation never automatically
+saves modified buffers. Ctrl+\ toggles the previous pane/window through the
+plugin's default mapping.
+
+The workstation tmux config declares RGB support for Foot and `xterm-256color`
+(used by Windows Terminal), keeping Neovim's background colors accurate.
+After changing terminal features, detach and reattach existing tmux clients.
+
+The file tree shows dotfiles but hides `.git`. Its optional icon dependency
+and Git integration are disabled, keeping this step focused on navigation.
+The built-in directory browser remains available until nvim-tree is loaded.
+
+Colors follow `theme-set` via
+`~/.local/state/dotfiles/theme/current/nvim.lua`, using the same dark, hard
+Everforest palette and non-italic settings as the home profile. Existing
+`theme-set everforest` / `theme-set gruvbox` commands switch the selection;
+Neovim reloads it on focus, buffer entry, or idle. `:ReloadTheme` applies it
+immediately. No selection defaults to Everforest; Habamax remains the fallback
+when the theme plugins are not installed. The home Neovim config is unchanged.
+
+Language support uses Neovim's built-in LSP with nvim-lspconfig and Mason.
+Lazy installs the editor plugins; it does **not** install language servers.
+Launch Neovim from a shell where `node` and `npm` work, then use `:Mason`
+to install these three packages (or run the standard command below):
+
+```vim
+:MasonInstall typescript-language-server css-lsp yaml-language-server
+```
+
+| Mason package | LSP name | Scope |
+|---|---|---|
+| `typescript-language-server` | `ts_ls` | TypeScript, JavaScript, React/TSX |
+| `css-lsp` | `cssls` | CSS, SCSS, Less, CSS Modules stylesheet contents |
+| `yaml-language-server` | `yamlls` | YAML and Azure Pipelines schemas |
+
+Mason's package installation and executables live under
+`stdpath("data")/nvim-work/mason`, separate from the home profile's Mason.
+Available servers start on matching files, including files opened before a
+Mason installation finishes. Missing servers do not cause startup failures.
+No Mason bridge plugin or automatic server installation list is needed.
+CSS Modules import navigation and a completion UI are later additions.
+Project TypeScript settings come from the project's tsconfig/jsconfig.
+
+In attached buffers: `gd` goes to definition, `gh` shows hover documentation,
+`grr` lists references (Neovim's built-in mapping), Space c r renames,
+Space c a offers code actions, Space d shows a diagnostic, and `[d` / `]d`
+move between diagnostics. No buffer is formatted automatically.
+
+Azure schema matching applies to `azure-pipelines*.yml` / `.yaml` and files
+under `.azure-pipelines/`. For templates elsewhere, add a YAML modeline:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
+```
+
+The Azure schema is fetched when needed from Microsoft's upstream repository;
+YAML SchemaStore auto-discovery is disabled. Existing project modelines may
+select other schemas. Registry refresh, npm packages, and schema downloads
+must be reachable through the existing proxy/trust configuration. If installation
+fails, inspect `:MasonLog` and `:checkhealth mason`; `:checkhealth vim.lsp`
+shows enabled clients. This configuration does not alter proxy or CA settings.
+
+Space is the leader. `jj` leaves insert mode, Ctrl+h/j/k/l moves between
+windows, Ctrl+n/p cycles buffers, and leader+w/q writes/quits. Leader+b closes
+a clean buffer while retaining splits; modified buffers must be saved first.
+`:W`, `:Wq`, and `:WQ` are also available. Markdown and text buffers wrap.
+External edits reload unmodified buffers on focus, buffer entry, or idle;
+checks defer during insert/command-line editing and never overwrite unsaved
+changes. This does not change the home profile's reload implementation.
+
+Visual leader+y copies to the system clipboard; normal leader+p pastes.
+On WSL, if `powershell.exe` is available, both `*` and `+` use the Windows
+clipboard with UTF-8 stdin/output. Clipboard text never becomes PowerShell
+code. PowerShell runs only for explicit clipboard operations; ordinary
+editing uses normal registers. Otherwise Neovim can use its native clipboard
+providers when available. No clipboard utility is installed by this package.
+
+On the actual Windows/WSL machine, verify normal `nvim` startup, split/buffer
+keys, copying and pasting multiline text with `åäö`, quotes and backslashes,
+an empty clipboard, and Windows CRLF text. Confirm external edits reload a
+clean buffer while unsaved edits stay intact. Linux mocks cannot validate
+Windows clipboard behavior or interactive Windows Terminal/tmux behavior.
+
+Remove only this profile with:
+
+```bash
+stow --delete --no-folding --dir=packages --target="$HOME" nvim-work
+```
+
+After this change is merged into your tracked branch, `git pull --ff-only`
+will include it. Pulling before merge does not install the unmerged PR.
+For isolated developer checks (Neovim and Stow must already be on PATH):
+
+```bash
+python3 scripts/test-nvim-work.py /absolute/path/to/nvim
+# Also exercise real Telescope file/text search using pre-fetched, pinned repos:
+python3 scripts/test-nvim-work.py /absolute/path/to/nvim /path/to/plugin-fixtures
+```
+
+The optional fixture directory must contain `lazy.nvim`, `telescope.nvim`,
+`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
+`nvim-lspconfig`, `telescope-fzf-native.nvim` (already built), and
+`vim-tmux-navigator` at the commits in `lua/work/plugins.lua`; integration checks
+copy them into disposable XDG data and require `rg`. Checks never install
+plugins into your real home. Real WSL clipboard/terminal behavior remains a
+manual check; the reported `åäö` issue is deferred. An optional third argument
+supplies a preinstalled Mason fixture (preserve symlinks, and include Microsoft's
+`azure-schema.json` at its root) to exercise real TS definition/type diagnostics,
+CSS Modules diagnostics, Less attachment, and Azure YAML schema validation.
+Those checks copy the fixture and do not install servers into the real home.
 
 ## Further details
 

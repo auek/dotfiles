@@ -44,8 +44,9 @@ dotfiles/
     ├── zshrc/.zshrc          # Zsh config
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # tmux config for server installs
-    ├── tmux/.tmux.conf       # tmux config
+    ├── tmux/.tmux.conf       # tmux config, including Foot/xterm-256color RGB
     ├── nvim/.config/nvim/    # Neovim config
+    ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
@@ -73,7 +74,23 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-and `bob`. `make stow-hyprland` additionally links the desktop group: `foot`,
+and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
+targets the same `~/.config/nvim` location as `nvim` and must not be stowed
+together with it. It needs no home or theme packages. Basic editing works
+without plugins; Lazy bootstraps on first launch and installs pinned Telescope
+and Plenary plus nvim-tree, Everforest, Gruvbox, Mason, nvim-lspconfig,
+telescope-fzf-native (built with Make and GCC/Clang), and vim-tmux-navigator.
+The work profile shares the existing tmux navigation bindings and never saves
+buffers automatically on pane switches. Use standard `:Lazy`
+commands afterward. Work colors follow the existing `theme-set` runtime
+selection, defaulting to Everforest without the optional `themes` package. Plugin files and Lazy
+state/lockfile are separate from the home profile. Text search needs `rg`.
+Mason installs servers only on explicit request (`typescript-language-server`,
+`css-lsp`, `yaml-language-server`) into the separate `nvim-work/mason` data root.
+The work profile enables only available `ts_ls`, `cssls`, and `yamlls` servers,
+with Azure Pipelines YAML schema associations. It adds no format-on-save or
+completion framework. Startup installs missing plugins but does not check for updates. Default package selection remains unchanged. `make stow-hyprland`
+additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations
 do not remove existing desktop links. The `themes` package
@@ -198,6 +215,20 @@ shell, and Stow links after two setup runs. The Hyprland path also checks local
 entrypoint preservation and the autostart marker. It does not test GPU support,
 a graphical session, or portal functionality. Do not run it on the host as a
 substitute for the container.
+
+Run `python3 scripts/test-nvim-work.py /absolute/path/to/nvim` to validate the
+work profile through Stow in disposable homes (requires GNU Stow and Neovim).
+It checks subprocess-free startup, native/mocked WSL clipboard selection and
+UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
+not validate the real Windows clipboard or the home plugin profile. An optional
+second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
+`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
+`nvim-lspconfig`, built `telescope-fzf-native.nvim`, and `vim-tmux-navigator` fixture
+directories to check real Telescope file/text search (requires `rg`), including
+space-separated path terms and incremental query edits, tree
+opening, theme selection/reloading, and offline startup with plugins installed.
+An optional third argument supplies a Mason server fixture plus a local copy of
+the Azure Pipelines schema to test real LSP behavior without network access.
 
 Run the lightweight isolated checks with:
 

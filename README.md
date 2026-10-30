@@ -42,6 +42,7 @@ been tested; verification is deferred until the next Arch installation.
 
 | Stow packages | Contents |
 |---|---|
+| `mise` | Node 24.19.0 and `.nvmrc`/`.node-version` compatibility |
 | `zshrc`, `zprofile` | Shell configuration and login environment |
 | `nvim-work` | Opt-in Neovim work profile with Telescope, nvim-tree, and selected theme |
 | `tmux`, `nvim`, `bob` | Terminal multiplexer, editor, and Neovim version-manager settings |
@@ -51,6 +52,13 @@ been tested; verification is deferred until the next Arch installation.
 | `foot`, `hypr`, `waybar`, `wofi`, `mako` | Opt-in Hyprland desktop, terminal, bar, launcher, and notifications |
 | `bashrc-server`, `vim-server`, `tmux-server` | Minimal server configuration |
 | `gtk` | Separately opt-in settings for the external Everforest GTK theme |
+
+Mise activates in interactive Zsh; login shells use its shims. On machines
+with mise already installed, link the `mise`, `zshrc`, and `zprofile` packages,
+then run `mise install` from your home directory and restart with `exec zsh -l`.
+Existing `~/.nvm` installations and machine-specific global npm packages are
+preserved. Global packages are not copied to mise; reinstall only those you need
+manually. Project `.nvmrc` and `.node-version` files override the global pin.
 
 ## Managing dotfiles
 

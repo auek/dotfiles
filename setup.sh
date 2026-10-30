@@ -5,7 +5,7 @@
 # Usage: setup.sh [--server | --slim | --full] [--hyprland] [--update]
 #   --server  Install minimal remote server tooling (bash, tmux, vim)
 #   --slim    Install common packages, dotfiles, shell (default)
-#   --full    All of the above + dev tools (nvim, nvm, node, tldr, llm)
+#   --full    All of the above + dev tools (nvim, mise, node, tldr, llm)
 #   --update  Run a full system package upgrade before installing (for first-time bootstrap)
 #   --hyprland  Add the Arch desktop and opt into tty1 autostart
 
@@ -19,7 +19,6 @@ DO_UPDATE=0
 INSTALL_HYPRLAND=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
-NVM_VERSION="v0.40.1"
 DOTFILES_LINK="$HOME/.dotfiles"
 IS_WSL=0
 
@@ -344,26 +343,20 @@ if [ "$PROFILE" = "full" ]; then
     info "Using Neovim from the system package manager"
   fi
 
-  # nvm
-  if [ -d "$HOME/.nvm" ]; then
-    info "nvm already installed"
+  # mise owns Node versions; retain ~/.nvm and its global packages for rollback.
+  export PATH="$HOME/.local/bin:$PATH"
+  if command -v mise &>/dev/null; then
+    info "mise already installed"
   else
-    info "Installing nvm $NVM_VERSION"
-    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | bash
-    success "nvm $NVM_VERSION installed"
+    info "Installing mise"
+    curl -fsSL https://mise.run | sh
+    success "mise installed"
   fi
 
-  # node LTS (load nvm first)
-  export NVM_DIR="$HOME/.nvm"
-  # shellcheck source=/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-  if command -v node &>/dev/null; then
-    info "node already installed: $(node --version)"
-  else
-    nvm install --lts
-    success "node LTS installed"
-  fi
+  # Install from the stowed declarative config without rewriting it.
+  (cd "$HOME" && mise install node)
+  mise reshim
+  success "Configured Node installed via mise"
 
   # uv
   if command -v uv &>/dev/null; then

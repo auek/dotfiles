@@ -14,10 +14,11 @@ if command -v less >/dev/null 2>&1; then
   export LESS='-R'
 fi
 
-# NVM
-export NVM_DIR="$HOME/.nvm"
-[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+# mise (also available in interactive shells that are not login shells).
+export PATH="$HOME/.local/bin:$PATH"
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
 
 ### Shell Behavior ###
 # Append commands immediately and import history from other shells.

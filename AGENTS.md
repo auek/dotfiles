@@ -47,6 +47,7 @@ dotfiles/
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
     ├── nvim/.config/nvim/    # Neovim config
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
+    ├── mise/.config/mise/    # Node 24.19.0 and idiomatic version-file settings
     ├── bob/.config/bob/      # Bob Neovim version-manager config
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
@@ -74,7 +75,7 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-and `bob`. The separate `nvim-work` package is opt-in via direct Stow; it
+`bob`, and `mise`. The separate `nvim-work` package is opt-in via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no home or theme packages. Basic editing works
 without plugins; Lazy bootstraps on first launch and installs pinned Telescope

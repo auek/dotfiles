@@ -3,6 +3,11 @@
 # PATH
 export PATH="$HOME/.local/bin:$PATH"
 
+# Shims make managed tools available to login commands without an interactive prompt.
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh --shims)"
+fi
+
 # Bob supplies current Neovim on Ubuntu/Debian; other supported distros use
 # their native Neovim package.
 if [[ -x "$HOME/.local/state/bob/nvim-bin/nvim" ]] && \

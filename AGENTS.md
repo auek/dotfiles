@@ -36,12 +36,13 @@ dotfiles/
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
 │   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
+│   ├── test-tmx.py           # Isolated Zsh session/local-hook checks with private tmux sockets
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh config
+    ├── zshrc/.zshrc          # Zsh config and portable tmx sessions with optional local hooks
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
@@ -83,6 +84,13 @@ ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
 `"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
 Do not Stow that file or change the shared pin for a machine-local preference.
 Project version files still override either global default.
+The shared Zsh `tmx` command lists sessions when called without arguments;
+`tmx <name> [directory]` attaches/switches or creates in the supplied directory
+(current directory by default). New sessions have one window/pane unless an
+ordinary, untracked `${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.zsh` hook customizes
+them. The hook runs in a separate `zsh -ef` process with session/window/pane IDs
+and the absolute directory as arguments; it never runs on reattachment. No
+editor or assistant is launched by shared code. Never Stow the local hook.
 Bob configuration remains optional for rollback; it is not in the default
 package selection. The separate `nvim-work` package is opt-in
 via direct Stow; it
@@ -256,6 +264,7 @@ Run the lightweight isolated checks with:
 
 ```bash
 python3 scripts/test-hyprland-bootstrap.py
+python3 scripts/test-tmx.py
 bash -n setup.sh scripts/configure-hyprland.sh docker/test.sh
 zsh -n packages/zprofile/.zprofile
 make themes-check
@@ -263,8 +272,12 @@ make themes-check
 
 The Python checks use disposable homes and mocked commands in the system
 temporary directory; they do not execute host setup, Stow, or service-manager
-operations. Python's `tempfile` manages creation and cleanup, with no dependency
-on an agent-specific directory.
+operations. The `tmx` checks require Zsh and tmux and use real private tmux
+sockets with attach/switch commands mocked; they never access host sessions.
+They cover listing, exact-name attachment, directory handling, 80/20 and 50/50
+hooks, program startup, hook isolation/failures, and terminal-size fallbacks.
+Python's `tempfile` manages creation and cleanup, with no dependency on an
+agent-specific directory.
 
 `scripts/test-mise.py` checks real mise activation, first-command Node/npm/npx
 and Neovim selection, machine-local Node overrides, project Node version files,

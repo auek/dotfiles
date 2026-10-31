@@ -56,7 +56,11 @@ class MiseTests(unittest.TestCase):
         (bindir / "mise").symlink_to(MISE)
         (self.home / ".oh-my-zsh").mkdir()
         (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
-        self.env = {**os.environ, "HOME": str(self.home),
+        # An activated parent exports a PATH diff that can restore its host
+        # tool directories even after we replace HOME and PATH for the fixture.
+        parent_env = {key: value for key, value in os.environ.items()
+                      if not key.startswith(("MISE_", "__MISE_"))}
+        self.env = {**parent_env, "HOME": str(self.home),
                     "PATH": f"{bindir}:{bindir}:/usr/bin:/bin",
                     "XDG_CONFIG_HOME": str(self.home / ".config"),
                     "XDG_DATA_HOME": str(self.home / ".local/share"),
@@ -169,6 +173,15 @@ class MiseTests(unittest.TestCase):
         before = self.config.read_bytes()
         self.run_checked([str(MISE), "reshim"])
         self.assertEqual(self.config.read_bytes(), before)
+
+    def test_fixture_path_isolation(self):
+        for flags in ("-lc", "-lic", "-ic"):
+            with self.subTest(flags=flags):
+                paths = self.shell(flags, "print -l -- $path").splitlines()
+                for path in paths:
+                    # Login shells may add distro paths through /etc/profile.
+                    self.assertTrue(path in ("/bin", "/sbin") or path.startswith("/usr/") or
+                                    path.startswith(str(self.home) + "/"), path)
 
     def test_stow_conflict_and_safe_removal(self):
         unrelated = self.home / ".config/tealdeer/local-note"

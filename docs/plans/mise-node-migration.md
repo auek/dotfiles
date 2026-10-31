@@ -85,7 +85,7 @@ Excluded:
   shells without inherited nvm PATH entries: an old installation can otherwise
   mask missing global npm commands.
 - Tealdeer 1.9.1 downloaded its cache through the system trust store and displayed
-  the Node page. The eight mise checks, seven Hyprland checks, theme consistency,
+  the Node page. The nine mise checks, seven Hyprland checks, theme consistency,
   and shell syntax checks passed.
 - Preserved the default `nvim` Stow profile, its lockfile, and its plugin/Mason
   data. Actual Neovim 0.12.6 startup found all 38 cached plugins (35 loaded at
@@ -115,9 +115,19 @@ Excluded:
   packages `bat`, `lazygit`, `fastfetch`, `ripgrep`, `fd`, `fzf`, and `neovim`
   through Pacman, and Python tldr through pipx. None had required reverse
   dependencies; Neovim was optional for pacman-contrib. Package archives remain
-  in the Pacman cache, and the nvm-managed Node 24.20.0 installation is retained.
-  Fresh-shell tool selection and editor checks were repeated without the
-  fallback installations.
+  in the Pacman cache. Fresh-shell tool selection and editor checks were repeated
+  without the fallback installations.
+- Initially retained nvm for rollback, then deleted `~/.nvm` after separate
+  explicit approval. Its only installed Node was 24.20.0, with npm and Corepack
+  globals already replaced by the mise installation. No external symlinks in
+  the inspected user tool/config directories or running executables depended
+  on nvm. Node/npm/npx, Corepack/pnpm, project switching, and Neovim checks were
+  repeated after deletion.
+- Re-running the disposable checks from a mise-activated parent exposed
+  inherited shell-diff state restoring host PATH entries inside the fixtures.
+  The checks now discard inherited mise variables before setting their own
+  directories, with a regression check that every PATH entry stays inside the
+  fixture or the explicitly allowed system paths.
 
 ## Completion Criteria
 

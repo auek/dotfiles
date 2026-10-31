@@ -146,7 +146,8 @@ passed; this is not verification of fresh distro provisioning. See the
 
 ## Tmux sessions with `tmx`
 
-`tmx` replaces `dev`; it never launches an editor or assistant by default.
+`tmx` lists, creates, and attaches to tmux sessions. It does not launch an editor
+or assistant by default.
 
 ```zsh
 tmx                         # list sessions (or show a creation hint)

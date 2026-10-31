@@ -84,7 +84,7 @@ ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
 `"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
 Do not Stow that file or change the shared pin for a machine-local preference.
 Project version files still override either global default.
-The shared Zsh `tmx` command replaces `dev`: no arguments lists sessions;
+The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an
 ordinary, untracked `${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.zsh` hook customizes

@@ -56,7 +56,11 @@ class MiseTests(unittest.TestCase):
         (bindir / "mise").symlink_to(MISE)
         (self.home / ".oh-my-zsh").mkdir()
         (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
-        self.env = {**os.environ, "HOME": str(self.home),
+        # An activated parent exports a PATH diff that can restore its host
+        # tool directories even after we replace HOME and PATH for the fixture.
+        parent_env = {key: value for key, value in os.environ.items()
+                      if not key.startswith(("MISE_", "__MISE_"))}
+        self.env = {**parent_env, "HOME": str(self.home),
                     "PATH": f"{bindir}:{bindir}:/usr/bin:/bin",
                     "XDG_CONFIG_HOME": str(self.home / ".config"),
                     "XDG_DATA_HOME": str(self.home / ".local/share"),
@@ -107,6 +111,9 @@ class MiseTests(unittest.TestCase):
         self.assertEqual(tools.pop("node"), "24.19.0")
         self.assertTrue(tools)
         self.assertTrue(all(version == "latest" for version in tools.values()))
+        self.assertEqual(tools["aqua:eza-community/eza"], "latest")
+        self.assertNotIn("aqua:astral-sh/uv", tools)
+        self.assertNotIn("uv", tools)
         self.assertEqual(self.manifest["settings"]["idiomatic_version_file_enable_tools"], ["node"])
         config = tomllib.loads((self.home / ".config/tealdeer/config.toml").read_text())
         self.assertEqual(config["updates"]["tls_backend"], "rustls-with-native-roots")
@@ -131,6 +138,28 @@ class MiseTests(unittest.TestCase):
                     output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
                     self.assertEqual(output.splitlines(), [f"v{OTHER_VERSION}", "v24.19.0"])
 
+    def test_machine_local_node_override_and_project_precedence(self):
+        before = self.config.read_bytes()
+        local = self.home / ".config/mise/config.local.toml"
+        contents = f'[tools]\nnode = "{OTHER_VERSION}"\n'
+        local.write_text(contents)
+        self.stow("--restow", "mise")
+        self.assertEqual(local.read_text(), contents)
+        for flags in ("-lc", "-lic", "-ic"):
+            with self.subTest(flags=flags):
+                self.assertEqual(self.shell(flags, "node --version"), f"v{OTHER_VERSION}")
+        for filename in (".nvmrc", ".node-version"):
+            project = self.home / ("local-override-" + filename.removeprefix("."))
+            project.mkdir()
+            (project / filename).write_text("24.19.0\n")
+            for flags in ("-lc", "-ic"):
+                with self.subTest(filename=filename, flags=flags):
+                    output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
+                    self.assertEqual(output.splitlines(), ["v24.19.0", f"v{OTHER_VERSION}"])
+        self.assertEqual(self.config.read_bytes(), before)
+        self.stow("--delete", "mise")
+        self.assertEqual(local.read_text(), contents)
+
     def test_inherited_subprocess_path_and_neovim_node(self):
         self.assertEqual(self.shell("-lic", "zsh -c 'node --version'"), "v24.19.0")
         lua = self.home / "node-check.lua"
@@ -148,6 +177,15 @@ class MiseTests(unittest.TestCase):
         self.run_checked([str(MISE), "reshim"])
         self.assertEqual(self.config.read_bytes(), before)
 
+    def test_fixture_path_isolation(self):
+        for flags in ("-lc", "-lic", "-ic"):
+            with self.subTest(flags=flags):
+                paths = self.shell(flags, "print -l -- $path").splitlines()
+                for path in paths:
+                    # Login shells may add distro paths through /etc/profile.
+                    self.assertTrue(path in ("/bin", "/sbin") or path.startswith("/usr/") or
+                                    path.startswith(str(self.home) + "/"), path)
+
     def test_stow_conflict_and_safe_removal(self):
         unrelated = self.home / ".config/tealdeer/local-note"
         unrelated.write_text("keep me\n")
@@ -162,9 +200,30 @@ class MiseTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(target.read_text(), "# existing local settings\n")
 
+    def test_bootstrap_leaves_eza_to_mise_and_uv_optional(self):
+        script = (ROOT / "setup.sh").read_text()
+        for line in script.splitlines():
+            if line.strip().startswith(("PKG_SERVER=", "PKG_COMMON=", "PKG_OPTIONAL=")):
+                packages = shlex.split(line.split("=", 1)[1])[0].split()
+                self.assertNotIn("eza", packages)
+                self.assertNotIn("uv", packages)
+        self.assertNotIn("uv/install.sh", script)
+        harness = (ROOT / "docker/test.sh").read_text()
+        zsh_commands = set()
+        for line in harness.splitlines():
+            if not line.strip().startswith(("require_commands ", "require_zsh_commands ")):
+                continue
+            commands = shlex.split(line)
+            self.assertNotIn("uv", commands[1:])
+            if commands[0] == "require_commands":
+                self.assertNotIn("eza", commands[1:])
+            else:
+                zsh_commands.update(commands[1:])
+        self.assertIn("eza", zsh_commands)
+
     def test_bootstrap_installs_declared_tools_without_rewriting_config(self):
         log = self.home / "bootstrap-log"
-        for name in ("mise", "uv", "llm"):
+        for name in ("mise", "llm", "curl"):
             mock = self.home / ".local/bin" / name
             mock.unlink(missing_ok=True)
             mock.write_text('#!/bin/sh\nprintf "%s %s\\n" "$PWD" "$*" >> "$HOME/bootstrap-log"\n')

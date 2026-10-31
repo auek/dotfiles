@@ -47,7 +47,7 @@ dotfiles/
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
     ├── nvim/.config/nvim/    # Neovim config
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
-    ├── mise/.config/mise/    # Pinned Node and latest stable editor/CLI tools
+    ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
     ├── foot/.config/foot/    # Foot terminal config
@@ -76,10 +76,15 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. The `mise` package pins Node 24.19.0 and selects
-latest stable Aqua releases of Neovim, Bat, Tealdeer, Lazygit, fastfetch,
-ripgrep, fd, and fzf. Bob configuration remains optional for rollback; it is
-not in the default package selection. The separate `nvim-work` package is opt-in
+`mise`, and `tealdeer`. The `mise` package defaults to Node 24.19.0 and selects
+latest stable Aqua releases of Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch,
+ripgrep, fd, and fzf. A machine may override Node or add optional tools with an
+ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
+`"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
+Do not Stow that file or change the shared pin for a machine-local preference.
+Project version files still override either global default.
+Bob configuration remains optional for rollback; it is not in the default
+package selection. The separate `nvim-work` package is opt-in
 via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no default editor or theme packages. Basic editing works
@@ -145,8 +150,10 @@ The full profile installs the declared mise tools on all supported distros;
 it does not install overlapping distro packages, nvm, Bob, or the Python tldr
 client. The slim/server profiles do not install the mise toolset. Existing
 installations are retained; no migration removes user binaries or npm globals.
-Stow, tmux, htop, shell frameworks, and Python utilities keep their existing
-installers. RHEL is not supported by `setup.sh`; limited RHEL machines use
+Stow, tmux, htop, shell frameworks, and Python applications such as llm keep
+their existing installers. eza is part of the shared mise baseline; uv is
+machine-local and is not installed separately by setup. RHEL is not supported
+by `setup.sh`; limited RHEL machines use
 direct Stow and `mise install` with their existing system tools. GNOME keybindings are
 applied only when supported, including the Swedish (US) layout (`se+us`):
 Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
@@ -260,8 +267,9 @@ operations. Python's `tempfile` manages creation and cleanup, with no dependency
 on an agent-specific directory.
 
 `scripts/test-mise.py` checks real mise activation, first-command Node/npm/npx
-and Neovim selection, project Node version files, inherited subprocess PATHs,
-PATH deduplication, declarative bootstrap behavior, and Stow conflicts/removal
+and Neovim selection, machine-local Node overrides, project Node version files,
+inherited subprocess PATHs, PATH deduplication, declarative bootstrap behavior,
+and Stow conflicts/removal
 in disposable homes. Pass the mise executable, unpacked Node 24.19.0 and
 another Node installation root, and a disposable fixture's
 `installs/aqua-neovim-neovim` directory produced by a real Aqua install.

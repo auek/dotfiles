@@ -81,7 +81,7 @@ case "$ID" in
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza htop openssh-clients sqlite"
+    PKG_OPTIONAL="htop openssh-clients sqlite"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
@@ -89,7 +89,7 @@ case "$ID" in
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza htop openssh-client sqlite3"
+    PKG_OPTIONAL="htop openssh-client sqlite3"
     info "Detected: $PRETTY_NAME"
     ;;
   arch)
@@ -97,7 +97,7 @@ case "$ID" in
     PKG_INSTALL="sudo pacman -S --needed --noconfirm"
     PKG_SERVER="curl git less make man-db man-pages stow tmux vim which"
     PKG_COMMON="curl github-cli git gcc libatomic less make man-db man-pages openssh python-pipx python-pip stow tmux unzip which zsh"
-    PKG_OPTIONAL="eza htop sqlite"
+    PKG_OPTIONAL="htop sqlite"
     info "Detected: $PRETTY_NAME"
     ;;
   *)
@@ -326,15 +326,6 @@ if [ "$PROFILE" = "full" ]; then
   (cd "$HOME" && mise install)
   mise reshim
   success "Configured development tools installed via mise"
-
-  # uv
-  if command -v uv &>/dev/null; then
-    info "uv already installed"
-  else
-    info "Installing uv"
-    curl -LsSf https://astral.sh/uv/install.sh | sh || warning "uv install failed"
-    success "uv installed"
-  fi
 
   # llm
   if command -v llm &>/dev/null; then

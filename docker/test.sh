@@ -111,8 +111,8 @@ elif [ "$PROFILE" != "server" ]; then
 fi
 
 if [ "$PROFILE" = "full" ]; then
-  require_commands eza htop ssh sqlite3
-  require_zsh_commands mise node npm npx nvim bat tldr lazygit fastfetch rg fd fzf uv llm
+  require_commands htop ssh sqlite3
+  require_zsh_commands mise node npm npx nvim bat eza tldr lazygit fastfetch rg fd fzf llm
   run 'zsh -lic '\''test "$(node --version)" = v24.19.0 && mise exec -- nvim --version >/dev/null'\'''
 fi
 

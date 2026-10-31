@@ -1,6 +1,7 @@
 [tools]
 node = "24.19.0"
 "aqua:sharkdp/bat" = "latest"
+"aqua:eza-community/eza" = "latest"
 "aqua:dbrgn/tealdeer" = "latest"
 "aqua:jesseduffield/lazygit" = "latest"
 "aqua:fastfetch-cli/fastfetch" = "latest"

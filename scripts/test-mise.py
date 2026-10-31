@@ -111,6 +111,9 @@ class MiseTests(unittest.TestCase):
         self.assertEqual(tools.pop("node"), "24.19.0")
         self.assertTrue(tools)
         self.assertTrue(all(version == "latest" for version in tools.values()))
+        self.assertEqual(tools["aqua:eza-community/eza"], "latest")
+        self.assertNotIn("aqua:astral-sh/uv", tools)
+        self.assertNotIn("uv", tools)
         self.assertEqual(self.manifest["settings"]["idiomatic_version_file_enable_tools"], ["node"])
         config = tomllib.loads((self.home / ".config/tealdeer/config.toml").read_text())
         self.assertEqual(config["updates"]["tls_backend"], "rustls-with-native-roots")
@@ -197,9 +200,30 @@ class MiseTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(target.read_text(), "# existing local settings\n")
 
+    def test_bootstrap_leaves_eza_to_mise_and_uv_optional(self):
+        script = (ROOT / "setup.sh").read_text()
+        for line in script.splitlines():
+            if line.strip().startswith(("PKG_SERVER=", "PKG_COMMON=", "PKG_OPTIONAL=")):
+                packages = shlex.split(line.split("=", 1)[1])[0].split()
+                self.assertNotIn("eza", packages)
+                self.assertNotIn("uv", packages)
+        self.assertNotIn("uv/install.sh", script)
+        harness = (ROOT / "docker/test.sh").read_text()
+        zsh_commands = set()
+        for line in harness.splitlines():
+            if not line.strip().startswith(("require_commands ", "require_zsh_commands ")):
+                continue
+            commands = shlex.split(line)
+            self.assertNotIn("uv", commands[1:])
+            if commands[0] == "require_commands":
+                self.assertNotIn("eza", commands[1:])
+            else:
+                zsh_commands.update(commands[1:])
+        self.assertIn("eza", zsh_commands)
+
     def test_bootstrap_installs_declared_tools_without_rewriting_config(self):
         log = self.home / "bootstrap-log"
-        for name in ("mise", "uv", "llm"):
+        for name in ("mise", "llm", "curl"):
             mock = self.home / ".local/bin" / name
             mock.unlink(missing_ok=True)
             mock.write_text('#!/bin/sh\nprintf "%s %s\\n" "$PWD" "$*" >> "$HOME/bootstrap-log"\n')

@@ -42,7 +42,7 @@ been tested; verification is deferred until the next Arch installation.
 
 | Stow packages | Contents |
 |---|---|
-| `mise` | Default Node 24.19.0 and stable Neovim, Bat, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
+| `mise` | Default Node 24.19.0 and stable Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration and login environment |
 | `nvim-work` | Opt-in minimal Neovim profile with Telescope, nvim-tree, and selected theme |
@@ -79,17 +79,20 @@ any previously enabled package-manager launchers in the active mise Node,
 then run `mise reshim`. Verify from a fresh shell without inherited nvm PATH
 entries, which can otherwise hide missing commands.
 
-For a different machine default, create an ordinary, untracked
+For machine-specific overrides or extra tools, create an ordinary, untracked
 `~/.config/mise/config.local.toml` alongside the shared symlink:
 
 ```toml
 [tools]
 node = "lts"
+"aqua:astral-sh/uv" = "latest"
 ```
 
-This follows the current LTS line without changing the shared pin on other
-machines. Use `"latest"` instead for the newest stable Node, including non-LTS
-releases. Use current mise (2026.8.5+ fixes global override precedence).
+This follows the current LTS line and adds uv/uvx only on that machine, while
+retaining the rest of the shared toolset. Omit the uv entry if it is not needed;
+`setup.sh --full` no longer installs uv separately. Set Node to `"latest"`
+instead to follow the newest stable release, including non-LTS releases.
+Use current mise (2026.8.5+ fixes global override precedence).
 The local file overrides the shared global config; project `.nvmrc` and
 `.node-version` files still take precedence. Updates remain explicit through
 `mise upgrade --no-prune`. Never Stow or commit the machine-local file.
@@ -131,8 +134,9 @@ downloads; if only `http_proxy` is set, also export `https_proxy="$http_proxy"`.
 
 Existing nvm, Bob, and manual/system binaries remain on disk for rollback.
 Remove redundant installations only after checking both machines. Stow, tmux,
-htop, and shell frameworks keep their existing installers; Python utilities
-remain outside mise. ShellCheck and shfmt are not added in this migration.
+htop, and shell frameworks keep their existing installers; Python applications
+such as llm remain outside mise. uv is an optional machine-local mise tool,
+not part of the shared baseline. ShellCheck and shfmt are not added in this migration.
 
 Targeted migration is verified on the Arch workstation with a local Node LTS
 override and the existing default `nvim` profile preserved. Shell selection,

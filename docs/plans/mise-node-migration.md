@@ -20,8 +20,10 @@ Included:
 - install mise in the `--full` profile using its recommended Linux installer
 - maintain the `mise` Stow package with `~/.config/mise/config.toml`
 - pin Node 24.19.0 and enable Node idiomatic version files
-- declare latest stable Aqua releases of Bat, Tealdeer, Lazygit, fastfetch,
+- declare latest stable Aqua releases of Bat, eza, Tealdeer, Lazygit, fastfetch,
   ripgrep, fd, fzf, and Neovim
+- allow optional machine-local tools such as uv without expanding the shared
+  baseline; remove uv's unconditional standalone installer
 - activate mise for interactive Zsh and expose shims to login/non-interactive
   consumers
 - remove overlapping distro installers, Bob installation/PATH overrides, and
@@ -31,7 +33,7 @@ Included:
 
 Excluded:
 
-- moving Stow, tmux, htop, shell frameworks, uv, llm, or pipx into mise
+- moving Stow, tmux, htop, shell frameworks, llm, or pipx into mise
 - deleting existing nvm/Bob/manual installations or migrating npm globals
 - changing proxy settings, certificates, credentials, or private configuration
 - adding RHEL support to the full bootstrap
@@ -85,7 +87,7 @@ Excluded:
   shells without inherited nvm PATH entries: an old installation can otherwise
   mask missing global npm commands.
 - Tealdeer 1.9.1 downloaded its cache through the system trust store and displayed
-  the Node page. The nine mise checks, seven Hyprland checks, theme consistency,
+  the Node page. The ten mise checks, seven Hyprland checks, theme consistency,
   and shell syntax checks passed.
 - Preserved the default `nvim` Stow profile, its lockfile, and its plugin/Mason
   data. Actual Neovim 0.12.6 startup found all 38 cached plugins (35 loaded at
@@ -128,6 +130,14 @@ Excluded:
   The checks now discard inherited mise variables before setting their own
   directories, with a regression check that every PATH entry stays inside the
   fixture or the explicitly allowed system paths.
+- Added eza to the shared Aqua baseline and removed its overlapping distro
+  installer. uv remains optional: only the Arch workstation's local config
+  declares it, and setup no longer runs its standalone installer. Container
+  checks now look for eza through Zsh and do not require uv by default.
+  eza 0.23.5 and uv/uvx 0.13.6 ran through mise in all three shell modes; a real
+  directory listing and disposable uv virtual environment with system Python
+  passed. Existing uv tool/Python/cache data locations are unchanged. The
+  previous distro eza and standalone uv/uvx binaries are retained for rollback.
 
 ## Completion Criteria
 

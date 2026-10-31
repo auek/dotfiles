@@ -85,8 +85,11 @@ still need checking on older distributions.
 
 On an existing machine with mise installed, run from the repository root:
 
+**On the restricted RHEL/WSL work machine, use this targeted workflow. Do not
+run `setup.sh` with any profile, including `--full`; RHEL is unsupported.**
+
 ```zsh
-git switch feat/work-setup
+git switch main
 git pull --ff-only
 stow --simulate --verbose --restow --no-folding --dir=packages --target="$HOME" mise tealdeer zshrc zprofile
 stow --restow --no-folding --dir=packages --target="$HOME" mise tealdeer zshrc zprofile
@@ -98,8 +101,7 @@ Check local changes before pulling. If Stow reports an existing ordinary
 configuration file, compare it with the repository version and preserve your
 local settings in a backup before resolving the conflict; do not use `--adopt`
 or overwrite it. These commands do not switch your Neovim configuration package.
-Use this targeted workflow on restricted RHEL/WSL machines: `setup.sh` does not
-support RHEL, and the workstation's system tools are already installed.
+The workstation's existing system tools remain installed.
 
 Verify `mise ls`, `node --version`, `npm --version`, `nvim --version`, and
 `whence -pa node nvim bat tldr lazygit fastfetch rg fd fzf`. Then check Neovim's

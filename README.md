@@ -42,7 +42,7 @@ been tested; verification is deferred until the next Arch installation.
 
 | Stow packages | Contents |
 |---|---|
-| `mise` | Pinned Node 24.19.0 and stable Neovim, Bat, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
+| `mise` | Default Node 24.19.0 and stable Neovim, Bat, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration and login environment |
 | `nvim-work` | Opt-in minimal Neovim profile with Telescope, nvim-tree, and selected theme |
@@ -58,7 +58,7 @@ been tested; verification is deferred until the next Arch installation.
 ## Development tools with mise
 
 The `--full` profile installs mise and the tools declared in
-`packages/mise/.config/mise/config.toml`. Node stays pinned to `24.19.0`;
+`packages/mise/.config/mise/config.toml`. Node defaults to the pin `24.19.0`;
 the other tools use `latest`, which excludes prereleases by default with the
 selected Aqua backends. Updates are explicit:
 
@@ -74,6 +74,25 @@ change configuration: those commands can rewrite the Stow-managed file.
 Edit its repository source instead. Project `.nvmrc` and `.node-version`
 files override the global Node pin. Existing global npm packages are not
 copied between Node installations; reinstall the ones you need locally.
+For example, a new Node major may no longer bundle Corepack. Restore it and
+any previously enabled package-manager launchers in the active mise Node,
+then run `mise reshim`. Verify from a fresh shell without inherited nvm PATH
+entries, which can otherwise hide missing commands.
+
+For a different machine default, create an ordinary, untracked
+`~/.config/mise/config.local.toml` alongside the shared symlink:
+
+```toml
+[tools]
+node = "lts"
+```
+
+This follows the current LTS line without changing the shared pin on other
+machines. Use `"latest"` instead for the newest stable Node, including non-LTS
+releases. Use current mise (2026.8.5+ fixes global override precedence).
+The local file overrides the shared global config; project `.nvmrc` and
+`.node-version` files still take precedence. Updates remain explicit through
+`mise upgrade --no-prune`. Never Stow or commit the machine-local file.
 
 Mise activates in interactive Zsh; shims also support the first command in a
 shell and inherited subprocess PATHs. Login shells expose shims without the
@@ -114,6 +133,12 @@ Existing nvm, Bob, and manual/system binaries remain on disk for rollback.
 Remove redundant installations only after checking both machines. Stow, tmux,
 htop, and shell frameworks keep their existing installers; Python utilities
 remain outside mise. ShellCheck and shfmt are not added in this migration.
+
+Targeted migration is verified on the Arch workstation with a local Node LTS
+override and the existing default `nvim` profile preserved. Shell selection,
+project version switching, Tealdeer downloads, and default-profile editor checks
+passed; this is not verification of fresh distro provisioning. See the
+[migration record](docs/plans/mise-node-migration.md) for scope and measurements.
 
 ## Managing dotfiles
 

@@ -131,6 +131,28 @@ class MiseTests(unittest.TestCase):
                     output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
                     self.assertEqual(output.splitlines(), [f"v{OTHER_VERSION}", "v24.19.0"])
 
+    def test_machine_local_node_override_and_project_precedence(self):
+        before = self.config.read_bytes()
+        local = self.home / ".config/mise/config.local.toml"
+        contents = f'[tools]\nnode = "{OTHER_VERSION}"\n'
+        local.write_text(contents)
+        self.stow("--restow", "mise")
+        self.assertEqual(local.read_text(), contents)
+        for flags in ("-lc", "-lic", "-ic"):
+            with self.subTest(flags=flags):
+                self.assertEqual(self.shell(flags, "node --version"), f"v{OTHER_VERSION}")
+        for filename in (".nvmrc", ".node-version"):
+            project = self.home / ("local-override-" + filename.removeprefix("."))
+            project.mkdir()
+            (project / filename).write_text("24.19.0\n")
+            for flags in ("-lc", "-ic"):
+                with self.subTest(filename=filename, flags=flags):
+                    output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
+                    self.assertEqual(output.splitlines(), ["v24.19.0", f"v{OTHER_VERSION}"])
+        self.assertEqual(self.config.read_bytes(), before)
+        self.stow("--delete", "mise")
+        self.assertEqual(local.read_text(), contents)
+
     def test_inherited_subprocess_path_and_neovim_node(self):
         self.assertEqual(self.shell("-lic", "zsh -c 'node --version'"), "v24.19.0")
         lua = self.home / "node-check.lua"

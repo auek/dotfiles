@@ -47,7 +47,7 @@ dotfiles/
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
     ├── nvim/.config/nvim/    # Neovim config
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
-    ├── mise/.config/mise/    # Pinned Node and latest stable editor/CLI tools
+    ├── mise/.config/mise/    # Default Node pin and latest stable editor/CLI tools
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
     ├── foot/.config/foot/    # Foot terminal config
@@ -76,10 +76,14 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. The `mise` package pins Node 24.19.0 and selects
+`mise`, and `tealdeer`. The `mise` package defaults to Node 24.19.0 and selects
 latest stable Aqua releases of Neovim, Bat, Tealdeer, Lazygit, fastfetch,
-ripgrep, fd, and fzf. Bob configuration remains optional for rollback; it is
-not in the default package selection. The separate `nvim-work` package is opt-in
+ripgrep, fd, and fzf. A machine may override Node with an ordinary, untracked
+`~/.config/mise/config.local.toml` (`node = "lts"` on the Arch workstation).
+Do not Stow that file or change the shared pin for a machine-local preference.
+Project version files still override either global default.
+Bob configuration remains optional for rollback; it is not in the default
+package selection. The separate `nvim-work` package is opt-in
 via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
 together with it. It needs no default editor or theme packages. Basic editing works
@@ -260,8 +264,9 @@ operations. Python's `tempfile` manages creation and cleanup, with no dependency
 on an agent-specific directory.
 
 `scripts/test-mise.py` checks real mise activation, first-command Node/npm/npx
-and Neovim selection, project Node version files, inherited subprocess PATHs,
-PATH deduplication, declarative bootstrap behavior, and Stow conflicts/removal
+and Neovim selection, machine-local Node overrides, project Node version files,
+inherited subprocess PATHs, PATH deduplication, declarative bootstrap behavior,
+and Stow conflicts/removal
 in disposable homes. Pass the mise executable, unpacked Node 24.19.0 and
 another Node installation root, and a disposable fixture's
 `installs/aqua-neovim-neovim` directory produced by a real Aqua install.

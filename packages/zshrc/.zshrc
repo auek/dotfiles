@@ -5,7 +5,9 @@ HISTFILE=~/.zsh_history
 HISTSIZE=500000
 SAVEHIST=400000
 
-export PATH="$HOME/.opencode/bin:$PATH"
+typeset -U path PATH
+path=("$HOME/.local/bin" "$HOME/.opencode/bin" $path)
+export PATH
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -14,10 +16,12 @@ if command -v less >/dev/null 2>&1; then
   export LESS='-R'
 fi
 
-# NVM
-export NVM_DIR="$HOME/.nvm"
-[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+# mise (also available in interactive shells that are not login shells).
+if command -v mise >/dev/null 2>&1; then
+  # Keep shims for subprocesses and commands run before the first prompt.
+  eval "$(mise activate zsh --shims)"
+  eval "$(mise activate zsh)"
+fi
 
 ### Shell Behavior ###
 # Append commands immediately and import history from other shells.
@@ -355,8 +359,8 @@ if [[ -z "$SSH_AUTH_SOCK" ]]; then
 fi
 
 ### External Tool Integrations ###
-# FZF configuration (only if fd is available).
-if command -v fd >/dev/null 2>&1; then
+# FZF configuration (both tools are needed, including during partial installs).
+if command -v fd >/dev/null 2>&1 && command -v fzf >/dev/null 2>&1; then
   FZF_CMD_ARGS="--hidden --exclude .git --exclude node_modules --exclude .cache --exclude .venv --exclude cache"
 
   export FZF_DEFAULT_COMMAND="fd --type f $FZF_CMD_ARGS"

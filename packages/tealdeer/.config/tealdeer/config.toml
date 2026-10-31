@@ -1,0 +1,2 @@
+[updates]
+tls_backend = "rustls-with-native-roots"

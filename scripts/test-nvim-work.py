@@ -16,8 +16,8 @@ NVIM = str(Path(shutil.which(sys.argv[1] if len(sys.argv) > 1 else "nvim")).reso
 STOW = shutil.which("stow")
 
 
-def run(args, env):
-    result = subprocess.run(args, env=env, text=True, capture_output=True, timeout=30, cwd=env.get("HOME"))
+def run(args, env, cwd=None):
+    result = subprocess.run(args, env=env, text=True, capture_output=True, timeout=30, cwd=cwd or env.get("HOME"))
     assert result.returncode == 0, result.stdout + result.stderr
     # Neovim can print Lua/startup errors yet exit zero after :qa!.
     lsp_log = Path(env.get("XDG_STATE_HOME", "/tmp")) / "nvim/lsp.log"
@@ -351,6 +351,23 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
             selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)
             run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                  "-c", 'lua assert(vim.g.colors_name == "gruvbox")', "-c", "qa!"], env)
+            directory = home / "directory with spaces"
+            directory.mkdir()
+            (directory / "example.ts").write_text("export const value = 1;\n")
+            check_directory = home / "check-directory.lua"
+            check_directory.write_text(r'''assert(vim.wait(3000, function()
+  return package.loaded["nvim-tree.api"] and require("nvim-tree.api").tree.is_visible()
+end))
+assert(vim.bo.filetype == "NvimTree")
+assert(vim.g.loaded_netrw == 1 and vim.g.loaded_netrwPlugin == 1)
+local listing = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+assert(listing:find("example.ts", 1, true), listing)
+''')
+            # Exercise real CLI directory startup and :edit before any tree keybinding.
+            for args in (["."], [str(directory)], ["-c", "edit " + str(directory).replace(" ", "\\ ")]):
+                run([NVIM, "--headless", "-i", "NONE", *args,
+                     "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
+
         run([STOW, "--delete", "--no-folding", f"--dir={packages}", f"--target={home}",
              "nvim-work"], {**os.environ})
         assert not (home / ".config/nvim/init.lua").exists()
@@ -359,7 +376,7 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
             ROOT / "packages/nvim-work/.config/nvim/init.lua").read_bytes()
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
         if scenario == "native-plugins":
-            print("PASS: Telescope path tokens/incremental edits/search, nvim-tree, theme selection/reload")
+            print("PASS: Telescope queries, nvim-tree commands/directory startup, theme selection/reload")
             if env.get("LSP_FIXTURE"):
                 print("PASS: real TS definition/type diagnostics, CSS diagnostics, Less attachment, Azure schema validation")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

@@ -1,13 +1,13 @@
 #!/usr/bin/env zsh
 #
 # PATH
-export PATH="$HOME/.local/bin:$PATH"
+typeset -U path PATH
+path=("$HOME/.local/bin" $path)
+export PATH
 
-# Bob supplies current Neovim on Ubuntu/Debian; other supported distros use
-# their native Neovim package.
-if [[ -x "$HOME/.local/state/bob/nvim-bin/nvim" ]] && \
-    grep -qE '^ID=(ubuntu|debian)$' /etc/os-release 2>/dev/null; then
-  export PATH="$HOME/.local/state/bob/nvim-bin:$PATH"
+# Shims make managed tools available to login commands without an interactive prompt.
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh --shims)"
 fi
 
 # Preferred editor

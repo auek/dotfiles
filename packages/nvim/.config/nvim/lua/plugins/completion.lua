@@ -69,7 +69,6 @@ return {
         },
         {
           { name = "buffer" },
-          { name = "copilot" },
         }
       ),
     }
@@ -80,4 +79,3 @@ return {
     require("luasnip.loaders.from_vscode").lazy_load()
   end,
 }
-

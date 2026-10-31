@@ -46,7 +46,7 @@ dotfiles/
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
-    ├── nvim/.config/nvim/    # Neovim config
+    ├── nvim/.config/nvim/    # Default editor with LSP, snippet, and buffer-word completion
     ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
@@ -77,7 +77,9 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. The `mise` package defaults to Node 24.19.0 and selects
+`mise`, and `tealdeer`. The default `nvim` profile provides LSP, snippet, and
+buffer-word completion without an assistant completion provider.
+The `mise` package defaults to Node 24.19.0 and selects
 latest stable Aqua releases of Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch,
 ripgrep, fd, and fzf. A machine may override Node or add optional tools with an
 ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and

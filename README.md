@@ -46,7 +46,7 @@ been tested; verification is deferred until the next Arch installation.
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration, portable `tmx` sessions with optional local hooks, and login environment |
 | `nvim-work` | Opt-in minimal Neovim profile with Telescope, nvim-tree, and selected theme |
-| `tmux`, `nvim` | Terminal multiplexer and default editor configuration |
+| `tmux`, `nvim` | Terminal multiplexer and default editor with LSP, snippet, and buffer-word completion |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |

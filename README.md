@@ -45,8 +45,8 @@ been tested; verification is deferred until the next Arch installation.
 | `mise` | Pinned Node 24.19.0 and stable Neovim, Bat, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration and login environment |
-| `nvim-work` | Opt-in Neovim work profile with Telescope, nvim-tree, and selected theme |
-| `tmux`, `nvim` | Terminal multiplexer and home editor configuration |
+| `nvim-work` | Opt-in minimal Neovim profile with Telescope, nvim-tree, and selected theme |
+| `tmux`, `nvim` | Terminal multiplexer and default editor configuration |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -85,7 +85,7 @@ still need checking on older distributions.
 
 On an existing machine with mise installed, run from the repository root:
 
-**On the restricted RHEL/WSL work machine, use this targeted workflow. Do not
+**On a limited RHEL/WSL machine, use this targeted workflow. Do not
 run `setup.sh` with any profile, including `--full`; RHEL is unsupported.**
 
 ```zsh
@@ -106,7 +106,7 @@ The workstation's existing system tools remain installed.
 Verify `mise ls`, `node --version`, `npm --version`, `nvim --version`, and
 `whence -pa node nvim bat tldr lazygit fastfetch rg fd fzf`. Then check Neovim's
 Node-backed language servers and run `tldr --update`. Tealdeer uses the system
-trust store on both home and work machines; proxy variables and corporate
+trust store across deployment targets; proxy variables and additional
 certificates remain machine-local. Preserve the existing proxy environment for
 downloads; if only `http_proxy` is set, also export `https_proxy="$http_proxy"`.
 
@@ -141,12 +141,12 @@ theme-set everforest
 theme-set            # show current selection
 ```
 
-## Minimal Neovim work profile
+## Minimal Neovim profile
 
 `nvim-work` uses built-in syntax and filetype indentation, Lazy/Telescope
 navigation, nvim-tree, and the existing Everforest/Gruvbox theme selection. A small set of
-plain options and mappings is copied from the home profile so this package
-stands alone without loading the home plugin collection. The `themes` Stow
+plain options and mappings is copied from the default profile so this package
+stands alone without loading the default plugin collection. The `themes` Stow
 package is optional; without a saved selection the editor uses Everforest.
 Mason manages explicitly installed language servers. This profile adds no
 completion framework or format-on-save. Telescope's fzf-native sorter builds
@@ -156,7 +156,7 @@ Once installed, the editor works offline.
 
 `nvim` and `nvim-work` are alternative profiles targeting `~/.config/nvim`.
 **Do not stow both.** Default `make stow` and setup profiles still select the
-home `nvim` package. Unstow your previous profile before switching. If Stow
+default `nvim` package. Unstow your previous profile before switching. If Stow
 reports existing files, resolve the conflict yourself; do not overwrite,
 `--adopt`, or automatically delete them.
 
@@ -183,7 +183,7 @@ vim-tmux-navigator, nvim-tree, Everforest, Gruvbox, Mason, and nvim-lspconfig. I
 requires Git and GitHub access through your existing network configuration;
 it installs no OS packages. Plugins live under
 `stdpath("data")/nvim-work/lazy`; the lockfile, package cache, and Lazy state
-live under `stdpath("state")/nvim-work`, separate from the home profile and
+live under `stdpath("state")/nvim-work`, separate from the default profile and
 outside the Stow checkout. Project-local `.lazy.lua` specs are disabled.
 Telescope loads only when a picker is used; nvim-tree loads when opening a
 directory or using its command/keybinding. Startup checks for missing
@@ -216,7 +216,7 @@ the compiler issue. A warning is shown and Telescope's default sorter remains
 available. Node/npm are required for the language servers below. Nerd Fonts
 are optional.
 
-Ctrl+h/j/k/l uses the same `vim-tmux-navigator` plugin as the home profile:
+Ctrl+h/j/k/l uses the same `vim-tmux-navigator` plugin as the default profile:
 it moves between Neovim splits and crosses into tmux panes at editor edges.
 Outside tmux it still navigates Neovim splits. The `tmux` and `tmux-server`
 packages already contain the matching bindings; no tmux config changes are
@@ -242,11 +242,11 @@ Netrw is disabled for this profile; ordinary file startup keeps nvim-tree lazy.
 
 Colors follow `theme-set` via
 `~/.local/state/dotfiles/theme/current/nvim.lua`, using the same dark, hard
-Everforest palette and non-italic settings as the home profile. Existing
+Everforest palette and non-italic settings as the default profile. Existing
 `theme-set everforest` / `theme-set gruvbox` commands switch the selection;
 Neovim reloads it on focus, buffer entry, or idle. `:ReloadTheme` applies it
 immediately. No selection defaults to Everforest; Habamax remains the fallback
-when the theme plugins are not installed. The home Neovim config is unchanged.
+when the theme plugins are not installed. The default Neovim config is unchanged.
 
 Language support uses Neovim's built-in LSP with nvim-lspconfig and Mason.
 Lazy installs the editor plugins; it does **not** install language servers.
@@ -264,7 +264,7 @@ to install these three packages (or run the standard command below):
 | `yaml-language-server` | `yamlls` | YAML and Azure Pipelines schemas |
 
 Mason's package installation and executables live under
-`stdpath("data")/nvim-work/mason`, separate from the home profile's Mason.
+`stdpath("data")/nvim-work/mason`, separate from the default profile's Mason.
 Available servers start on matching files, including files opened before a
 Mason installation finishes. Missing servers do not cause startup failures.
 No Mason bridge plugin or automatic server installation list is needed.
@@ -296,7 +296,7 @@ a clean buffer while retaining splits; modified buffers must be saved first.
 `:W`, `:Wq`, and `:WQ` are also available. Markdown and text buffers wrap.
 External edits reload unmodified buffers on focus, buffer entry, or idle;
 checks defer during insert/command-line editing and never overwrite unsaved
-changes. This does not change the home profile's reload implementation.
+changes. This does not change the default profile's reload implementation.
 
 Visual leader+y copies to the system clipboard; normal leader+p pastes.
 On WSL, if `powershell.exe` is available, both `*` and `+` use the Windows

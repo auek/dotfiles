@@ -82,18 +82,18 @@ ripgrep, fd, and fzf. Bob configuration remains optional for rollback; it is
 not in the default package selection. The separate `nvim-work` package is opt-in
 via direct Stow; it
 targets the same `~/.config/nvim` location as `nvim` and must not be stowed
-together with it. It needs no home or theme packages. Basic editing works
+together with it. It needs no default editor or theme packages. Basic editing works
 without plugins; Lazy bootstraps on first launch and installs pinned Telescope
 and Plenary plus nvim-tree, Everforest, Gruvbox, Mason, nvim-lspconfig,
 telescope-fzf-native (built with Make and GCC/Clang), and vim-tmux-navigator.
-The work profile shares the existing tmux navigation bindings and never saves
+The minimal profile shares the existing tmux navigation bindings and never saves
 buffers automatically on pane switches. Use standard `:Lazy`
-commands afterward. Work colors follow the existing `theme-set` runtime
+commands afterward. Profile colors follow the existing `theme-set` runtime
 selection, defaulting to Everforest without the optional `themes` package. Plugin files and Lazy
-state/lockfile are separate from the home profile. Text search needs `rg`.
+state/lockfile are separate from the default profile. Text search needs `rg`.
 Mason installs servers only on explicit request (`typescript-language-server`,
 `css-lsp`, `yaml-language-server`) into the separate `nvim-work/mason` data root.
-The work profile enables only available `ts_ls`, `cssls`, and `yamlls` servers,
+The minimal profile enables only available `ts_ls`, `cssls`, and `yamlls` servers,
 with Azure Pipelines YAML schema associations. It adds no format-on-save or
 completion framework. Startup installs missing plugins but does not check for updates. Default package selection remains unchanged. `make stow-hyprland`
 additionally links the desktop group: `foot`,
@@ -146,7 +146,7 @@ it does not install overlapping distro packages, nvm, Bob, or the Python tldr
 client. The slim/server profiles do not install the mise toolset. Existing
 installations are retained; no migration removes user binaries or npm globals.
 Stow, tmux, htop, shell frameworks, and Python utilities keep their existing
-installers. RHEL is not supported by `setup.sh`; restricted work machines use
+installers. RHEL is not supported by `setup.sh`; limited RHEL machines use
 direct Stow and `mise install` with their existing system tools. GNOME keybindings are
 applied only when supported, including the Swedish (US) layout (`se+us`):
 Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
@@ -179,6 +179,9 @@ Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
 ## Repository visibility
 
 - This repository is public.
+- Describe deployment targets by platform or constraints, such as "limited
+  machine" or "Arch workstation". Keep employment and personal-device context
+  out of documentation, commit messages, and pull request titles/descriptions.
 - Never commit secrets, tokens, private keys, machine-specific credentials, or
   sensitive hostnames/IPs.
 - Prefer placeholders, environment variables, or local untracked files for
@@ -228,10 +231,10 @@ a graphical session, or portal functionality. Do not run it on the host as a
 substitute for the container.
 
 Run `python3 scripts/test-nvim-work.py /absolute/path/to/nvim` to validate the
-work profile through Stow in disposable homes (requires GNU Stow and Neovim).
+minimal profile through Stow in disposable homes (requires GNU Stow and Neovim).
 It checks subprocess-free startup, native/mocked WSL clipboard selection and
 UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
-not validate the real Windows clipboard or the home plugin profile. An optional
+not validate the real Windows clipboard or the default plugin profile. An optional
 second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
 `plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
 `nvim-lspconfig`, built `telescope-fzf-native.nvim`, and `vim-tmux-navigator` fixture
@@ -264,7 +267,7 @@ another Node installation root, and a disposable fixture's
 `installs/aqua-neovim-neovim` directory produced by a real Aqua install.
 It copies the Neovim fixture and registers the supplied Node builds locally;
 it performs no downloads or host installation. This does not validate the
-corporate proxy, work-machine performance, or the full container bootstrap.
+proxy configuration, target-machine performance, or the full container bootstrap.
 
 `docker/run.sh -d <distro> -t <server|slim|full>` runs setup and opens a shell.
 For an already-running test container:

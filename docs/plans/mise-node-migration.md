@@ -1,7 +1,7 @@
 # Shared development tools with mise
 
-Status: implemented on `feat/work-setup`; deployment verification on the work
-and home machines remains outstanding. Keep all related changes on this branch.
+Status: implemented on `feat/work-setup`; targeted deployment on a limited
+RHEL/WSL machine is verified. Native Arch migration remains outstanding.
 
 ## Goal
 
@@ -37,7 +37,7 @@ Excluded:
 
 ## Approach
 
-1. Use the workstation inventory as the baseline and preserve existing versions
+1. Use the tool inventory as the baseline and preserve existing versions
    for Node. Use `latest` for the selected stable CLI releases.
 2. Install from declarative configuration without `mise use --global` or other
    commands that rewrite tracked settings. Upgrade explicitly with
@@ -46,7 +46,7 @@ Excluded:
    mise's Neovim over the retained Bob launcher.
 4. On restricted RHEL/WSL, pull and directly Stow only the selected packages,
    then run `mise install`; do not run `setup.sh`.
-5. Verify both machines before manually removing redundant installations.
+5. Verify each deployment target before manually removing redundant installations.
 
 ## Verification
 
@@ -61,14 +61,15 @@ Excluded:
 - Check the current Neovim binary's glibc requirements; a successful cloud
   startup alone does not prove RHEL compatibility for future releases.
 - Run shell syntax, existing Hyprland/theme checks, and Neovim smoke tests.
-- Work/home deployment, real corporate networking, shell timing, and full
-  Fedora/Ubuntu/Arch container provisioning require separate verification.
+- Targeted RHEL/WSL deployment, proxy-dependent downloads, and selection of the
+  migrated binaries have been verified. Native Arch migration, comparative
+  shell timing, and full Fedora/Ubuntu/Arch provisioning remain unverified.
 
 ## Completion Criteria
 
 Repository implementation is ready when the declared tools install and run,
 shell selection and Stow checks pass, and bootstrap/documentation agree.
-Deployment is complete only after real home/work verification, including
-Neovim language servers and proxy-dependent downloads. The previous 1.5-second
-work-machine measurement covered the whole shell, not nvm alone; cloud timings
-must not be presented as a measured workstation improvement.
+Deployment is complete only after verification on each target, including
+Neovim language servers and proxy-dependent downloads. Measure complete shell
+startup on each target; cloud timings must not be presented as a measured
+target-machine improvement or attributed solely to one tool manager.

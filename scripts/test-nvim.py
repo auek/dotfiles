@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Smoke-test the shared stowed profile; requires nvim, stow, and Python 3.
 
-Usage: python3 scripts/test-nvim.py /absolute/path/to/nvim [plugin-fixtures [mason-fixture]]
+Usage: python3 scripts/test-nvim.py /absolute/path/to/nvim [plugin-fixtures [mason-fixture|- [parser-fixture]]]
 All HOME/XDG state and clipboard processes are disposable fixtures.
 """
 import os
@@ -61,9 +61,12 @@ with tempfile.TemporaryDirectory(prefix="nvim-check-") as tmp:
         if scenario == "native-plugins":
             shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/lazy")
             env["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
-            if len(sys.argv) > 3:
+            if len(sys.argv) > 3 and sys.argv[3] != "-":
                 shutil.copytree(Path(sys.argv[3]), home / ".data/nvim/mason", symlinks=True)
                 env["LSP_FIXTURE"] = "1"
+            if len(sys.argv) > 4:
+                shutil.copytree(Path(sys.argv[4]), home / ".data/nvim/treesitter-v2")
+                env["PARSER_FIXTURE"] = "1"
             for name in ("everforest", "gruvbox"):
                 theme = home / ".local/state/dotfiles/theme" / name
                 theme.mkdir(parents=True)
@@ -222,24 +225,53 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.system = _G.real_system
   vim.uv.spawn = _G.real_spawn
   vim.fn.jobstart = _G.real_jobstart
-  require("lazy").load({plugins={"nvim-cmp", "nvim-treesitter"}})
+  require("lazy").load({plugins={"nvim-cmp"}})
   local sources = {}
   for _, source in ipairs(require("cmp").get_config().sources) do sources[#sources+1] = source.name end
   assert(vim.deep_equal(sources, {"nvim_lsp", "luasnip", "path", "buffer"}), vim.inspect(sources))
-  local treesitter = require("nvim-treesitter.configs")
-  assert(#treesitter.get_ensure_installed_parsers() == 0 and not treesitter.get_module("highlight").disable("bash"))
-  assert(treesitter.get_module("highlight").disable("markdown"))
+  assert(not package.loaded["nvim-treesitter.configs"] and not package.loaded["nvim-treesitter.query_predicates"])
+  assert(not package.loaded["nvim-treesitter.install"], "parser installation must not run at startup")
+  local treesitter = require("nvim-treesitter")
+  assert(require("nvim-treesitter.config").get_install_dir("parser") == vim.fn.stdpath("data") .. "/treesitter-v2/parser")
+  assert(config.plugins["nvim-treesitter"].lazy == false)
   assert(vim.fn.exists(":InstallParsers") == 2)
   local installs = 0
-  local command = vim.cmd
-  -- Exercise the explicit command without downloading/compiling a parser.
-  vim.cmd = setmetatable({}, {__index=command, __call=function(_, value)
-    assert(value == "TSInstall " .. table.concat(settings.parsers, " "))
+  local install, system, executable, notify = treesitter.install, vim.system, vim.fn.executable, vim.notify
+  treesitter.install = function(languages)
+    assert(vim.deep_equal(languages, settings.parsers))
     installs = installs + 1
-  end})
+    return {await=function(_, callback) callback(nil, true) end}
+  end
+  local warning
+  vim.notify = function(message) warning = message end
+  vim.fn.executable = function(name) return name == "tree-sitter" and 0 or executable(name) end
   vim.cmd.InstallParsers()
-  vim.cmd = command
+  assert(installs == 0 and warning:find("tree%-sitter CLI"))
+  vim.fn.executable = function(name) return name == "tree-sitter" and 1 or executable(name) end
+  local version = "0.25.10"
+  vim.system = function(args)
+    assert(vim.deep_equal(args, {"tree-sitter", "--version"}))
+    return {wait=function() return {code=0, stdout="tree-sitter " .. version} end}
+  end
+  vim.cmd.InstallParsers()
+  assert(installs == 0 and warning:find("0.26.1"))
+  version = "0.27.1"
+  vim.cmd.InstallParsers()
+  treesitter.install, vim.system, vim.fn.executable, vim.notify = install, system, executable, notify
   assert(installs == 1)
+  -- Core hover starts Markdown Treesitter after FileType; a FileType stop hook
+  -- did not cover this path. Force injections and conceal-line rendering too.
+  local hover, window = vim.lsp.util.open_floating_preview({
+    "```typescript", "const answer: number", "```", "Hover documentation",
+  }, "markdown", {focus_id="treesitter-regression"})
+  local highlighter = vim.treesitter.highlighter.active[hover]
+  assert(highlighter, "native Markdown hover highlighter did not start")
+  vim.treesitter.get_parser(hover, "markdown"):parse(true)
+  vim.api.nvim_win_text_height(window, {})
+  vim.cmd.redraw()
+  vim.api.nvim_win_close(window, true)
+  assert(not vim.tbl_contains(vim.treesitter.query.list_directives(), "set-lang-from-info-string!"))
+  print("PASS: Markdown hover with fenced TypeScript, injections and conceal-line rendering")
   local git_project = vim.env.HOME .. "/git-project"
   vim.fn.mkdir(git_project, "p")
   local function git(...)
@@ -260,8 +292,9 @@ if vim.env.SCENARIO == "native-plugins" then
     return status and ((status.changed or 0) > 0 or (status.added or 0) > 0)
   end), "Git indicators did not update")
   vim.bo.modified = false
-  local parsed = pcall(vim.treesitter.get_parser, 0, "bash")
-  if parsed then
+  local parsed, parser = pcall(vim.treesitter.get_parser, 0, "bash")
+  if vim.env.PARSER_FIXTURE == "1" then assert(parsed and parser, "Bash parser fixture did not load") end
+  if parsed and vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()] then
     assert(vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()])
     print("PASS: real Bash parser and Treesitter highlighting")
   end
@@ -401,6 +434,18 @@ if vim.env.LSP_FIXTURE == "1" then
     return client, buf
   end
   local client, buf = open("main.ts", "ts_ls", true)
+  vim.api.nvim_win_set_cursor(0, {1, 10})
+  vim.fn.maparg("gh", "n", false, true).callback()
+  assert(vim.wait(10000, function()
+    local window = vim.b[buf].lsp_floating_preview
+    return window and vim.api.nvim_win_is_valid(window)
+  end), "gh did not open the TypeScript hover")
+  local hover_window = vim.b[buf].lsp_floating_preview
+  local hover_buffer = vim.api.nvim_win_get_buf(hover_window)
+  assert(vim.treesitter.highlighter.active[hover_buffer])
+  vim.treesitter.get_parser(hover_buffer, "markdown"):parse(true)
+  vim.api.nvim_win_text_height(hover_window, {})
+  vim.api.nvim_win_close(hover_window, true)
   local result = client:request_sync("textDocument/definition", {
     textDocument={uri=vim.uri_from_bufnr(buf)}, position={line=0, character=10},
   }, 10000, buf)
@@ -435,7 +480,7 @@ end
 local path = vim.env.HOME .. "/external.txt"
 vim.cmd.enew()
 vim.bo.filetype = "markdown"
-assert(not vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()])
+vim.treesitter.get_parser(0, "markdown"):parse(true)
 assert(vim.wo.wrap)
 vim.fn.writefile({"original"}, path)
 vim.cmd.edit(path)
@@ -522,6 +567,30 @@ assert(opts.format_on_save(vim.api.nvim_get_current_buf()) == nil)
             run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                  "-c", f"luafile {feature_checks}", "-c", "qa!"], env)
             local_before = local.read_bytes()
+            # A pull must remain safe before :Lazy update has replaced an
+            # installed legacy plugin. Poison scripts/queries must never load.
+            plugin = home / ".data/nvim/lazy/nvim-treesitter"
+            modern = home / "modern-treesitter"
+            plugin.rename(modern)
+            (plugin / "lua/nvim-treesitter").mkdir(parents=True)
+            (plugin / "lua/nvim-treesitter/configs.lua").write_text("return {}\n")
+            (plugin / "plugin").mkdir()
+            (plugin / "plugin/legacy.lua").write_text('error("legacy plugin must not load")\n')
+            legacy_check = home / "legacy.lua"
+            legacy_check.write_text('''
+local plugin = require("lazy.core.config").plugins["nvim-treesitter"]
+assert(plugin and plugin.lazy and plugin.module == false and not plugin._.loaded)
+assert(not package.loaded["nvim-treesitter.query_predicates"])
+local buffer, window = vim.lsp.util.open_floating_preview({"```typescript", "const x: number", "```"}, "markdown")
+vim.treesitter.get_parser(buffer, "markdown"):parse(true)
+vim.api.nvim_win_text_height(window, {})
+vim.api.nvim_win_close(window, true)
+''')
+            run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                 "-c", f"luafile {legacy_check}", "-c", "qa!"], env)
+            shutil.rmtree(plugin)  # disposable poison fixture, never host data
+            modern.rename(plugin)
+            print("PASS: legacy installed plugin is disabled safely until explicit update")
 
         run([STOW, "--delete", "--no-folding", f"--dir={packages}", f"--target={home}",
               "nvim"], {**os.environ})

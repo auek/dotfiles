@@ -46,7 +46,7 @@ been tested; verification is deferred until the next Arch installation.
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration, portable `tmx` sessions with optional local hooks, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
-| `nvim` | Shared editor with completion, Git indicators, Treesitter, navigation, and optional local features |
+| `nvim` | Shared editor with completion, Git indicators, Neovim 0.12 Treesitter, navigation, and local features |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -227,7 +227,7 @@ theme-set            # show current selection
 
 ## Neovim
 
-The `nvim` package provides one shared editor configuration (Neovim 0.11.3+):
+The `nvim` package provides one shared editor configuration (Neovim 0.12+):
 LSP/snippet/path/buffer completion, Git change indicators, Treesitter highlighting,
 Telescope search, nvim-tree, a status line, keybinding hints, automatic pairs,
 surround editing, and tmux navigation. No assistant completion provider is used.
@@ -264,10 +264,43 @@ Node/npm available, explicitly install the tools you need:
 ```
 
 `InstallParsers` installs the selected Bash, CSS, JavaScript, JSON, Lua, TSX,
-TypeScript, and YAML parsers. Make/GCC or Clang are needed for native builds;
+TypeScript, and YAML parsers into `stdpath("data")/treesitter-v2` using the
+supported `nvim-treesitter` main-branch API. A standalone **tree-sitter CLI
+0.26.1+**, a C compiler, curl and tar are needed only for parser installation.
+Parser installation is explicit; updating the plugin runs `:TSUpdate` to align
+already-installed parsers/queries with its pin. Old parser directories are not
+deleted or automatically reused. Missing parsers fall back to ordinary syntax.
 Telescope's fzf-native sorter also builds with Make. Text search requires `rg`.
 If its sorter build fails, Telescope falls back with a warning; retry with
 `:Lazy build telescope-fzf-native.nvim`. Nerd Fonts are not required.
+
+Install the standalone CLI through an approved system/tool manager, not npm.
+On current Arch/Fedora/Ubuntu 24.04+, an optional machine-local mise entry is:
+
+```toml
+[tools]
+"aqua:tree-sitter/tree-sitter" = "latest"
+```
+
+The upstream Linux x86_64 CLI 0.26.1 and 0.27.1 binaries require glibc 2.39;
+they do **not** run on RHEL 9's glibc 2.34. Do not add this Aqua tool to the
+shared baseline or install it blindly on older systems. Where permitted, a
+machine-local source build avoids that binary requirement:
+
+```toml
+[tools]
+rust = "stable"
+"cargo:tree-sitter-cli" = "0.27.1"
+
+[settings.cargo]
+binstall = false
+```
+
+Use only one CLI backend per machine. This source-build route needs an approved
+Rust toolchain, linker/native build dependencies and registry access; it has not
+been verified on the limited RHEL machine. After editing the ordinary local
+mise config, run `mise install && mise reshim` from `$HOME`. The CLI is not
+needed to edit files or display hover documentation with installed parsers.
 
 Bash's language server uses ShellCheck on PATH for diagnostics. Shell
 formatting is disabled; no shfmt is installed or configured as a formatter.
@@ -327,8 +360,8 @@ Searches use the current directory. Space-separated file queries such as
 `foo File` match full paths with fzf syntax. `nvim .` and `:edit directory`
 open the tree. Completion keeps the existing Tab/Shift-Tab, Enter and
 Ctrl+Space bindings; native `gc` commenting is available. Markdown/text wrap.
-Theme changes reload on focus or with `:ReloadTheme`. Markdown Treesitter
-highlighting remains disabled due to the known Neovim 0.12 crash.
+Theme changes reload on focus or with `:ReloadTheme`. Native Markdown hover
+highlighting and fenced-code injections work without the legacy query handlers.
 External file changes reload only clean buffers, deferring during insert and
 command-line editing. Closing a modified buffer never discards its changes.
 
@@ -354,6 +387,14 @@ the old profile's separate data is not automatically copied into the shared
 locations. Review extra language needs in `local.lua`; broad automatic server
 installation and format-on-save are not defaults.
 
+For an installed legacy Treesitter plugin, restart Neovim to load the guard,
+run `:Lazy update nvim-treesitter`, then restart again. Until then it stays
+dormant (but available in Lazy's update list) with an update hint so its
+incompatible queries cannot break hover windows. With the supported CLI on
+PATH, use `:InstallParsers` to build the selected parsers in the new directory;
+no parser or plugin data needs deleting. Existing Stow links need no changes
+for this Treesitter update.
+
 ### Isolated checks
 
 ```bash
@@ -367,7 +408,11 @@ Git indicators, parser configuration, search/tree/themes, clipboard and safe
 buffer behavior, and verify package removal preserves local settings. An
 optional third argument supplies a Mason fixture with the four baseline servers,
 ShellCheck and `azure-schema.json` for real LSP/diagnostic checks without downloads.
-Tests never install plugins or tools into the real home.
+An optional fourth argument supplies the parser/query directory built with the
+pinned plugin (`-` as the third argument skips Mason checks). Hover tests cover
+fenced TypeScript, injections, conceal-line rendering, the actual LSP `gh`
+mapping when server fixtures are present, and safe startup with an old installed
+plugin awaiting update. Tests never install plugins or tools into the real home.
 
 ## Further details
 

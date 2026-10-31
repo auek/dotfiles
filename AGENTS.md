@@ -47,7 +47,7 @@ dotfiles/
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
-    ├── nvim/.config/nvim/    # Shared editor, completion, Git indicators, Treesitter, and local feature selection
+    ├── nvim/.config/nvim/    # Shared editor, Neovim 0.12 Treesitter/hover, and local feature selection
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
@@ -100,9 +100,22 @@ package selection. Neovim uses one `nvim` Stow package; machine-local options
 live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
 `server_options` supplies per-server overrides. Never Stow the local file.
-The baseline selects available `ts_ls`, `cssls`, `yamlls`, and `bashls` servers
+The shared editor targets Neovim 0.12+. The baseline selects available `ts_ls`,
+`cssls`, `yamlls`, and `bashls` servers
 with Azure Pipelines YAML schemas. Mason installs servers/ShellCheck only on
 explicit request; `:InstallParsers` installs explicitly selected parsers.
+Treesitter uses the supported main-branch API, eager loading, native highlighting,
+and the separate `stdpath("data")/treesitter-v2` parser/query root. Plugin updates
+run `:TSUpdate` for existing parsers; startup never installs parsers. An old
+installed legacy plugin stays dormant but remains in Lazy's update list until
+an explicit `:Lazy update nvim-treesitter` and restart, keeping incompatible
+query handlers out of Markdown hover windows. Restart before updating to load
+that guard rather than hot-reloading a mix of legacy and supported modules.
+Parser builds need standalone tree-sitter CLI 0.26.1+, curl/tar and a C compiler.
+Do not add its current Aqua binaries to the shared mise baseline: Linux x86_64
+0.26.1/0.27.1 require glibc 2.39, incompatible with RHEL 9's 2.34. CLI installation
+is machine-local; README includes an opt-in Cargo source-build route whose
+target-machine verification remains pending. The CLI is not a runtime dependency.
 There is no automatic parser/server installation, shell formatting, or default
 format-on-save. Conform formatting and Markdown preview are separate opt-in
 features. Lazy bootstraps and installs missing editor plugins, without update
@@ -264,6 +277,10 @@ Mason fixture with the four baseline servers, ShellCheck, and a local
 `azure-schema.json` for real language-server and diagnostic checks without
 network access. The tests never install into the real home; real Windows
 clipboard and interactive terminal behavior remain manual checks.
+An optional fourth argument provides a matching parser/query fixture (use `-`
+for the Mason argument to skip LSP fixtures). Tests cover native Markdown hover
+with TypeScript fences, injection parsing/conceal-line rendering, real LSP `gh`,
+missing/old CLI warnings, and safe startup while a legacy plugin awaits update.
 
 Run the lightweight isolated checks with:
 

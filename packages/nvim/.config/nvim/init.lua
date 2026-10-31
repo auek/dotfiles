@@ -134,14 +134,6 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.opt_local.linebreak = true
   end,
 })
-vim.api.nvim_create_autocmd("FileType", {
-  group = wrap,
-  pattern = "markdown",
-  callback = function(event)
-    -- Retain the Neovim 0.12 Markdown crash workaround independently of plugins.
-    pcall(vim.treesitter.stop, event.buf)
-  end,
-})
 
 local ok, plugins = pcall(require, "config.plugins")
 if ok then

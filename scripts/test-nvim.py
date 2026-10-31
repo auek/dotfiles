@@ -306,6 +306,62 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.fn.writefile({"needle ignored"}, project .. "/ignored.txt")
   vim.fn.writefile({"needle metadata"}, project .. "/.git/HEAD")
   vim.cmd.cd(project)
+  -- Exercise the asynchronous file-preview path, not only picker result lists.
+  -- Telescope 0.1.8 called the removed nvim-treesitter ft_to_lang API here.
+  local previews = project .. "/previews"
+  vim.fn.mkdir(previews, "p")
+  local maker = require("telescope.config").values.buffer_previewer_maker
+  for _, case in ipairs({
+    {"example.ts", {"export const answer: number = 42;"}, "typescript"},
+    {"example.sh", {"#!/usr/bin/env bash", "echo hello"}, "bash"},
+    {"example.md", {"```typescript", "const answer: number", "```"}, "markdown"},
+    {"example.rs", {"fn main() {}"}, "rust"},
+  }) do
+    local file, contents, language = previews .. "/" .. case[1], case[2], case[3]
+    vim.fn.writefile(contents, file)
+    local buffer = vim.api.nvim_create_buf(false, true)
+    local utils = require("telescope.utils")
+    local has_parser = utils.has_ts_parser
+    if language == "rust" then
+      utils.has_ts_parser = function(lang) return lang ~= "rust" and has_parser(lang) end
+    end
+    local completed = false
+    maker(file, buffer, {use_ft_detect=true, callback=function() completed = true end})
+    assert(vim.wait(5000, function()
+      return completed and (vim.treesitter.highlighter.active[buffer] ~= nil or vim.bo[buffer].syntax ~= "")
+    end), "file preview/highlighter did not finish: " .. case[1])
+    assert(vim.deep_equal(vim.api.nvim_buf_get_lines(buffer, 0, #contents, false), contents), case[1])
+    if language == "markdown" or (vim.env.PARSER_FIXTURE == "1" and language ~= "rust") then
+      assert(vim.treesitter.highlighter.active[buffer], "no native preview highlighter: " .. case[1])
+      vim.treesitter.get_parser(buffer, language):parse(true)
+    elseif language == "rust" then
+      assert(not vim.treesitter.highlighter.active[buffer] and vim.bo[buffer].syntax == "rust")
+    end
+    utils.has_ts_parser = has_parser
+    vim.api.nvim_buf_delete(buffer, {force=true})
+  end
+  -- Force a real picker preview window even in the headless terminal's small
+  -- default dimensions; previously the preview pane could remain hidden.
+  vim.o.columns, vim.o.lines = 180, 55
+  require("telescope.builtin").find_files({
+    cwd=previews, default_text="example.ts", layout_strategy="horizontal",
+    layout_config={horizontal={preview_cutoff=0}},
+  })
+  local preview_prompt = vim.api.nvim_get_current_buf()
+  local preview_picker = require("telescope.actions.state").get_current_picker(preview_prompt)
+  assert(vim.wait(5000, function()
+    local state = preview_picker.previewer and preview_picker.previewer.state
+    return state and state.winid and vim.api.nvim_win_is_valid(state.winid)
+      and state.bufnr and vim.api.nvim_buf_is_valid(state.bufnr)
+      and vim.api.nvim_buf_get_lines(state.bufnr, 0, 1, false)[1] == "export const answer: number = 42;"
+      and (vim.treesitter.highlighter.active[state.bufnr] ~= nil or vim.bo[state.bufnr].syntax ~= "")
+  end), "real Telescope picker preview did not render")
+  if vim.env.PARSER_FIXTURE == "1" then
+    assert(vim.treesitter.highlighter.active[preview_picker.previewer.state.bufnr])
+  end
+  vim.cmd.redraw()
+  require("telescope.actions").close(preview_prompt)
+  print("PASS: asynchronous TS/Bash/Markdown previews, missing-parser fallback, and real visible preview pane")
   local function results(key, query)
     vim.fn.maparg(key, "n", false, true).callback()
     local state = require("telescope.actions.state")

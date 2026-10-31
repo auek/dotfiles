@@ -47,7 +47,7 @@ dotfiles/
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
-    ├── nvim/.config/nvim/    # Shared editor, Neovim 0.12 Treesitter/hover, and local feature selection
+    ├── nvim/.config/nvim/    # Shared editor, native Treesitter/hover/search previews, and local features
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
@@ -81,6 +81,8 @@ The default workstation packages are stowed to `$HOME` via `make stow`:
 completion, Git indicators, selected Treesitter highlighting, search/tree,
 themes, status line, key hints, pairs/surround, and safe tmux navigation.
 It has no assistant completion provider or separate Git command plugin.
+Telescope 0.2.1 is pinned for native Treesitter previews; do not revert to the
+0.1.8 previewer, which calls APIs removed by the supported Treesitter rewrite.
 The `mise` package defaults to Node 24.19.0 and selects
 latest stable Aqua releases of Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch,
 ripgrep, fd, and fzf. A machine may override Node or add optional tools with an
@@ -281,6 +283,9 @@ An optional fourth argument provides a matching parser/query fixture (use `-`
 for the Mason argument to skip LSP fixtures). Tests cover native Markdown hover
 with TypeScript fences, injection parsing/conceal-line rendering, real LSP `gh`,
 missing/old CLI warnings, and safe startup while a legacy plugin awaits update.
+Preview regressions exercise asynchronous TypeScript/Bash/Markdown file reads,
+native highlighting, missing-parser syntax fallback, and a real visible
+Telescope picker preview window (not only result-list matching).
 
 Run the lightweight isolated checks with:
 

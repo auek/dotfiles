@@ -46,7 +46,7 @@ been tested; verification is deferred until the next Arch installation.
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration, portable `tmx` sessions with optional local hooks, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
-| `nvim` | Shared editor with completion, Git indicators, Neovim 0.12 Treesitter, navigation, and local features |
+| `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and local features |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -249,7 +249,9 @@ Mason tools in `stdpath("data")/mason`, and Lazy's runtime lockfile/cache/state 
 `stdpath("state")/dotfiles`. The tracked `lazy-lock.json` supplies explicit pins;
 plugin upgrades are deliberate repository changes. `:Lazy install` reconciles
 missing plugins without needing `:Lazy clean` or removing old data.
-Project-local `.lazy.lua` plugin specs are disabled.
+Project-local `.lazy.lua` plugin specs are disabled. Telescope is pinned to
+0.2.1, whose previewer uses Neovim's native Treesitter API rather than the
+removed legacy plugin helpers.
 
 ### Languages and optional features
 
@@ -395,6 +397,10 @@ PATH, use `:InstallParsers` to build the selected parsers in the new directory;
 no parser or plugin data needs deleting. Existing Stow links need no changes
 for this Treesitter update.
 
+An existing Telescope 0.1.8 installation also needs `:Lazy update telescope.nvim`
+and a restart for compatible file previews; no restow or parser rebuild is
+needed solely for the Telescope update.
+
 ### Isolated checks
 
 ```bash
@@ -412,7 +418,9 @@ An optional fourth argument supplies the parser/query directory built with the
 pinned plugin (`-` as the third argument skips Mason checks). Hover tests cover
 fenced TypeScript, injections, conceal-line rendering, the actual LSP `gh`
 mapping when server fixtures are present, and safe startup with an old installed
-plugin awaiting update. Tests never install plugins or tools into the real home.
+plugin awaiting update. Preview regressions cover asynchronous TypeScript,
+Bash and Markdown reads, missing-parser syntax fallback, and a real visible
+Telescope preview pane. Tests never install plugins or tools into the real home.
 
 ## Further details
 

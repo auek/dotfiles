@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Smoke-test the real stowed work profile; requires nvim, stow, and Python 3.
+"""Smoke-test the shared stowed profile; requires nvim, stow, and Python 3.
 
-Usage: python3 scripts/test-nvim-work.py /absolute/path/to/nvim [plugin-fixtures [mason-fixture]]
+Usage: python3 scripts/test-nvim.py /absolute/path/to/nvim [plugin-fixtures [mason-fixture]]
 All HOME/XDG state and clipboard processes are disposable fixtures.
 """
 import os
@@ -12,12 +12,15 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-NVIM = str(Path(shutil.which(sys.argv[1] if len(sys.argv) > 1 else "nvim")).resolve())
+NVIM = shutil.which(sys.argv[1] if len(sys.argv) > 1 else "nvim")
 STOW = shutil.which("stow")
+if not NVIM or not STOW:
+    sys.exit("Neovim and GNU Stow must already be installed")
+NVIM = str(Path(NVIM).resolve())
 
 
 def run(args, env, cwd=None):
-    result = subprocess.run(args, env=env, text=True, capture_output=True, timeout=30, cwd=cwd or env.get("HOME"))
+    result = subprocess.run(args, env=env, text=True, capture_output=True, timeout=90, cwd=cwd or env.get("HOME"))
     assert result.returncode == 0, result.stdout + result.stderr
     # Neovim can print Lua/startup errors yet exit zero after :qa!.
     lsp_log = Path(env.get("XDG_STATE_HOME", "/tmp")) / "nvim/lsp.log"
@@ -25,12 +28,21 @@ def run(args, env, cwd=None):
     return result
 
 
-with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
+with tempfile.TemporaryDirectory(prefix="nvim-check-") as tmp:
     base = Path(tmp)
-    # Copy only this package: the unstowed home configuration cannot be borrowed.
+    # Copy only this package: no other package or real user configuration is loaded.
     packages = base / "arbitrary checkout" / "packages"
-    shutil.copytree(ROOT / "packages/nvim-work", packages / "nvim-work")
-    scenarios = ["native", "wsl-missing", "wsl"]
+    shutil.copytree(ROOT / "packages/nvim", packages / "nvim")
+    source_snapshot = {path.relative_to(packages): path.read_bytes()
+                       for path in packages.rglob("*") if path.is_file()}
+    conflict = base / "conflict"
+    (conflict / ".config/nvim").mkdir(parents=True)
+    ordinary = conflict / ".config/nvim/init.lua"
+    ordinary.write_text("-- preserve existing settings\n")
+    result = subprocess.run([STOW, "--simulate", "--no-folding", f"--dir={packages}",
+                             f"--target={conflict}", "nvim"], capture_output=True, text=True, timeout=10)
+    assert result.returncode != 0 and ordinary.read_text() == "-- preserve existing settings\n"
+    scenarios = ["native", "wsl-missing", "wsl", "local", "invalid-local", "bootstrap-failure", "unrestowed"]
     if len(sys.argv) > 2:
         scenarios.append("native-plugins")
     for scenario in scenarios:
@@ -38,17 +50,19 @@ with tempfile.TemporaryDirectory(prefix="nvim-work-check-") as tmp:
         home.mkdir()
         bin_dir = home / "bin"
         bin_dir.mkdir()
-        env = {**os.environ, "HOME": str(home), "PATH": str(bin_dir),
+        parent = {key: value for key, value in os.environ.items()
+                  if not key.startswith(("MISE_", "__MISE_", "TMUX", "NVIM_", "LUA_"))}
+        env = {**parent, "HOME": str(home), "PATH": str(bin_dir),
                "XDG_CONFIG_HOME": str(home / ".config"),
                "XDG_DATA_HOME": str(home / ".data"),
                "XDG_STATE_HOME": str(home / ".state"),
                "XDG_CACHE_HOME": str(home / ".cache"),
                "SCENARIO": scenario}
         if scenario == "native-plugins":
-            shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/nvim-work/lazy")
+            shutil.copytree(Path(sys.argv[2]), home / ".data/nvim/lazy")
             env["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
             if len(sys.argv) > 3:
-                shutil.copytree(Path(sys.argv[3]), home / ".data/nvim/nvim-work/mason", symlinks=True)
+                shutil.copytree(Path(sys.argv[3]), home / ".data/nvim/mason", symlinks=True)
                 env["LSP_FIXTURE"] = "1"
             for name in ("everforest", "gruvbox"):
                 theme = home / ".local/state/dotfiles/theme" / name
@@ -69,13 +83,33 @@ else:
     sys.stdout.buffer.write((home / "paste").read_bytes())
 ''')
             mock.chmod(0o755)
+        if scenario == "bootstrap-failure":
+            git = bin_dir / "git"
+            git.write_text(f"#!{sys.executable}\nimport sys\nprint('simulated clone failure', file=sys.stderr)\nsys.exit(1)\n")
+            git.chmod(0o755)
         (home / "unrelated").write_text("preserve me")
-        run([STOW, "--no-folding", f"--dir={packages}", f"--target={home}", "nvim-work"],
+        legacy = home / ".data/nvim/nvim-work/keep"
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text("existing data\n")
+        run([STOW, "--no-folding", f"--dir={packages}", f"--target={home}", "nvim"],
             {**os.environ})
+        local = home / ".config/nvim/local.lua"
+        if scenario == "local":
+            local.write_text('return {servers={cssls=false, pyright=true}, parsers={"bash"}, '
+                             'features={format_on_save=true}, server_options={pyright={settings={}}}}\n')
+        elif scenario == "invalid-local":
+            local.write_text('return {parsers={"bash; unsafe"}}\n')
+        local_before = local.read_bytes() if local.exists() else None
+        run([STOW, "--restow", "--no-folding", f"--dir={packages}", f"--target={home}", "nvim"],
+            {**os.environ})
+        if scenario == "unrestowed":
+            (home / ".config/nvim/lua/config/plugins.lua").unlink()
+        mason = home / ".data/nvim/mason"
+        installed_before = sorted(path.name for path in (mason / "packages").glob("*"))
         before = home / "before.lua"
         before.write_text('''local has = vim.fn.has
 vim.fn.has = function(feature)
-  if feature == "wsl" then return os.getenv("SCENARIO"):match("^native") and 0 or 1 end
+  if feature == "wsl" then return os.getenv("SCENARIO"):match("^wsl") and 1 or 0 end
   return has(feature)
 end
 _G.real_system = vim.system
@@ -87,22 +121,38 @@ vim.fn.system = forbidden
 vim.fn.systemlist = forbidden
 vim.fn.jobstart = forbidden
 vim.uv.spawn = forbidden
+if vim.env.SCENARIO == "bootstrap-failure" then
+  vim.system = _G.real_system
+  vim.uv.spawn = _G.real_spawn
+end
 ''')
         checks = home / "checks.lua"
         checks.write_text(r'''
 local function read(path) return vim.fn.readfile(path, "b") end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
+local settings = require("config.settings")
+assert(settings.servers.ts_ls and settings.servers.yamlls and settings.servers.bashls)
+assert(not settings.features.markdown_preview)
+if vim.env.SCENARIO == "local" then
+  assert(not settings.servers.cssls and settings.servers.pyright)
+  assert(settings.features.format_on_save and vim.deep_equal(settings.parsers, {"bash"}))
+else
+  assert(settings.servers.cssls and not settings.servers.pyright)
+  assert(not settings.features.format_on_save and vim.tbl_contains(settings.parsers, "bash"))
+end
 assert(vim.g.colors_name == (vim.env.SCENARIO == "native-plugins" and "everforest" or "habamax"))
 assert(not package.loaded["telescope.builtin"])
 if vim.env.SCENARIO ~= "native-plugins" then assert(not package.loaded["mason"]) end
 if vim.env.SCENARIO ~= "native-plugins" then
   assert(not package.loaded.lazy)
-  local notifications = {}
-  local notify = vim.notify
-  vim.notify = function(message) table.insert(notifications, message) end
-  vim.fn.maparg(" ff", "n", false, true).callback()
-  assert(notifications[1]:find(":Lazy", 1, true))
-  vim.notify = notify
+  if vim.env.SCENARIO ~= "unrestowed" then
+    local notifications = {}
+    local notify = vim.notify
+    vim.notify = function(message) table.insert(notifications, message) end
+    vim.fn.maparg(" ff", "n", false, true).callback()
+    assert(notifications[1]:find(":Lazy", 1, true))
+    vim.notify = notify
+  end
 end
 assert(vim.fn.filereadable(vim.env.HOME .. "/calls") == 0)
 if vim.env.SCENARIO == "wsl" then
@@ -142,23 +192,79 @@ else
 end
 if vim.env.SCENARIO == "native-plugins" then
   assert(package.loaded.lazy)
-  assert(require("mason.settings").current.install_root_dir == vim.fn.stdpath("data") .. "/nvim-work/mason")
-  assert(#require("mason-registry").get_installed_package_names() == (vim.env.LSP_FIXTURE == "1" and 3 or 0))
-  for server, executable in pairs({ts_ls="typescript-language-server", cssls="vscode-css-language-server", yamlls="yaml-language-server"}) do
+  assert(require("mason.settings").current.install_root_dir == vim.fn.stdpath("data") .. "/mason")
+  for server, executable in pairs({ts_ls="typescript-language-server", cssls="vscode-css-language-server", yamlls="yaml-language-server", bashls="bash-language-server"}) do
     if vim.fn.executable(executable) == 0 then assert(not vim.lsp.is_enabled(server)) end
+    if vim.env.LSP_FIXTURE == "1" then
+      assert(vim.fn.executable(executable) == 1, "missing fixture executable: " .. executable)
+      assert(vim.lsp.is_enabled(server), "fixture server not enabled: " .. server)
+    end
   end
-  assert(vim.fn.exists(":Lazy") == 2 and vim.fn.exists(":WorkPluginsInstall") == 0)
+  assert(vim.fn.exists(":Lazy") == 2)
   local config = require("lazy.core.config")
-  local isolated = vim.fn.stdpath("state") .. "/nvim-work/"
+  local isolated = vim.fn.stdpath("state") .. "/dotfiles/"
   for _, path in ipairs({config.options.lockfile, config.options.state,
       config.options.pkg.cache, config.options.readme.root}) do
     assert(path:sub(1, #isolated) == isolated, path)
   end
-  assert(config.options.root == vim.fn.stdpath("data") .. "/nvim-work/lazy")
+  assert(config.options.root == vim.fn.stdpath("data") .. "/lazy")
   assert(config.options.local_spec == false)
+  assert(config.options.install.missing == true and not config.options.checker.enabled)
+  local pins = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lazy-lock.json"), "\n"))
+  for name, plugin in pairs(config.plugins) do assert(plugin.commit == pins[name].commit, name) end
+  for _, name in ipairs({"vim-fugitive", "dashboard-nvim", "nvim-notify", "trouble.nvim", "mason-lspconfig.nvim",
+      "cmp-cmdline", "conform.nvim", "markdown-preview.nvim", "nvim-yati", "nvim-ts-autotag"}) do
+    assert(not config.plugins[name], name)
+  end
+  assert(config.plugins["nvim-cmp"] and config.plugins["gitsigns.nvim"] and config.plugins["nvim-treesitter"])
+  assert(vim.lsp.config.bashls.settings.bashIde.shfmt.path == "")
+  assert(not vim.lsp.is_enabled("pyright") and not vim.lsp.is_enabled("lua_ls"))
   vim.system = _G.real_system
   vim.uv.spawn = _G.real_spawn
   vim.fn.jobstart = _G.real_jobstart
+  require("lazy").load({plugins={"nvim-cmp", "nvim-treesitter"}})
+  local sources = {}
+  for _, source in ipairs(require("cmp").get_config().sources) do sources[#sources+1] = source.name end
+  assert(vim.deep_equal(sources, {"nvim_lsp", "luasnip", "path", "buffer"}), vim.inspect(sources))
+  local treesitter = require("nvim-treesitter.configs")
+  assert(#treesitter.get_ensure_installed_parsers() == 0 and not treesitter.get_module("highlight").disable("bash"))
+  assert(treesitter.get_module("highlight").disable("markdown"))
+  assert(vim.fn.exists(":InstallParsers") == 2)
+  local installs = 0
+  local command = vim.cmd
+  -- Exercise the explicit command without downloading/compiling a parser.
+  vim.cmd = setmetatable({}, {__index=command, __call=function(_, value)
+    assert(value == "TSInstall " .. table.concat(settings.parsers, " "))
+    installs = installs + 1
+  end})
+  vim.cmd.InstallParsers()
+  vim.cmd = command
+  assert(installs == 1)
+  local git_project = vim.env.HOME .. "/git-project"
+  vim.fn.mkdir(git_project, "p")
+  local function git(...)
+    local args = {"git", "-C", git_project}
+    vim.list_extend(args, {...})
+    local result = vim.system(args, {text=true}):wait()
+    assert(result.code == 0, result.stderr)
+  end
+  git("init", "-q")
+  vim.fn.writefile({"original"}, git_project .. "/example.sh")
+  git("add", "example.sh")
+  git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "fixture")
+  vim.cmd.edit(git_project .. "/example.sh")
+  assert(vim.wait(5000, function() return vim.b.gitsigns_head ~= nil end), "Git indicators did not attach")
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {"changed", "extra"})
+  assert(vim.wait(5000, function()
+    local status = vim.b.gitsigns_status_dict
+    return status and ((status.changed or 0) > 0 or (status.added or 0) > 0)
+  end), "Git indicators did not update")
+  vim.bo.modified = false
+  local parsed = pcall(vim.treesitter.get_parser, 0, "bash")
+  if parsed then
+    assert(vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()])
+    print("PASS: real Bash parser and Treesitter highlighting")
+  end
   local project = vim.env.HOME .. "/project"
   vim.fn.mkdir(project .. "/.git", "p")
   vim.fn.writefile({"needle in code"}, project .. "/code.txt")
@@ -218,7 +324,7 @@ if vim.env.SCENARIO == "native-plugins" then
   local positions = file_picker.sorter:highlighter("foo File", "foo-app/src/long/path/to/stuff/File.tsx")
   table.sort(positions)
   assert(vim.deep_equal(positions, {1,2,3,32,33,34,35}), vim.inspect(positions))
-  assert(package.loaded["fzf_lib"] and not package.loaded["work.file_sorter"])
+  assert(package.loaded["fzf_lib"])
   require("telescope.actions").close(file_prompt)
 
   -- Outside tmux the navigator still moves between editor splits safely.
@@ -251,9 +357,9 @@ if vim.env.SCENARIO == "native-plugins" then
   assert(vim.uv.fs_symlink(themes .. "everforest", themes .. "current"))
   vim.cmd.ReloadTheme()
   assert(vim.g.colors_name == "everforest")
-  local theme_count = #vim.api.nvim_get_autocmds({group = "NvimWorkThemeReload"})
-  require("work.theme").setup()
-  assert(#vim.api.nvim_get_autocmds({group = "NvimWorkThemeReload"}) == theme_count)
+  local theme_count = #vim.api.nvim_get_autocmds({group = "DotfilesThemeReload"})
+  require("config.theme").setup()
+  assert(#vim.api.nvim_get_autocmds({group = "DotfilesThemeReload"}) == theme_count)
   local executable = vim.fn.executable
   vim.fn.executable = function(cmd) return cmd == "rg" and 0 or executable(cmd) end
   local warning
@@ -280,7 +386,7 @@ if vim.env.LSP_FIXTURE == "1" then
   assert(yaml.settings.yaml.schemaStore.enable == false)
   -- Same official schema, served from a fixture so this test needs no network.
   yaml.settings.yaml.schemas = {
-    [vim.uri_from_fname(vim.fn.stdpath("data") .. "/nvim-work/mason/azure-schema.json")] = "azure-pipelines.yml",
+    [vim.uri_from_fname(vim.fn.stdpath("data") .. "/mason/azure-schema.json")] = "azure-pipelines.yml",
   }
   local function open(file, server, expect_diagnostic)
     vim.cmd.edit(project .. "/" .. file)
@@ -301,14 +407,36 @@ if vim.env.LSP_FIXTURE == "1" then
   assert(result and result.result and #result.result > 0, vim.inspect(result))
   local definition = result.result[1]
   assert((definition.uri or definition.targetUri):find("dep.ts", 1, true))
+  local completion = client:request_sync("textDocument/completion", {
+    textDocument={uri=vim.uri_from_bufnr(buf)}, position={line=2, character=13},
+    context={triggerKind=1},
+  }, 10000, buf)
+  assert(completion and completion.result, vim.inspect(completion))
+  local answer = false
+  for _, item in ipairs(completion.result.items or completion.result) do
+    if item.label == "answer" then answer = true end
+  end
+  assert(answer, "TypeScript completion did not offer the imported symbol")
   open("test.module.css", "cssls", true)
   open("test.less", "cssls", false)
   open("azure-pipelines.yml", "yamlls", true)
+  vim.fn.writefile({"#!/usr/bin/env bash", "echo $undefined_value"}, project .. "/example.sh")
+  local _, shell_buf = open("example.sh", "bashls", true)
+  assert(vim.wait(15000, function()
+    for _, diagnostic in ipairs(vim.diagnostic.get(shell_buf)) do
+      if tostring(diagnostic.code):match("^SC") then return true end
+    end
+    return false
+  end), "no ShellCheck diagnostics")
   assert(vim.bo.modified == false)
   for _, active in ipairs(vim.lsp.get_clients()) do active:stop(true) end
-  print("PASS: real TS definition/type diagnostics, CSS Modules diagnostics, Less attachment, Azure YAML schema diagnostics")
+  print("PASS: real TS definitions/type diagnostics, CSS/Less, Azure YAML schema and Bash/ShellCheck diagnostics")
 end
 local path = vim.env.HOME .. "/external.txt"
+vim.cmd.enew()
+vim.bo.filetype = "markdown"
+assert(not vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()])
+assert(vim.wo.wrap)
 vim.fn.writefile({"original"}, path)
 vim.cmd.edit(path)
 vim.fn.writefile({"external longer"}, path)
@@ -338,13 +466,21 @@ vim.bo.modified = false -- fixture only: allow testing closing a clean buffer
 vim.cmd.vsplit()
 close()
 assert(#vim.api.nvim_list_wins() == 2 and not vim.api.nvim_buf_is_valid(buf))
-local count = #vim.api.nvim_get_autocmds({group = "NvimWorkReload"})
+local count = #vim.api.nvim_get_autocmds({group = "DotfilesReload"})
 dofile(vim.fn.stdpath("config") .. "/init.lua")
-assert(#vim.api.nvim_get_autocmds({group = "NvimWorkReload"}) == count)
+assert(#vim.api.nvim_get_autocmds({group = "DotfilesReload"}) == count)
 if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everforest") end
 ''')
         result = run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                       "-c", f"luafile {checks}", "-c", "qa!"], env)
+        for line in (result.stdout + result.stderr).splitlines():
+            if line.startswith("PASS:"):
+                print(line)
+        if scenario == "bootstrap-failure":
+            assert "Lazy bootstrap failed" in result.stderr
+            assert not list((home / ".data/nvim/lazy").glob(".lazy-install-*"))
+        if scenario == "unrestowed":
+            assert "restow the nvim package" in result.stderr
         if scenario == "native-plugins":
             selection = home / ".local/state/dotfiles/theme/current"
             selection.unlink()
@@ -366,17 +502,39 @@ assert(listing:find("example.ts", 1, true), listing)
             # Exercise real CLI directory startup and :edit before any tree keybinding.
             for args in (["."], [str(directory)], ["-c", "edit " + str(directory).replace(" ", "\\ ")]):
                 run([NVIM, "--headless", "-i", "NONE", *args,
-                     "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
+                      "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
+            local.write_text('return {servers={cssls=false, pyright=true}, parsers={"bash"}, '
+                             'features={format_on_save=true, markdown_preview=true}}\n')
+            feature_checks = home / "features.lua"
+            feature_checks.write_text('''
+local plugins = require("lazy.core.config").plugins
+assert(plugins["conform.nvim"] and plugins["markdown-preview.nvim"])
+assert(not require("config.settings").servers.cssls)
+assert(not vim.lsp.is_enabled("cssls"))
+assert(vim.deep_equal(require("config.settings").parsers, {"bash"}))
+require("lazy").load({plugins={"conform.nvim"}})
+assert(require("conform").list_formatters_for_buffer ~= nil)
+vim.cmd.enew()
+vim.bo.filetype = "sh"
+local opts = require("lazy.core.plugin").values(plugins["conform.nvim"], "opts", false)
+assert(opts.format_on_save(vim.api.nvim_get_current_buf()) == nil)
+''')
+            run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                 "-c", f"luafile {feature_checks}", "-c", "qa!"], env)
+            local_before = local.read_bytes()
 
         run([STOW, "--delete", "--no-folding", f"--dir={packages}", f"--target={home}",
-             "nvim-work"], {**os.environ})
+              "nvim"], {**os.environ})
         assert not (home / ".config/nvim/init.lua").exists()
+        assert (local.read_bytes() if local.exists() else None) == local_before
+        assert sorted(path.name for path in (mason / "packages").glob("*")) == installed_before
+        assert legacy.read_text() == "existing data\n"
         assert (home / "unrelated").read_text() == "preserve me"
-        assert (packages / "nvim-work/.config/nvim/init.lua").read_bytes() == (
-            ROOT / "packages/nvim-work/.config/nvim/init.lua").read_bytes()
+        assert (packages / "nvim/.config/nvim/init.lua").read_bytes() == (
+            ROOT / "packages/nvim/.config/nvim/init.lua").read_bytes()
+        assert {path.relative_to(packages): path.read_bytes()
+                for path in packages.rglob("*") if path.is_file()} == source_snapshot
         print(f"PASS: {scenario}: startup, clipboard, safe reload, buffer close, unstow")
         if scenario == "native-plugins":
-            print("PASS: Telescope queries, nvim-tree commands/directory startup, theme selection/reload")
-            if env.get("LSP_FIXTURE"):
-                print("PASS: real TS definition/type diagnostics, CSS diagnostics, Less attachment, Azure schema validation")
+            print("PASS: completion, Git indicators, parser configuration, optional features, Telescope/tree/themes")
 print(run([NVIM, "--version"], os.environ).stdout.splitlines()[0])

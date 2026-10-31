@@ -16,3 +16,6 @@ packages/opencode/.config/opencode/bun.lock
 
 # theme-switching runtime state (must not be tracked)
 packages/themes/.local/state/
+
+# ordinary machine-local editor settings (never commit)
+packages/nvim/.config/nvim/local.lua

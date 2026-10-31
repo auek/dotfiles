@@ -1,93 +1,152 @@
+-- Shared editing behavior; machine-specific features live in local.lua.
 vim.g.mapleader = " "
+local opt = vim.opt
+opt.guicursor = "i:ver100-iCursor"
+opt.number = true
+opt.relativenumber = true
+opt.tabstop = 2
+opt.softtabstop = 2
+opt.shiftwidth = 2
+opt.expandtab = true
+opt.autoindent = true
+opt.smartindent = true
+opt.ignorecase = true
+opt.smartcase = true
+opt.incsearch = true
+opt.hlsearch = false
+opt.wrap = false
+opt.signcolumn = "yes:1"
+opt.termguicolors = true
+-- Clipboard work is explicit: ordinary yanks/deletes stay in normal registers.
+opt.clipboard = ""
+vim.cmd("filetype plugin indent on")
+vim.cmd("syntax enable")
+if not package.loaded["config.theme"] then vim.cmd.colorscheme("habamax") end
 
--- Load configurations early
-require("config.keymaps")
-require("config.options")
+local map = function(mode, lhs, rhs)
+  vim.keymap.set(mode, lhs, rhs, { silent = true })
+end
+map("i", "jj", "<Esc>")
+for direction, name in pairs({ h = "Left", j = "Down", k = "Up", l = "Right" }) do
+  map("n", "<C-" .. direction .. ">", function()
+    if vim.fn.exists(":TmuxNavigate" .. name) == 2 then
+      vim.cmd("TmuxNavigate" .. name)
+    else
+      vim.cmd.wincmd(direction)
+    end
+  end)
+end
+map("n", "<leader>w", "<cmd>write<CR>")
+map("n", "<leader>q", "<cmd>quit<CR>")
+map("n", "<C-n>", "<cmd>bnext<CR>")
+map("n", "<C-p>", "<cmd>bprevious<CR>")
+map("x", "<leader>y", '"*y')
+map("n", "<leader>p", '"*p')
+map("x", "<F9>", ":sort<CR>")
+map("n", "<C-\\>", function()
+  if vim.fn.exists(":TmuxNavigatePrevious") == 2 then vim.cmd.TmuxNavigatePrevious() end
+end)
+map("n", "<leader>b", function()
+  local current = vim.api.nvim_get_current_buf()
+  if vim.bo[current].modified then
+    vim.notify("Unsaved changes; write the buffer before closing it", vim.log.levels.WARN)
+    return
+  end
+  local replacement = vim.fn.bufnr("#")
+  if replacement == current or not vim.api.nvim_buf_is_valid(replacement)
+      or not vim.bo[replacement].buflisted then
+    replacement = nil
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if buf ~= current and vim.bo[buf].buflisted then
+        replacement = buf
+        break
+      end
+    end
+  end
+  replacement = replacement or vim.api.nvim_create_buf(true, false)
+  for _, win in ipairs(vim.fn.win_findbuf(current)) do
+    vim.api.nvim_win_set_buf(win, replacement)
+  end
+  vim.api.nvim_buf_delete(current, { force = false })
+end)
+for _, name in ipairs({ "W", "Wq", "WQ" }) do
+  vim.api.nvim_create_user_command(name, name == "W" and "write" or "wq", {})
+end
 
--- Clipboard
-if vim.fn.has("wsl") == 1 then
+-- No Windows process is started until an explicit clipboard operation.
+-- PowerShell reads UTF-8 stdin; clipboard text never becomes executable code.
+if vim.fn.has("wsl") == 1 and vim.fn.executable("powershell.exe") == 1 then
+  local function powershell(script, input)
+    local result = vim.system({
+      "powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script,
+    }, { stdin = input, text = false }):wait(5000)
+    if result.code ~= 0 then
+      error("Windows clipboard operation failed: " .. (result.stderr or ""))
+    end
+    return result.stdout or ""
+  end
+  local function copy(lines)
+    -- Neovim already includes a final empty line for linewise selections.
+    local text = table.concat(lines, "\n")
+    powershell(
+      "$ErrorActionPreference = 'Stop'; "
+        .. "[Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false); "
+        .. "Set-Clipboard -Value ([Console]::In.ReadToEnd())", text)
+  end
+  local function paste()
+    local text = powershell(
+      "$ErrorActionPreference = 'Stop'; "
+        .. "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); "
+        .. "$text = Get-Clipboard -Raw; if ($null -ne $text) { [Console]::Out.Write($text) }")
+    return { vim.split(text:gsub("\r\n", "\n"), "\n", { plain = true }), "v" }
+  end
   vim.g.clipboard = {
-    name = "WslClipboard",
-    copy = {
-      ["+"] = "clip.exe",
-      ["*"] = "clip.exe",
-    },
-    paste = {
-      ["+"] =
-      'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
-      ["*"] =
-      'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
-    },
-    cache_enabled = 0,
-  }
-elseif vim.fn.has("unix") == 1 and vim.fn.executable("wl-copy") == 1 then
-  vim.g.clipboard = {
-    name = "WlClipboard",
-    copy = {
-      ["+"] = "wl-copy",
-      ["*"] = "wl-copy",
-    },
-    paste = {
-      ["+"] = "wl-paste --no-newline",
-      ["*"] = "wl-paste --no-newline",
-    },
+    name = "WSL Windows clipboard",
+    copy = { ["+"] = copy, ["*"] = copy },
+    paste = { ["+"] = paste, ["*"] = paste },
     cache_enabled = 0,
   }
 end
 
--- Auto-reload file when changed externally
-vim.opt.autoread = true
--- Trigger checktime to check for changes on disk
-vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
-  pattern = "*",
-  callback = function()
-    if vim.fn.mode() ~= 'c' and not vim.bo.modified then
-      vim.cmd("checktime")
-    end
-  end,
+opt.autoread = true
+local reload = vim.api.nvim_create_augroup("DotfilesReload", { clear = true })
+local function check_current_file()
+  -- Skip modified buffers entirely to avoid conflict prompts and lost edits.
+  if vim.fn.mode() == "n" and vim.fn.getcmdtype() == "" and not vim.bo.modified
+      and vim.bo.buftype == "" then
+    vim.cmd("checktime " .. vim.api.nvim_get_current_buf())
+  end
+end
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+  group = reload,
+  callback = check_current_file,
 })
-
--- Notification/Redraw when file changes
-vim.api.nvim_create_autocmd("FileChangedShellPost", {
-  pattern = "*",
-  callback = function()
-    vim.notify("File changed on disk. Reloading...", vim.log.levels.INFO)
-    vim.cmd("redraw")
-  end,
+vim.api.nvim_create_autocmd({ "InsertLeave", "CmdlineLeave" }, {
+  group = reload,
+  callback = function() vim.schedule(check_current_file) end,
 })
-
--- Wordwrap for markdown and txt files
-local wrap_group = vim.api.nvim_create_augroup("WrapSettings", { clear = true })
+local wrap = vim.api.nvim_create_augroup("DotfilesWrap", { clear = true })
 vim.api.nvim_create_autocmd("FileType", {
-  group = wrap_group,
-  pattern = { "markdown", "txt" },
+  group = wrap,
+  pattern = { "markdown", "text" },
   callback = function()
     vim.opt_local.wrap = true
     vim.opt_local.linebreak = true
   end,
 })
-
 vim.api.nvim_create_autocmd("FileType", {
-  group = wrap_group,
-  pattern = { "markdown" },
-  callback = function(args)
-    -- Neovim 0.12 + nvim-treesitter currently crashes on some markdown buffers.
-    pcall(vim.treesitter.stop, args.buf)
+  group = wrap,
+  pattern = "markdown",
+  callback = function(event)
+    -- Retain the Neovim 0.12 Markdown crash workaround independently of plugins.
+    pcall(vim.treesitter.stop, event.buf)
   end,
 })
 
--- Bootstrap lazy.nvim
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.uv.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable",
-    lazypath,
-  })
+local ok, plugins = pcall(require, "config.plugins")
+if ok then
+  plugins.setup()
+else
+  vim.notify("Editor modules unavailable; restow the nvim package, then restart:\n"
+    .. tostring(plugins):match("[^\n]+"), vim.log.levels.WARN)
 end
-vim.opt.rtp:prepend(lazypath)
-
-require("lazy").setup("plugins")

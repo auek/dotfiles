@@ -44,7 +44,7 @@ been tested; verification is deferred until the next Arch installation.
 |---|---|
 | `mise` | Default Node 24.19.0 and stable Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
-| `zshrc`, `zprofile` | Shell configuration and login environment |
+| `zshrc`, `zprofile` | Shell configuration, portable `tmx` sessions with optional local hooks, and login environment |
 | `nvim-work` | Opt-in minimal Neovim profile with Telescope, nvim-tree, and selected theme |
 | `tmux`, `nvim` | Terminal multiplexer and default editor configuration |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
@@ -143,6 +143,53 @@ override and the existing default `nvim` profile preserved. Shell selection,
 project version switching, Tealdeer downloads, and default-profile editor checks
 passed; this is not verification of fresh distro provisioning. See the
 [migration record](docs/plans/mise-node-migration.md) for scope and measurements.
+
+## Tmux sessions with `tmx`
+
+`tmx` replaces `dev`; it never launches an editor or assistant by default.
+
+```zsh
+tmx                         # list sessions (or show a creation hint)
+tmx project                 # attach/switch, or create in the current directory
+tmx project ~/code/project  # use this directory only when creating
+tmx -h                      # show help
+```
+
+An existing session is matched by its exact name and left unchanged, even if a
+different directory is supplied. Inside tmux, `tmx` switches clients rather than
+nesting sessions. Session names cannot contain `.` or `:` or begin with `-` or `$`.
+
+New sessions have one window and one shell pane. To customize them, create an
+ordinary, **untracked** `${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.zsh`. This
+machine-local hook runs once per new session in a separate `zsh -ef` process,
+before attachment, with four arguments:
+
+1. Session ID (for example, `$1`)
+2. Initial window ID (for example, `@1`)
+3. Initial pane ID (for example, `%1`)
+4. Absolute project directory
+
+For a 50/50 side-by-side split, put this in the local hook:
+
+```zsh
+session=$1 window=$2 pane=$3 directory=$4
+tmux split-window -d -h -p 50 -t "$pane" -c "$directory"
+```
+
+Use `-p 20` instead for an approximately 80/20 layout. The original pane stays
+selected. To explicitly start a program there, append, for example:
+
+```zsh
+tmux send-keys -t "$pane" -l 'nvim'
+tmux send-keys -t "$pane" Enter
+```
+
+Choose startup commands explicitly on each machine; installed tools are not
+automatically launched. Hooks are trusted shell code, never discovered in a
+project, Stowed, or committed. They inherit the caller's environment but do not
+load interactive `.zshrc` aliases/functions. A failing command stops the hook
+and prints a warning; the session remains accessible and attachment is still
+attempted. Reattaching does not retry a failed hook or add panes.
 
 ## Managing dotfiles
 

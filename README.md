@@ -42,10 +42,12 @@ been tested; verification is deferred until the next Arch installation.
 
 | Stow packages | Contents |
 |---|---|
-| `mise` | Node 24.19.0 and `.nvmrc`/`.node-version` compatibility |
+| `mise` | Pinned Node 24.19.0 and stable Neovim, Bat, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
+| `tealdeer` | Use the system certificate trust store for tldr page downloads |
 | `zshrc`, `zprofile` | Shell configuration and login environment |
 | `nvim-work` | Opt-in Neovim work profile with Telescope, nvim-tree, and selected theme |
-| `tmux`, `nvim`, `bob` | Terminal multiplexer, editor, and Neovim version-manager settings |
+| `tmux`, `nvim` | Terminal multiplexer and home editor configuration |
+| `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
 | `espanso` | Text expansion configuration |
@@ -53,12 +55,63 @@ been tested; verification is deferred until the next Arch installation.
 | `bashrc-server`, `vim-server`, `tmux-server` | Minimal server configuration |
 | `gtk` | Separately opt-in settings for the external Everforest GTK theme |
 
-Mise activates in interactive Zsh; login shells use its shims. On machines
-with mise already installed, link the `mise`, `zshrc`, and `zprofile` packages,
-then run `mise install` from your home directory and restart with `exec zsh -l`.
-Existing `~/.nvm` installations and machine-specific global npm packages are
-preserved. Global packages are not copied to mise; reinstall only those you need
-manually. Project `.nvmrc` and `.node-version` files override the global pin.
+## Development tools with mise
+
+The `--full` profile installs mise and the tools declared in
+`packages/mise/.config/mise/config.toml`. Node stays pinned to `24.19.0`;
+the other tools use `latest`, which excludes prereleases by default with the
+selected Aqua backends. Updates are explicit:
+
+```zsh
+cd "$HOME"
+mise install               # install missing configured versions
+mise outdated              # inspect available updates
+mise upgrade --no-prune     # update within configured versions; retain old versions
+```
+
+Do not use `mise use --global`, `mise settings`, or `mise upgrade --bump` to
+change configuration: those commands can rewrite the Stow-managed file.
+Edit its repository source instead. Project `.nvmrc` and `.node-version`
+files override the global Node pin. Existing global npm packages are not
+copied between Node installations; reinstall the ones you need locally.
+
+Mise activates in interactive Zsh; shims also support the first command in a
+shell and inherited subprocess PATHs. Login shells expose shims without the
+interactive hooks. A non-interactive, non-login Zsh inherits its parent's
+PATH; scripts launched from other environments can use `mise exec -- command`.
+Neovim uses the same upstream release archives as a manual installation.
+The current Linux x86_64 0.12.6 build requires glibc 2.34; future stable builds
+still need checking on older distributions.
+
+On an existing machine with mise installed, run from the repository root:
+
+```zsh
+git switch feat/work-setup
+git pull --ff-only
+stow --simulate --verbose --restow --no-folding --dir=packages --target="$HOME" mise tealdeer zshrc zprofile
+stow --restow --no-folding --dir=packages --target="$HOME" mise tealdeer zshrc zprofile
+(cd "$HOME" && mise install && mise reshim)
+exec zsh -l
+```
+
+Check local changes before pulling. If Stow reports an existing ordinary
+configuration file, compare it with the repository version and preserve your
+local settings in a backup before resolving the conflict; do not use `--adopt`
+or overwrite it. These commands do not switch your Neovim configuration package.
+Use this targeted workflow on restricted RHEL/WSL machines: `setup.sh` does not
+support RHEL, and the workstation's system tools are already installed.
+
+Verify `mise ls`, `node --version`, `npm --version`, `nvim --version`, and
+`whence -pa node nvim bat tldr lazygit fastfetch rg fd fzf`. Then check Neovim's
+Node-backed language servers and run `tldr --update`. Tealdeer uses the system
+trust store on both home and work machines; proxy variables and corporate
+certificates remain machine-local. Preserve the existing proxy environment for
+downloads; if only `http_proxy` is set, also export `https_proxy="$http_proxy"`.
+
+Existing nvm, Bob, and manual/system binaries remain on disk for rollback.
+Remove redundant installations only after checking both machines. Stow, tmux,
+htop, and shell frameworks keep their existing installers; Python utilities
+remain outside mise. ShellCheck and shfmt are not added in this migration.
 
 ## Managing dotfiles
 
@@ -74,7 +127,8 @@ Packages live under `packages/`, mirroring paths below `$HOME`.
 
 Corresponding `unstow` targets remove only their package group's links.
 General `make unstow` retains the separate desktop group; use
-`make unstow-hyprland` to unlink it. Linking/unlinking does not clear local state
+`make unstow-hyprland` to unlink that group. Legacy `bob` links are also retained.
+Linking/unlinking does not clear local state
 or the Hyprland autostart preference.
 
 Everforest is selected initially. Switch themes with:

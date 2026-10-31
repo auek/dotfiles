@@ -1,5 +1,13 @@
 [tools]
 node = "24.19.0"
+"aqua:sharkdp/bat" = "latest"
+"aqua:dbrgn/tealdeer" = "latest"
+"aqua:jesseduffield/lazygit" = "latest"
+"aqua:fastfetch-cli/fastfetch" = "latest"
+"aqua:BurntSushi/ripgrep" = "latest"
+"aqua:sharkdp/fd" = "latest"
+"aqua:junegunn/fzf" = "latest"
+"aqua:neovim/neovim" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]

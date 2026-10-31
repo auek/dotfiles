@@ -1,4 +1,4 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim themes opencode claude espanso bob mise
+STOW_PACKAGES = zshrc zprofile tmux nvim themes opencode claude espanso mise tealdeer
 STOW_PACKAGES_HYPRLAND = foot hypr waybar wofi mako
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk

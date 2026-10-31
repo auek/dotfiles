@@ -5,7 +5,7 @@
 # Usage: setup.sh [--server | --slim | --full] [--hyprland] [--update]
 #   --server  Install minimal remote server tooling (bash, tmux, vim)
 #   --slim    Install common packages, dotfiles, shell (default)
-#   --full    All of the above + dev tools (nvim, mise, node, tldr, llm)
+#   --full    All of the above + mise-managed editor/CLI tools and Python utilities
 #   --update  Run a full system package upgrade before installing (for first-time bootstrap)
 #   --hyprland  Add the Arch desktop and opt into tty1 autostart
 
@@ -80,8 +80,8 @@ case "$ID" in
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh fastfetch"
-    PKG_OPTIONAL="eza fd-find fzf htop bat neovim ripgrep openssh-clients sqlite"
+    PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
+    PKG_OPTIONAL="eza htop openssh-clients sqlite"
     info "Detected: Fedora $VERSION_ID"
     ;;
   ubuntu|debian)
@@ -89,15 +89,15 @@ case "$ID" in
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
     PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
-    PKG_OPTIONAL="eza fd-find fzf htop bat ripgrep openssh-client sqlite3"
+    PKG_OPTIONAL="eza htop openssh-client sqlite3"
     info "Detected: $PRETTY_NAME"
     ;;
   arch)
     PKG_MANAGER="pacman"
     PKG_INSTALL="sudo pacman -S --needed --noconfirm"
     PKG_SERVER="curl git less make man-db man-pages stow tmux vim which"
-    PKG_COMMON="curl github-cli git gcc libatomic less make man-db man-pages openssh python-pipx python-pip stow tmux unzip which zsh fastfetch"
-    PKG_OPTIONAL="eza fd fzf htop bat neovim ripgrep sqlite"
+    PKG_COMMON="curl github-cli git gcc libatomic less make man-db man-pages openssh python-pipx python-pip stow tmux unzip which zsh"
+    PKG_OPTIONAL="eza htop sqlite"
     info "Detected: $PRETTY_NAME"
     ;;
   *)
@@ -312,38 +312,7 @@ step "11/12 — Installing dev tools"
 
 if [ "$PROFILE" = "full" ]; then
 
-  if [ "$PKG_MANAGER" = "apt" ]; then
-    mkdir -p "$HOME/.local/state/bob"
-
-    # Ubuntu/Debian LTS Neovim can be substantially behind upstream stable.
-    if command -v bob &>/dev/null; then
-      info "bob already installed"
-    else
-      info "Installing bob-nvim"
-      cargo install bob-nvim || {
-        # Fallback: install cargo first if not present
-        if ! command -v cargo &>/dev/null; then
-          info "cargo not found — installing rust toolchain"
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-          # shellcheck source=/dev/null
-          . "$HOME/.cargo/env"
-        fi
-        cargo install bob-nvim
-      }
-      success "bob-nvim installed"
-    fi
-
-    if command -v nvim &>/dev/null; then
-      info "neovim already installed"
-    else
-      bob use stable
-      success "neovim stable installed via bob"
-    fi
-  else
-    info "Using Neovim from the system package manager"
-  fi
-
-  # mise owns Node versions; retain ~/.nvm and its global packages for rollback.
+  # Keep existing nvm, Bob, and system installations available for rollback.
   export PATH="$HOME/.local/bin:$PATH"
   if command -v mise &>/dev/null; then
     info "mise already installed"
@@ -354,9 +323,9 @@ if [ "$PROFILE" = "full" ]; then
   fi
 
   # Install from the stowed declarative config without rewriting it.
-  (cd "$HOME" && mise install node)
+  (cd "$HOME" && mise install)
   mise reshim
-  success "Configured Node installed via mise"
+  success "Configured development tools installed via mise"
 
   # uv
   if command -v uv &>/dev/null; then
@@ -365,15 +334,6 @@ if [ "$PROFILE" = "full" ]; then
     info "Installing uv"
     curl -LsSf https://astral.sh/uv/install.sh | sh || warning "uv install failed"
     success "uv installed"
-  fi
-
-  # tldr
-  if command -v tldr &>/dev/null; then
-    info "tldr already installed"
-  else
-    pipx install tldr
-    tldr --update || true
-    success "tldr installed"
   fi
 
   # llm

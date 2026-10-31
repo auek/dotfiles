@@ -93,9 +93,6 @@ else
   run 'test -L "$HOME/.local/bin/theme-set"'
   run 'test -f "$HOME/.local/share/dotfiles/themes/everforest/foot.ini"'
   require_commands gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh
-  if [ "$DISTRO" != "ubuntu" ]; then
-    require_commands fastfetch
-  fi
   run 'test "$(readlink -f "$(getent passwd devuser | cut -d: -f7)")" = "$(readlink -f "$(command -v zsh)")"'
   run 'test "$(readlink -f "$HOME/.zshrc")" = /home/devuser/code/dotfiles/packages/zshrc/.zshrc'
   run 'zsh -lic exit'
@@ -114,11 +111,9 @@ elif [ "$PROFILE" != "server" ]; then
 fi
 
 if [ "$PROFILE" = "full" ]; then
-  require_commands eza fd fzf htop bat rg ssh sqlite3 nvim
-  if [ "$DISTRO" != "ubuntu" ]; then
-    require_commands fastfetch
-  fi
-  require_zsh_commands node npm npx uv tldr llm
+  require_commands eza htop ssh sqlite3
+  require_zsh_commands mise node npm npx nvim bat tldr lazygit fastfetch rg fd fzf uv llm
+  run 'zsh -lic '\''test "$(node --version)" = v24.19.0 && mise exec -- nvim --version >/dev/null'\'''
 fi
 
 echo "[test] $DISTRO $PROFILE $HYPRLAND passed (bootstrap only; no graphical session)"

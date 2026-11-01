@@ -38,16 +38,17 @@ dotfiles/
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
 │   ├── test-tmx.py           # Isolated Zsh session/local-hook checks with private tmux sockets
 │   ├── test-nvim.py          # Shared editor, local settings, clipboard, plugins, and LSP fixtures
+│   ├── test-nvim-project-tools.py # Real project-local Prettier/ESLint and forbidden-fallback checks
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh config and portable tmx sessions with optional local hooks
+    ├── zshrc/.zshrc          # Zsh config, private environment overrides, and portable tmx sessions
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
-    ├── nvim/.config/nvim/    # Shared editor, native Treesitter/hover/search previews, and local features
+    ├── nvim/.config/nvim/    # Shared editor with optional project-local Prettier/ESLint
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
@@ -80,6 +81,19 @@ The default workstation packages are stowed to `$HOME` via `make stow`:
 `mise`, and `tealdeer`. The shared `nvim` profile provides LSP/snippet/path/buffer
 completion, Git indicators, selected Treesitter highlighting, search/tree,
 themes, status line, key hints, pairs/surround, and safe tmux navigation.
+`features.format_on_save` enables project-local Prettier through Conform;
+`features.eslint` enables project-local ESLint CLI diagnostics through pinned
+nvim-lint on open/save. Both default off. Diagnostics never apply fixes.
+Executable discovery stops at the repository root (or nearest package outside
+Git) and supports hoisted dependencies. Missing tools skip the integration.
+Never add global/PATH, Mason, mise, `npx` auto-download, or LSP fallbacks for
+project formatters/linters such as Prettier and ESLint. Project configuration,
+plugins, parsers, and ignore rules belong to the project's dependency workflow.
+Do not enable the optional ESLint language server; use `features.eslint`.
+Other filetypes have no implicit save formatter, including the former
+Lua/Python and generic LSP fallbacks.
+`format_timeout_ms` defaults to 3000 and accepts local integer overrides from
+1 to 60000. A failure or timeout preserves the buffer and never changes tools.
 It has no assistant completion provider or separate Git command plugin.
 Telescope 0.2.1 is pinned for native Treesitter previews; do not revert to the
 0.1.8 previewer, which calls APIs removed by the supported Treesitter rewrite.
@@ -90,6 +104,9 @@ ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
 `"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
 Do not Stow that file or change the shared pin for a machine-local preference.
 Project version files still override either global default.
+`.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
+environment overrides. Keep that file outside the repository; never Stow or
+commit its contents.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an
@@ -119,7 +136,7 @@ Do not add its current Aqua binaries to the shared mise baseline: Linux x86_64
 is machine-local; README includes an opt-in Cargo source-build route whose
 target-machine verification remains pending. The CLI is not a runtime dependency.
 There is no automatic parser/server installation, shell formatting, or default
-format-on-save. Conform formatting and Markdown preview are separate opt-in
+format-on-save. Formatting, ESLint diagnostics, and Markdown preview are separate opt-in
 features. Lazy bootstraps and installs missing editor plugins, without update
 checks or project-local plugin specs. Pins come from the tracked `lazy-lock.json`;
 runtime lockfile/cache/state live under `stdpath("state")/dotfiles`. Plugin and
@@ -286,6 +303,14 @@ missing/old CLI warnings, and safe startup while a legacy plugin awaits update.
 Preview regressions exercise asynchronous TypeScript/Bash/Markdown file reads,
 native highlighting, missing-parser syntax fallback, and a real visible
 Telescope picker preview window (not only result-list matching).
+
+`scripts/test-nvim-project-tools.py` runs actual Conform/nvim-lint save/open
+hooks in disposable homes. Supply Neovim, pinned Lazy/Conform/nvim-lint fixtures, two
+Prettier npm fixture prefixes, and ESLint 8/9 fixture prefixes with compatible
+`@typescript-eslint/parser` dependencies. It checks real JS/TS/CSS/etc. formatting,
+legacy/flat ESLint configs, monorepo version selection, ignores, visible errors,
+and no global/cwd/other-repository/LSP fallback. Tests use existing project
+dependencies and perform no downloads or real-home changes.
 
 Run the lightweight isolated checks with:
 

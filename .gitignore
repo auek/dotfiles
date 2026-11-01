@@ -9,6 +9,9 @@ target/
 __pycache__/
 *.pyc
 
+# Machine-local shell environment (never commit)
+.zshrc.private
+
 # opencode runtime files
 packages/opencode/.config/opencode/node_modules/
 packages/opencode/.config/opencode/package.json

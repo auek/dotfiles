@@ -2,7 +2,8 @@ local defaults = {
   servers = { ts_ls = true, cssls = true, yamlls = true, bashls = true },
   parsers = { "bash", "css", "javascript", "json", "lua", "tsx", "typescript", "yaml" },
   server_options = {},
-  features = { format_on_save = false, markdown_preview = false },
+  format_timeout_ms = 3000,
+  features = { format_on_save = false, eslint = false, markdown_preview = false },
 }
 
 -- This is trusted machine-local code, not a project-discovered configuration.
@@ -14,6 +15,9 @@ if vim.fn.filereadable(path) == 1 then
     local value = dofile(path)
     assert(type(value) == "table", "expected a table")
     for key in pairs(value) do assert(defaults[key] ~= nil, "unknown setting: " .. tostring(key)) end
+    local timeout = value.format_timeout_ms
+    assert(timeout == nil or (type(timeout) == "number" and timeout % 1 == 0 and timeout > 0 and timeout <= 60000),
+      "format_timeout_ms must be an integer between 1 and 60000")
     for name, enabled in pairs(value.servers or {}) do
       assert(type(name) == "string" and name:match("^[%w_]+$") and type(enabled) == "boolean",
         "servers must map LSP names to booleans")

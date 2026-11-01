@@ -44,9 +44,9 @@ been tested; verification is deferred until the next Arch installation.
 |---|---|
 | `mise` | Default Node 24.19.0 and stable Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
-| `zshrc`, `zprofile` | Shell configuration, portable `tmx` sessions with optional local hooks, and login environment |
+| `zshrc`, `zprofile` | Shell configuration, private environment overrides, portable `tmx` sessions with optional local hooks, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
-| `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and local features |
+| `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and project-local formatting/linting opt-ins |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
@@ -54,6 +54,11 @@ been tested; verification is deferred until the next Arch installation.
 | `foot`, `hypr`, `waybar`, `wofi`, `mako` | Opt-in Hyprland desktop, terminal, bar, launcher, and notifications |
 | `bashrc-server`, `vim-server`, `tmux-server` | Minimal server configuration |
 | `gtk` | Separately opt-in settings for the external Everforest GTK theme |
+
+For machine-local environment variables and overrides, create an ordinary
+`~/.zshrc.private` outside this repository. Interactive Zsh sources it at the
+end of `.zshrc`, after shared defaults. Never Stow or commit it; use
+`chmod 600 "$HOME/.zshrc.private"` to restrict access. Restart Zsh after editing.
 
 ## Development tools with mise
 
@@ -320,6 +325,7 @@ return {
   parsers = { "bash", "css", "javascript", "json", "lua", "python", "tsx", "typescript", "yaml" },
   features = {
     format_on_save = false,
+    eslint = false,
     markdown_preview = false,
   },
   server_options = { lua_ls = { settings = { Lua = { diagnostics = { globals = { "vim" } } } } } },
@@ -330,8 +336,41 @@ Omit unchanged settings. Restart Neovim after changing this file; install any
 newly selected servers/parsers explicitly. `server_options` customizes LSP
 configurations but does not enable unselected servers. Malformed local settings
 produce a warning and fall back to defaults. Never Stow or commit this file.
-Format-on-save is off by default; opting in loads Conform with Lua/Python
-formatters (installed separately) and LSP fallback, never shell formatting.
+Project formatting and linting are separate opt-ins. To enable both, merge
+these flags into the existing ordinary `local.lua`, then restart Neovim:
+
+```lua
+return {
+  features = {
+    format_on_save = true,
+    eslint = true,
+  },
+}
+```
+
+Conform formats JS/JSX, TS/TSX, CSS/SCSS/Less, JSON/JSONC, YAML, HTML,
+Markdown/MDX, and GraphQL on save with the nearest project
+`node_modules/.bin/prettier`. The project's Prettier configuration,
+`.editorconfig`, and nearest `.prettierignore` are respected. Formatting runs
+before writing with a three-second default timeout; set `format_timeout_ms`
+in `local.lua` for slower projects (a positive integer up to 60000, in milliseconds).
+Other filetypes are left alone;
+the previous implicit Lua/Python and generic LSP formatting fallbacks are removed.
+
+With `features.eslint`, pinned nvim-lint runs the project's
+`node_modules/.bin/eslint` for JS/JSX and TS/TSX on open and after save. ESLint
+selects its own configuration, parsers, plugins, and ignore rules. Diagnostics
+do not modify buffers or apply fixes. Use this feature instead of
+`servers.eslint`; a separately installed ESLint language server is not enabled.
+
+**Project dependencies only:** neither integration installs tools or falls back
+to PATH, global npm packages, Mason, mise, `npx`, or another repository's tools.
+Missing dependencies skip the integration. Executable lookup stops at the Git
+root (supporting hoisted monorepo dependencies); outside Git it stops at the
+nearest `package.json`. Projects without a `node_modules/.bin` entrypoint,
+including pure Yarn PnP layouts, are skipped. Install dependencies with the
+project's normal lockfile workflow, never a separate editor-managed copy.
+`:ConformInfo` shows the selected formatter path and any errors.
 Markdown preview is also opt-in and requires an npm build. No dashboard,
 custom notification UI, separate Git command interface, or extra diagnostics
 window is included.
@@ -421,6 +460,21 @@ mapping when server fixtures are present, and safe startup with an old installed
 plugin awaiting update. Preview regressions cover asynchronous TypeScript,
 Bash and Markdown reads, missing-parser syntax fallback, and a real visible
 Telescope preview pane. Tests never install plugins or tools into the real home.
+
+For project tooling, provide the pinned Lazy/Conform/nvim-lint repositories and
+disposable npm fixture projects containing Prettier 2/3 and ESLint 8/9 with
+compatible `@typescript-eslint/parser` dependencies:
+
+```bash
+python3 scripts/test-nvim-project-tools.py /absolute/path/to/nvim \
+  /fixtures/lazy.nvim /fixtures/conform.nvim /fixtures/nvim-lint \
+  /fixtures/prettier-2 /fixtures/prettier-3 /fixtures/eslint-8 /fixtures/eslint-9
+```
+
+These checks exercise actual first-open/save hooks, config/ignore handling,
+project version selection, diagnostics, and missing-tool/failure behavior.
+Global and other-repository tools are present as traps and must never run.
+The script uses existing fixture dependencies and performs no downloads.
 
 ## Further details
 

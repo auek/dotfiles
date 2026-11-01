@@ -142,6 +142,7 @@ local function configure()
     },
     require("plugins.completion"),
     require("plugins.git"),
+    require("plugins.linting"),
     require("plugins.treesitter"),
     require("plugins.misc"),
     require("plugins.ui"),

@@ -29,12 +29,14 @@ function M.setup()
     ts_ls = "typescript-language-server", cssls = "vscode-css-language-server",
     yamlls = "yaml-language-server", bashls = "bash-language-server",
     pyright = "pyright-langserver", lua_ls = "lua-language-server",
-    eslint = "vscode-eslint-language-server", ansiblels = "ansible-language-server",
+    ansiblels = "ansible-language-server",
     astro = "astro-ls", marksman = "marksman",
   }
   local function enable_available()
     for server, enabled in pairs(settings.servers) do
-      local config = enabled and vim.lsp.config[server]
+      -- ESLint diagnostics use the project CLI via features.eslint, never a
+      -- separately installed language server with its own resolution fallbacks.
+      local config = enabled and server ~= "eslint" and vim.lsp.config[server]
       local executable = config and (type(config.cmd) == "table" and config.cmd[1] or executables[server])
       if executable and vim.fn.executable(executable) == 1 then
         vim.lsp.enable(server)

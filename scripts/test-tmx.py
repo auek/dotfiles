@@ -34,6 +34,10 @@ class TmxTests(unittest.TestCase):
         self.config = self.home / "tmux.conf"
         # Nonzero indexes catch accidental assumptions about window 0/pane 0.
         self.config.write_text("set -g default-shell /bin/sh\n"
+                               # No terminal is attached in these tests. Older
+                               # tmux otherwise recalculates to 80x24 between
+                               # commands, discarding new-session's -x/-y size.
+                               "set -g window-size manual\n"
                                "set -g base-index 3\n"
                                "set -g pane-base-index 4\n"
                                "set -g status off\n")

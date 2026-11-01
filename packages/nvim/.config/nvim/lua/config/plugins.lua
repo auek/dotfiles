@@ -1,8 +1,24 @@
 local M = {}
-local root = vim.fn.stdpath("data") .. "/nvim-work/lazy"
+local root = vim.fn.stdpath("data") .. "/lazy"
 local manager = root .. "/lazy.nvim"
-local lazy_commit = "85c7ff3711b730b4030d03144f6db6375044ae82"
+local pins = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lazy-lock.json"), "\n"))
+local lazy_commit = pins["lazy.nvim"].commit
 local configured = false
+
+-- One tracked set of pins for every machine. Lazy writes its runtime lockfile
+-- to local state, not through a Stow symlink into the repository.
+local function pin(spec)
+  if type(spec) == "string" then spec = { spec } end
+  if type(spec[1]) == "string" then
+    local name = spec[1]:match("/([^/]+)$")
+    spec.commit = assert(pins[name], "Missing plugin pin: " .. name).commit
+  end
+  for index, child in ipairs(spec) do
+    if type(child) == "table" then spec[index] = pin(child) end
+  end
+  for index, dependency in ipairs(spec.dependencies or {}) do spec.dependencies[index] = pin(dependency) end
+  return spec
+end
 
 local function bootstrap()
   if vim.uv.fs_stat(manager .. "/lua/lazy/init.lua") then return true end
@@ -33,42 +49,35 @@ local function configure()
   if configured then return true end
   if not bootstrap() then return false end
   vim.opt.rtp:prepend(manager)
-  local state = vim.fn.stdpath("state") .. "/nvim-work"
+  local state = vim.fn.stdpath("state") .. "/dotfiles"
   vim.fn.mkdir(state, "p")
-  require("lazy").setup({
+  local spec = {
     { "folke/lazy.nvim", branch = "main", commit = lazy_commit },
     {
       "christoomey/vim-tmux-navigator",
-      commit = "e41c431a0c7b7388ae7ba341f01a0d217eb3a432",
       lazy = false,
       init = function() vim.g.tmux_navigator_save_on_switch = 0 end,
     },
     {
       "neovim/nvim-lspconfig",
-      commit = "4b2b045b8ceb035f5c8bc9cab19b95706bfa6a19",
       lazy = false,
       dependencies = {
-        {
-          "mason-org/mason.nvim",
-          commit = "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
-          opts = { install_root_dir = vim.fn.stdpath("data") .. "/nvim-work/mason" },
-        },
+        { "mason-org/mason.nvim", opts = { install_root_dir = vim.fn.stdpath("data") .. "/mason" } },
+        "hrsh7th/cmp-nvim-lsp",
       },
-      config = function() require("work.lsp").setup() end,
+      config = function() require("config.lsp").setup() end,
     },
     {
       "neanias/everforest-nvim",
-      commit = "a0e9edc57379e8feafc6ba207c26dbb12fc1b6d8",
       lazy = false,
       priority = 1000,
       dependencies = {
-        { "ellisonleao/gruvbox.nvim", commit = "154eb5ff5b96d0641307113fa385eaf0d36d9796" },
+        "ellisonleao/gruvbox.nvim",
       },
-      config = function() require("work.theme").setup() end,
+      config = function() require("config.theme").setup() end,
     },
     {
       "nvim-tree/nvim-tree.lua",
-      commit = "96b6d0ea594a1e519abd58fd8b60a39a9dec1869",
       cmd = { "NvimTreeToggle", "NvimTreeFindFileToggle" },
       keys = {
         { "<leader>fe", "<cmd>NvimTreeFindFileToggle<CR>", desc = "Toggle file tree" },
@@ -76,7 +85,7 @@ local function configure()
       init = function()
         vim.g.loaded_netrw = 1
         vim.g.loaded_netrwPlugin = 1
-        local group = vim.api.nvim_create_augroup("NvimWorkDirectory", { clear = true })
+        local group = vim.api.nvim_create_augroup("DotfilesDirectory", { clear = true })
         vim.api.nvim_create_autocmd("BufEnter", {
           group = group,
           callback = function(event)
@@ -102,13 +111,11 @@ local function configure()
     },
     {
       "nvim-telescope/telescope.nvim",
-      commit = "a0bbec21143c7bc5f8bb02e0005fa0b982edc026", -- 0.1.8
       lazy = true,
       dependencies = {
-        { "nvim-lua/plenary.nvim", commit = "74b06c6c75e4eeb3108ec01852001636d85a932b" },
+        "nvim-lua/plenary.nvim",
         {
           "nvim-telescope/telescope-fzf-native.nvim",
-          commit = "b25b749b9db64d375d782094e2b9dce53ad53a40",
           build = "make",
         },
       },
@@ -133,7 +140,14 @@ local function configure()
         end
       end,
     },
-  }, {
+    require("plugins.completion"),
+    require("plugins.git"),
+    require("plugins.treesitter"),
+    require("plugins.misc"),
+    require("plugins.ui"),
+    (require("plugins.formatting")),
+  }
+  require("lazy").setup(pin(spec), {
     root = root,
     lockfile = state .. "/lazy-lock.json",
     local_spec = false,
@@ -141,6 +155,7 @@ local function configure()
     pkg = { cache = state .. "/pkg-cache.lua" },
     readme = { root = state .. "/readme" },
     checker = { enabled = false },
+    install = { missing = true },
     change_detection = { enabled = false },
     rocks = { enabled = false },
   })
@@ -156,9 +171,12 @@ function M.setup()
     ["<leader>fo"] = { "oldfiles", "Recent files" },
     ["<leader>ls"] = { "buffers", "Find buffers" },
     ["<leader>fh"] = { "help_tags", "Search help" },
+    ["<leader>fF"] = { "find_files", "Find all project files", { hidden = true, no_ignore = true } },
+    ["<leader>fG"] = { "live_grep", "Search all project text", { additional_args = { "--hidden", "--no-ignore" } } },
+    ["<C-f>"] = { "command_history", "Search command history", nil, "c" },
   }
   for key, picker in pairs(pickers) do
-    vim.keymap.set("n", key, function()
+    vim.keymap.set(picker[4] or "n", key, function()
       if not configured or not vim.uv.fs_stat(root .. "/telescope.nvim/lua/telescope/init.lua")
           or not vim.uv.fs_stat(root .. "/plenary.nvim/lua/plenary/init.lua") then
         vim.notify("Use :Lazy to install missing plugins; if Lazy is unavailable, check Git/network access and restart", vim.log.levels.WARN)
@@ -168,7 +186,7 @@ function M.setup()
         vim.notify("Project text search requires ripgrep (rg) on PATH", vim.log.levels.WARN)
         return
       end
-      require("telescope.builtin")[picker[1]]()
+      require("telescope.builtin")[picker[1]](picker[3])
     end, { silent = true, desc = picker[2] })
   end
 end

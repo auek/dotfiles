@@ -37,6 +37,7 @@ dotfiles/
 │   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
 │   ├── test-tmx.py           # Isolated Zsh session/local-hook checks with private tmux sockets
+│   ├── test-nvim.py          # Shared editor, local settings, clipboard, plugins, and LSP fixtures
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
 └── packages/                 # GNU Stow package sources
@@ -46,8 +47,7 @@ dotfiles/
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
-    ├── nvim/.config/nvim/    # Neovim config
-    ├── nvim-work/.config/nvim/ # Opt-in editor with Telescope, nvim-tree, and selected theme
+    ├── nvim/.config/nvim/    # Shared editor, native Treesitter/hover/search previews, and local features
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
     ├── bob/.config/bob/      # Optional legacy Bob config for rollback
@@ -77,7 +77,13 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. The `mise` package defaults to Node 24.19.0 and selects
+`mise`, and `tealdeer`. The shared `nvim` profile provides LSP/snippet/path/buffer
+completion, Git indicators, selected Treesitter highlighting, search/tree,
+themes, status line, key hints, pairs/surround, and safe tmux navigation.
+It has no assistant completion provider or separate Git command plugin.
+Telescope 0.2.1 is pinned for native Treesitter previews; do not revert to the
+0.1.8 previewer, which calls APIs removed by the supported Treesitter rewrite.
+The `mise` package defaults to Node 24.19.0 and selects
 latest stable Aqua releases of Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch,
 ripgrep, fd, and fzf. A machine may override Node or add optional tools with an
 ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
@@ -92,23 +98,38 @@ them. The hook runs in a separate `zsh -ef` process with session/window/pane IDs
 and the absolute directory as arguments; it never runs on reattachment. No
 editor or assistant is launched by shared code. Never Stow the local hook.
 Bob configuration remains optional for rollback; it is not in the default
-package selection. The separate `nvim-work` package is opt-in
-via direct Stow; it
-targets the same `~/.config/nvim` location as `nvim` and must not be stowed
-together with it. It needs no default editor or theme packages. Basic editing works
-without plugins; Lazy bootstraps on first launch and installs pinned Telescope
-and Plenary plus nvim-tree, Everforest, Gruvbox, Mason, nvim-lspconfig,
-telescope-fzf-native (built with Make and GCC/Clang), and vim-tmux-navigator.
-The minimal profile shares the existing tmux navigation bindings and never saves
-buffers automatically on pane switches. Use standard `:Lazy`
-commands afterward. Profile colors follow the existing `theme-set` runtime
-selection, defaulting to Everforest without the optional `themes` package. Plugin files and Lazy
-state/lockfile are separate from the default profile. Text search needs `rg`.
-Mason installs servers only on explicit request (`typescript-language-server`,
-`css-lsp`, `yaml-language-server`) into the separate `nvim-work/mason` data root.
-The minimal profile enables only available `ts_ls`, `cssls`, and `yamlls` servers,
-with Azure Pipelines YAML schema associations. It adds no format-on-save or
-completion framework. Startup installs missing plugins but does not check for updates. Default package selection remains unchanged. `make stow-hyprland`
+package selection. Neovim uses one `nvim` Stow package; machine-local options
+live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
+`XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
+`server_options` supplies per-server overrides. Never Stow the local file.
+The shared editor targets Neovim 0.12+. The baseline selects available `ts_ls`,
+`cssls`, `yamlls`, and `bashls` servers
+with Azure Pipelines YAML schemas. Mason installs servers/ShellCheck only on
+explicit request; `:InstallParsers` installs explicitly selected parsers.
+Treesitter uses the supported main-branch API, eager loading, native highlighting,
+and the separate `stdpath("data")/treesitter-v2` parser/query root. Plugin updates
+run `:TSUpdate` for existing parsers; startup never installs parsers. An old
+installed legacy plugin stays dormant but remains in Lazy's update list until
+an explicit `:Lazy update nvim-treesitter` and restart, keeping incompatible
+query handlers out of Markdown hover windows. Restart before updating to load
+that guard rather than hot-reloading a mix of legacy and supported modules.
+Parser builds need standalone tree-sitter CLI 0.26.1+, curl/tar and a C compiler.
+Do not add its current Aqua binaries to the shared mise baseline: Linux x86_64
+0.26.1/0.27.1 require glibc 2.39, incompatible with RHEL 9's 2.34. CLI installation
+is machine-local; README includes an opt-in Cargo source-build route whose
+target-machine verification remains pending. The CLI is not a runtime dependency.
+There is no automatic parser/server installation, shell formatting, or default
+format-on-save. Conform formatting and Markdown preview are separate opt-in
+features. Lazy bootstraps and installs missing editor plugins, without update
+checks or project-local plugin specs. Pins come from the tracked `lazy-lock.json`;
+runtime lockfile/cache/state live under `stdpath("state")/dotfiles`. Plugin and
+Mason roots remain `stdpath("data")/lazy` and `/mason`. Do not automatically
+clean, migrate, or remove existing user data. For installations using the old
+`nvim-work` package, unstow it before pulling its removal, then link `nvim`;
+see README migration notes. Basic editing survives bootstrap failure. Theme
+selection follows `theme-set` with Everforest/Habamax fallbacks; real Windows
+clipboard behavior still needs manual verification. Default package selection
+remains unchanged. `make stow-hyprland`
 additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations
@@ -245,20 +266,26 @@ entrypoint preservation and the autostart marker. It does not test GPU support,
 a graphical session, or portal functionality. Do not run it on the host as a
 substitute for the container.
 
-Run `python3 scripts/test-nvim-work.py /absolute/path/to/nvim` to validate the
-minimal profile through Stow in disposable homes (requires GNU Stow and Neovim).
-It checks subprocess-free startup, native/mocked WSL clipboard selection and
-UTF-8 data handling, safe reloads, buffer closing, and package removal. It does
-not validate the real Windows clipboard or the default plugin profile. An optional
-second argument points to pre-fetched `lazy.nvim`, `telescope.nvim`,
-`plenary.nvim`, `nvim-tree.lua`, `everforest-nvim`, `gruvbox.nvim`, `mason.nvim`,
-`nvim-lspconfig`, built `telescope-fzf-native.nvim`, and `vim-tmux-navigator` fixture
-directories to check real Telescope file/text search (requires `rg`), including
-space-separated path terms and incremental query edits, tree
-opening (including `nvim .` and `:edit directory`), theme selection/reloading,
-and offline startup with plugins installed.
-An optional third argument supplies a Mason server fixture plus a local copy of
-the Azure Pipelines schema to test real LSP behavior without network access.
+Run `python3 scripts/test-nvim.py /absolute/path/to/nvim` to validate the shared
+profile through Stow in disposable homes (requires GNU Stow and Neovim).
+It checks subprocess-free basic startup, native/mocked WSL clipboard and UTF-8
+handling, safe reloads/buffer closing, local settings validation/merging, and
+package removal preserving local files. An optional second argument supplies
+the plugin repositories in `lazy-lock.json` (fzf-native already built) to check
+real completion, Git indicators, parser configuration, Telescope search
+(requires `rg`), tree/directory startup, theme reloads, optional features and
+offline startup with plugins installed. An optional third argument supplies a
+Mason fixture with the four baseline servers, ShellCheck, and a local
+`azure-schema.json` for real language-server and diagnostic checks without
+network access. The tests never install into the real home; real Windows
+clipboard and interactive terminal behavior remain manual checks.
+An optional fourth argument provides a matching parser/query fixture (use `-`
+for the Mason argument to skip LSP fixtures). Tests cover native Markdown hover
+with TypeScript fences, injection parsing/conceal-line rendering, real LSP `gh`,
+missing/old CLI warnings, and safe startup while a legacy plugin awaits update.
+Preview regressions exercise asynchronous TypeScript/Bash/Markdown file reads,
+native highlighting, missing-parser syntax fallback, and a real visible
+Telescope picker preview window (not only result-list matching).
 
 Run the lightweight isolated checks with:
 

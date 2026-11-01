@@ -11,7 +11,7 @@ function M.setup()
     italic = { strings = false, comments = false, operators = false, folds = false },
   })
 
-  -- Same runtime selection as theme-set; no dependency on the home nvim package.
+  -- Runtime selection remains independent of the optional themes package.
   local path = vim.fn.expand("~/.local/state/dotfiles/theme/current/nvim.lua")
   local function default_theme()
     vim.g.dotfiles_theme = "everforest"
@@ -25,7 +25,7 @@ function M.setup()
       local ok, err = pcall(dofile, path)
       if not ok then
         default_theme()
-        vim.notify("Could not apply selected work theme: " .. tostring(err), vim.log.levels.WARN)
+        vim.notify("Could not apply selected theme: " .. tostring(err), vim.log.levels.WARN)
       end
     end
   end
@@ -38,14 +38,15 @@ function M.setup()
     apply()
     last = signature()
   end, { desc = "Reload the theme-set selection" })
-  local group = vim.api.nvim_create_augroup("NvimWorkThemeReload", { clear = true })
+  local group = vim.api.nvim_create_augroup("DotfilesThemeReload", { clear = true })
   vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
     group = group,
     callback = function()
       local current = signature()
-      if current ~= last then
-        last = current
-        apply()
+        if current ~= last then
+          last = current
+          apply()
+          if package.loaded.lualine then require("lualine").refresh() end
       end
     end,
   })

@@ -658,6 +658,8 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
             selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)
             run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                  "-c", 'lua assert(vim.g.colors_name == "gruvbox")', "-c", "qa!"], env)
+            selection.unlink()
+            selection.symlink_to(selection.parent / "everforest", target_is_directory=True)
             directory = home / "directory with spaces"
             directory.mkdir()
             (directory / "example.ts").write_text("export const value = 1;\n")
@@ -682,6 +684,21 @@ vim.v.oldfiles = {vim.fn.getcwd() .. "/example.ts", vim.env.HOME .. "/unrelated"
             run_ui([], r'''
 assert(vim.bo.filetype == "snacks_dashboard", vim.bo.filetype)
 assert(Snacks.dashboard.status.opened)
+local function dashboard_colors()
+  local function hl(name) return vim.api.nvim_get_hl(0, {name=name, link=false}) end
+  for part, theme in pairs({Header="String", Title="String", Desc="Normal", File="Normal",
+      Key="Identifier", Dir="Comment"}) do
+    assert(hl("SnacksDashboard" .. part).fg == hl(theme).fg, "dashboard color mismatch: " .. part)
+  end
+  assert(hl("SnacksDashboardNormal").bg == hl("Normal").bg)
+  return hl("SnacksDashboardHeader").fg
+end
+assert(vim.g.colors_name == "everforest")
+local green = dashboard_colors()
+vim.cmd.colorscheme("gruvbox")
+assert(dashboard_colors() ~= green, "dashboard retained stale Everforest colors")
+vim.cmd.ReloadTheme()
+assert(vim.g.colors_name == "everforest" and dashboard_colors() == green)
 assert(not package.loaded["telescope.builtin"] and not package.loaded["nvim-tree.api"])
 for _, name in ipairs({"picker", "explorer", "notifier", "scroll", "input", "image"}) do
   assert(not Snacks.config[name].enabled, "unrequested Snacks module enabled: " .. name)

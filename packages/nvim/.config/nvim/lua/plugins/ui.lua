@@ -4,6 +4,10 @@ return {
     lazy = false,
     priority = 1000,
     opts = function() return require("config.dashboard").options() end,
+    config = function(_, opts)
+      require("snacks").setup(opts)
+      require("config.dashboard").highlights()
+    end,
   },
   {
     "nvim-lualine/lualine.nvim",

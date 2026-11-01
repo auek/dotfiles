@@ -37,6 +37,20 @@ local function shortcuts()
   return items
 end
 
+function M.highlights()
+  -- Register dashboard defaults first, then replace their loud UI accents with
+  -- semantic theme links. Snacks reapplies these links on ColorScheme changes.
+  require("snacks.dashboard")
+  require("snacks.util").set_hl({
+    Header = "String",
+    Title = "String",
+    Desc = "Normal",
+    File = "Normal",
+    Key = "Identifier",
+    Dir = "Comment",
+  }, { prefix = "SnacksDashboard" })
+end
+
 function M.options()
   return {
     dashboard = {

@@ -47,7 +47,6 @@ been tested; verification is deferred until the next Arch installation.
 | `zshrc`, `zprofile` | Zsh startup, private environment overrides, portable `tmx` sessions with optional local hooks, `ddcutil` brightness read/set helpers, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
 | `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and project-local formatting/linting opt-ins |
-| `bob` | Optional legacy Bob configuration, retained for rollback |
 | `themes` | Everforest and Gruvbox theme packs and switching utilities |
 | `opencode`, `claude` | AI coding-tool configuration |
 | `espanso` | Text expansion configuration |
@@ -140,7 +139,7 @@ trust store across deployment targets; proxy variables and additional
 certificates remain machine-local. Preserve the existing proxy environment for
 downloads; if only `http_proxy` is set, also export `https_proxy="$http_proxy"`.
 
-Existing nvm, Bob, and manual/system binaries remain on disk for rollback.
+Existing nvm and manual/system binaries remain on disk for rollback.
 Remove redundant installations only after checking both machines. Stow, tmux,
 htop, and shell frameworks keep their existing installers; Python applications
 such as llm remain outside mise. uv is an optional machine-local mise tool,
@@ -221,7 +220,7 @@ Packages live under `packages/`, mirroring paths below `$HOME`.
 
 Corresponding `unstow` targets remove only their package group's links.
 General `make unstow` retains the separate desktop group; use
-`make unstow-hyprland` to unlink that group. Legacy `bob` links are also retained.
+`make unstow-hyprland` to unlink that group.
 Linking/unlinking does not clear local state
 or the Hyprland autostart preference.
 

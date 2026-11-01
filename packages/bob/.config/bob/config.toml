@@ -1,3 +1,0 @@
-downloads_location = "$HOME/.local/state/bob"
-installation_location = "$HOME/.local/state/bob/nvim-bin"
-add_neovim_binary_to_path = false

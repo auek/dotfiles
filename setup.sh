@@ -312,7 +312,7 @@ step "11/12 — Installing dev tools"
 
 if [ "$PROFILE" = "full" ]; then
 
-  # Keep existing nvm, Bob, and system installations available for rollback.
+  # Keep existing nvm and system installations available for rollback.
   export PATH="$HOME/.local/bin:$PATH"
   if command -v mise &>/dev/null; then
     info "mise already installed"

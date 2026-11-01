@@ -76,11 +76,33 @@ with_secrets() {
   fi
 }
 
-# ddcutil brightness helpers
+# ddcutil brightness helpers: no arguments reads current/max brightness.
 if command -v ddcutil >/dev/null 2>&1; then
-  br()  { ( ddcutil --display 1 setvcp 10 "$1" >/dev/null & ddcutil --display 2 setvcp 10 "$1" >/dev/null & wait ); }
-  br1() { ddcutil --display 1 setvcp 10 "$1"; }
-  br2() { ddcutil --display 2 setvcp 10 "$1"; }
+  br() {
+    if (( $# == 0 )); then
+      local result=0
+      print -r -- "Display 1:"
+      br1 || result=1
+      print -r -- "Display 2:"
+      br2 || result=1
+      return "$result"
+    fi
+    ( ddcutil --display 1 setvcp 10 "$1" >/dev/null & ddcutil --display 2 setvcp 10 "$1" >/dev/null & wait )
+  }
+  br1() {
+    if (( $# == 0 )); then
+      ddcutil --display 1 getvcp 10
+    else
+      ddcutil --display 1 setvcp 10 "$1"
+    fi
+  }
+  br2() {
+    if (( $# == 0 )); then
+      ddcutil --display 2 getvcp 10
+    else
+      ddcutil --display 2 setvcp 10 "$1"
+    fi
+  }
 fi
 
 # Cross-platform open command

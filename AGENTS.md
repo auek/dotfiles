@@ -37,6 +37,7 @@ dotfiles/
 │   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
 │   ├── test-tmx.py           # Isolated Zsh session/local-hook checks with private tmux sockets
+│   ├── test-br.py            # Isolated Zsh brightness read/set checks with mocked ddcutil
 │   ├── test-nvim.py          # Shared editor, local settings, clipboard, plugins, and LSP fixtures
 │   ├── test-nvim-project-tools.py # Real project-local Prettier/ESLint and forbidden-fallback checks
 │   ├── palettes/             # One JSON palette per theme
@@ -44,7 +45,7 @@ dotfiles/
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh startup, private environment overrides, and portable tmx sessions
+    ├── zshrc/.zshrc          # Zsh startup, private overrides, portable tmx sessions, and brightness helpers
     ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
@@ -78,7 +79,10 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. The shared `nvim` profile provides LSP/snippet/path/buffer
+`mise`, and `tealdeer`. Zsh's optional `ddcutil` helpers `br`, `br1`, and `br2`
+read current/max brightness without arguments and set it with a value; `br`
+targets both displays, while `br1`/`br2` target one each.
+The shared `nvim` profile provides LSP/snippet/path/buffer
 completion, Git indicators, selected Treesitter highlighting, search/tree,
 themes, status line, key hints, pairs/surround, and safe tmux navigation.
 `features.format_on_save` enables project-local Prettier through Conform;

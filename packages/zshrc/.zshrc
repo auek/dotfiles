@@ -19,7 +19,7 @@ fi
 # mise (also available in interactive shells that are not login shells).
 if command -v mise >/dev/null 2>&1; then
   # Keep shims for subprocesses and commands run before the first prompt.
-  eval "$(mise activate zsh --shims)"
+  path=("${MISE_SHIMS_DIR:-${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims}" $path)
   eval "$(mise activate zsh)"
 fi
 
@@ -32,7 +32,7 @@ unsetopt auto_cd
 ### Completion ###
 # Case-insensitive completion.
 zstyle ":completion:*" matcher-list "m:{a-z}={A-Za-z}"
-autoload -Uz compinit && compinit
+# Oh My Zsh runs compinit after configuring plugin completion paths.
 
 ### Oh My Zsh Configuration ###
 ZSH_THEME="robbyrussell"

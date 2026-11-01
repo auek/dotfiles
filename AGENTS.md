@@ -44,8 +44,8 @@ dotfiles/
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh config, private environment overrides, and portable tmx sessions
-    ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
+    ├── zshrc/.zshrc          # Zsh startup, private environment overrides, and portable tmx sessions
+    ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
     ├── nvim/.config/nvim/    # Shared editor with optional project-local Prettier/ESLint
@@ -107,6 +107,11 @@ Project version files still override either global default.
 `.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
 environment overrides. Keep that file outside the repository; never Stow or
 commit its contents.
+Oh My Zsh initializes completion once after setting plugin paths; do not run
+an earlier `compinit` or disable its audits. Login/interactive startup adds mise
+shim PATH entries directly (respecting its data/shim and XDG overrides), then
+interactive Zsh performs one full mise activation. Keep its initial environment
+hook: deferring it only to improve an exit benchmark changes first-command behavior.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an

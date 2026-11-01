@@ -44,7 +44,7 @@ been tested; verification is deferred until the next Arch installation.
 |---|---|
 | `mise` | Default Node 24.19.0 and stable Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
-| `zshrc`, `zprofile` | Shell configuration, private environment overrides, portable `tmx` sessions with optional local hooks, and login environment |
+| `zshrc`, `zprofile` | Zsh startup, private environment overrides, portable `tmx` sessions with optional local hooks, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
 | `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and project-local formatting/linting opt-ins |
 | `bob` | Optional legacy Bob configuration, retained for rollback |
@@ -102,9 +102,12 @@ The local file overrides the shared global config; project `.nvmrc` and
 `.node-version` files still take precedence. Updates remain explicit through
 `mise upgrade --no-prune`. Never Stow or commit the machine-local file.
 
-Mise activates in interactive Zsh; shims also support the first command in a
-shell and inherited subprocess PATHs. Login shells expose shims without the
-interactive hooks. A non-interactive, non-login Zsh inherits its parent's
+Mise activates once in interactive Zsh; direct shim PATH entries also support
+the first command in a shell and inherited subprocess PATHs. Login shells expose shims without the
+interactive hooks or a shim-activation subprocess. Shim paths respect
+`MISE_SHIMS_DIR`, `MISE_DATA_DIR`, and `XDG_DATA_HOME`. Oh My Zsh owns completion
+initialization; the shared config does not run a second `compinit` or bypass
+its security checks. A non-interactive, non-login Zsh inherits its parent's
 PATH; scripts launched from other environments can use `mise exec -- command`.
 Neovim uses the same upstream release archives as a manual installation.
 The current Linux x86_64 0.12.6 build requires glibc 2.34; future stable builds

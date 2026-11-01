@@ -3,12 +3,13 @@
 
 import os
 from pathlib import Path
-import select
 import shlex
 import shutil
 import subprocess
 import tempfile
 import unittest
+
+from test_support import stop_tmux
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = Path(os.environ["DOTFILES_TEST_FIXTURES"])
@@ -50,25 +51,7 @@ class RuntimeTests(unittest.TestCase):
         self.addCleanup(self.stop_server)
 
     def stop_server(self):
-        command = [TMUX, "-S", str(self.socket)]
-        panes = subprocess.run([*command, "list-panes", "-a", "-F", "#{pane_pid}"],
-                               env=self.env, capture_output=True, text=True, timeout=10)
-        descriptors = []
-        try:
-            for pid in panes.stdout.splitlines():
-                try:
-                    descriptors.append(os.pidfd_open(int(pid)))
-                except ProcessLookupError:
-                    pass
-            subprocess.run([*command, "kill-server"], env=self.env, capture_output=True, timeout=10)
-            # kill-server can return before Zsh finishes saving its history.
-            # Wait for those exact processes before removing the disposable home.
-            for descriptor in descriptors:
-                if not select.select([descriptor], [], [], 10)[0]:
-                    raise TimeoutError("tmux pane shell did not exit during cleanup")
-        finally:
-            for descriptor in descriptors:
-                os.close(descriptor)
+        stop_tmux(TMUX, self.socket, self.env)
 
     def mock(self, name, body):
         path = self.bin / name

@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from test_support import stop_tmux
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ZSH = shutil.which("zsh")
@@ -73,8 +75,7 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         self.function = ROOT / "packages/zshrc/.zshrc"
 
     def stop_server(self):
-        subprocess.run([TMUX, "-S", str(self.socket), "kill-server"],
-                       env=self.env, capture_output=True, timeout=10)
+        stop_tmux(TMUX, self.socket, self.env)
 
     def run_tmx(self, *args, code='tmx "$@"', **env):
         return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,

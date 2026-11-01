@@ -44,7 +44,7 @@ been tested; verification is deferred until the next Arch installation.
 |---|---|
 | `mise` | Default Node 24.19.0 and stable Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | Use the system certificate trust store for tldr page downloads |
-| `zshrc`, `zprofile` | Zsh startup, private environment overrides, portable `tmx` sessions with optional local hooks, and login environment |
+| `zshrc`, `zprofile` | Zsh startup, private environment overrides, portable `tmx` sessions with optional local hooks, `ddcutil` brightness read/set helpers, and login environment |
 | `tmux` | Terminal multiplexer with shared editor navigation and current-directory inheritance |
 | `nvim` | Shared editor with completion, Git indicators, native Treesitter/search previews, and project-local formatting/linting opt-ins |
 | `bob` | Optional legacy Bob configuration, retained for rollback |

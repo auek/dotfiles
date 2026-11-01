@@ -6,12 +6,19 @@ Use --scenario NAME to rerun one failure. The default reports every scenario.
 All HOME/XDG state and clipboard processes are disposable fixtures.
 """
 import argparse
+import errno
+import fcntl
 import os
 from pathlib import Path
+import pty
+import select
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
+import termios
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = ["native", "wsl-missing", "wsl", "local", "invalid-local", "bootstrap-failure", "unrestowed", "native-plugins"]
@@ -56,6 +63,62 @@ def run(args, env, cwd=None):
     lsp_log = Path(env.get("XDG_STATE_HOME", "/tmp")) / "nvim/lsp.log"
     assert "Error" not in result.stderr, result.stderr + (lsp_log.read_text()[:1500] + lsp_log.read_text()[-500:] if lsp_log.exists() else "")
     return result
+
+
+def run_ui(args, checks, env, cwd, before, stdin=None):
+    """Exercise actual UI startup guards with a disposable terminal."""
+    home = Path(env["HOME"])
+    script, result = home / "ui-check.lua", home / "ui-result"
+    script.write_text(checks)
+    result.unlink(missing_ok=True)
+    start = '''lua vim.api.nvim_create_autocmd("VimEnter", {once=true, callback=function()
+  vim.defer_fn(function()
+    local ok, err = pcall(dofile, vim.env.HOME .. "/ui-check.lua")
+    vim.fn.writefile({ok and "ok" or tostring(err)}, vim.env.HOME .. "/ui-result")
+    vim.cmd("qa!")
+  end, 200)
+end})'''
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, 80, 0, 0))
+    output = bytearray()
+    process = None
+    try:
+        process = subprocess.Popen(
+            [NVIM, "-i", "NONE", "--cmd", f"luafile {before}", "--cmd", start, *args],
+            env={**env, "TERM": "xterm-256color"}, cwd=cwd,
+            stdin=slave if stdin is None else subprocess.PIPE, stdout=slave, stderr=slave,
+            start_new_session=True)
+        os.close(slave)
+        slave = None
+        if stdin is not None:
+            process.stdin.write(stdin)
+            process.stdin.close()
+        deadline = time.monotonic() + 20
+        while process.poll() is None:
+            assert time.monotonic() < deadline, "Neovim UI timed out: " + output.decode(errors="replace")
+            if select.select([master], [], [], 0.1)[0]:
+                try:
+                    data = os.read(master, 65536)
+                    output.extend(data)
+                    # Answer the startup background/status probes like a real terminal.
+                    if b"\x1b]11;?" in data:
+                        os.write(master, b"\x1b]11;rgb:2828/2828/2828\x1b\\")
+                    if b"\x1b[5n" in data:
+                        os.write(master, b"\x1b[0n")
+                except OSError as error:
+                    if error.errno != errno.EIO:
+                        raise
+        assert process.returncode == 0, output.decode(errors="replace")
+        assert b"Error" not in output, output.decode(errors="replace")
+        assert result.exists(), output.decode(errors="replace")
+        assert result.read_text() == "ok\n", result.read_text() + output.decode(errors="replace")
+    finally:
+        if process and process.poll() is None:
+            process.kill()
+            process.wait()
+        if slave is not None:
+            os.close(slave)
+        os.close(master)
 
 
 with tempfile.TemporaryDirectory(prefix="nvim-check-") as tmp:
@@ -595,6 +658,8 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
             selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)
             run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                  "-c", 'lua assert(vim.g.colors_name == "gruvbox")', "-c", "qa!"], env)
+            selection.unlink()
+            selection.symlink_to(selection.parent / "everforest", target_is_directory=True)
             directory = home / "directory with spaces"
             directory.mkdir()
             (directory / "example.ts").write_text("export const value = 1;\n")
@@ -611,6 +676,165 @@ assert(listing:find("example.ts", 1, true), listing)
             for args in (["."], [str(directory)], ["-c", "edit " + str(directory).replace(" ", "\\ ")]):
                 run([NVIM, "--headless", "-i", "NONE", *args,
                       "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
+            dashboard_before = home / "dashboard-before.lua"
+            dashboard_before.write_text(before.read_text() + '''
+vim.v.oldfiles = {vim.fn.getcwd() .. "/example.ts", vim.env.HOME .. "/unrelated",
+  vim.fn.getcwd() .. "/removed.ts"}
+-- Keep the missing-tool fallback deterministic even when fortune is installed.
+local executable = vim.fn.executable
+vim.fn.executable = function(name) return name == "fortune" and 0 or executable(name) end
+''')
+            run_ui([], r'''
+assert(vim.bo.filetype == "snacks_dashboard", vim.bo.filetype)
+assert(Snacks.dashboard.status.opened)
+local function dashboard_colors()
+  local function hl(name) return vim.api.nvim_get_hl(0, {name=name, link=false}) end
+  for part, theme in pairs({Header="String", Title="String", Desc="Normal", File="Normal",
+      Key="Identifier", Dir="Comment"}) do
+    assert(hl("SnacksDashboard" .. part).fg == hl(theme).fg, "dashboard color mismatch: " .. part)
+  end
+  assert(hl("SnacksDashboardNormal").bg == hl("Normal").bg)
+  return hl("SnacksDashboardHeader").fg
+end
+assert(vim.g.colors_name == "everforest")
+local green = dashboard_colors()
+vim.cmd.colorscheme("gruvbox")
+assert(dashboard_colors() ~= green, "dashboard retained stale Everforest colors")
+vim.cmd.ReloadTheme()
+assert(vim.g.colors_name == "everforest" and dashboard_colors() == green)
+assert(not package.loaded["telescope.builtin"] and not package.loaded["nvim-tree.api"])
+for _, name in ipairs({"picker", "explorer", "notifier", "scroll", "input", "image"}) do
+  assert(not Snacks.config[name].enabled, "unrequested Snacks module enabled: " .. name)
+end
+local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+local listing = table.concat(lines, "\n")
+assert(listing:find("^__^", 1, true) and listing:find("< ", 1, true), listing)
+for row, line in ipairs(lines) do
+  local col = line:find([[\   ^__^]], 1, true)
+  if col then
+    assert(lines[row + 1]:find([[\  (oo)\_______]], 1, true) == col + 1, "cow art lost indentation")
+  end
+end
+assert(listing:find("directory with spaces", 1, true), listing)
+assert(listing:find("Recent in this directory", 1, true) and listing:find("example.ts", 1, true), listing)
+assert(not listing:find("unrelated", 1, true) and not listing:find("removed.ts", 1, true), listing)
+local regular_keys = {f="ff", g="fg", o="fo", e="fe"}
+for key, mapping in pairs(regular_keys) do
+  local regular = vim.fn.maparg(" " .. mapping, "n", false, true)
+  assert(listing:find(regular.desc, 1, true), regular.desc)
+  assert(vim.fn.maparg(key, "n", false, true).buffer == 1)
+end
+-- Exercise the one-letter mappings, not duplicate picker calls in the test.
+local called = {}
+package.loaded["telescope.builtin"] = {
+  find_files = function() called[#called + 1] = "files" end,
+  live_grep = function() called[#called + 1] = "grep" end,
+  oldfiles = function() called[#called + 1] = "oldfiles" end,
+}
+for _, key in ipairs({"f", "g", "o"}) do
+  vim.api.nvim_feedkeys(key, "xt", false)
+end
+assert(vim.deep_equal(called, {"files", "grep", "oldfiles"}), vim.inspect(called))
+vim.api.nvim_feedkeys("e", "xt", false)
+assert(require("nvim-tree.api").tree.is_visible())
+require("nvim-tree.api").tree.close()
+vim.api.nvim_feedkeys("n", "xt", false)
+vim.cmd.stopinsert()
+assert(vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) == "" and vim.bo.modifiable)
+assert(vim.fn.maparg("f", "n", false, true).buffer == nil, "dashboard shortcut leaked")
+assert(vim.wait(1000, function() return vim.o.laststatus ~= 0 end), "statusline not restored after dashboard")
+''', env, directory, dashboard_before)
+            fortune = bin_dir / "fortune"
+            fortune.write_text(f"#!{sys.executable}\n" + '''import os, sys, time
+mode = os.environ["FORTUNE_CASE"]
+if mode == "slow":
+    time.sleep(2)
+if mode == "error":
+    print("fortune database unavailable", file=sys.stderr)
+    sys.exit(1)
+if mode == "empty":
+    print("   ")
+else:
+    print("Fortune fixture: åäö and 中文, with enough words to wrap the speech bubble without losing the original quote.")
+    print()
+    print("x" * 75)
+    print("-- Fixture Author")
+''')
+            fortune.chmod(0o755)
+            fortune_before = home / "fortune-before.lua"
+            fortune_before.write_text(before.read_text() + '''
+vim.uv.spawn = _G.real_spawn
+vim.system = function(command, opts, on_exit)
+  assert(vim.deep_equal(command, {"fortune", "-s"}), "unexpected dashboard subprocess")
+  vim.g.fortune_attempts = (vim.g.fortune_attempts or 0) + 1
+  if vim.env.FORTUNE_CASE == "spawn" then error("simulated spawn failure") end
+  if vim.env.FORTUNE_CASE == "late" then _G.fortune_exit = on_exit; return {} end
+  return _G.real_system(command, opts, on_exit)
+end
+vim.api.nvim_create_autocmd("User", {pattern="SnacksDashboardOpened", callback=function()
+  vim.g.initial_header = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
+end})
+''')
+            run_ui([], r'''
+assert(vim.bo.filetype == "snacks_dashboard")
+assert(not vim.g.initial_header:find("Fortune fixture", 1, true), "startup waited for fortune")
+local function listing() return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n") end
+assert(vim.wait(2000, function() return listing():find("Fortune fixture", 1, true) ~= nil end))
+local text = listing()
+assert(text:find("åäö", 1, true) and text:find("中文", 1, true) and text:find("-- Fixture Author", 1, true), text)
+assert(not text:find(string.rep("x", 75), 1, true), "long word was not wrapped")
+for _, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+  assert(vim.fn.strdisplaywidth(vim.trim(line)) <= 56, "fortune overflowed dashboard: " .. line)
+end
+Snacks.dashboard.update()
+vim.wait(50)
+assert(listing() == text and vim.g.fortune_attempts == 1, "fortune changed on redraw")
+''', {**env, "FORTUNE_CASE": "success"}, directory, fortune_before)
+            for case in ("error", "empty", "slow", "spawn"):
+                run_ui([], '''
+assert(vim.bo.filetype == "snacks_dashboard")
+vim.wait(500)
+local text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
+assert(text == vim.g.initial_header, "failed fortune replaced fallback")
+assert(text:find("< ", 1, true) and text:find("^__^", 1, true), text)
+Snacks.dashboard.update()
+assert(vim.g.fortune_attempts == 1, "failed fortune retried on redraw")
+''', {**env, "FORTUNE_CASE": case}, directory, fortune_before)
+            run_ui([], '''
+assert(type(_G.fortune_exit) == "function")
+vim.cmd.enew()
+vim.api.nvim_buf_set_lines(0, 0, -1, false, {"keep this text"})
+local buf = vim.api.nvim_get_current_buf()
+_G.fortune_exit({code=0, stdout="Late fortune fixture\\n"})
+vim.wait(50)
+assert(vim.api.nvim_get_current_buf() == buf and vim.bo.filetype ~= "snacks_dashboard")
+assert(vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == "keep this text")
+''', {**env, "FORTUNE_CASE": "late"}, directory, fortune_before)
+            print("PASS: asynchronous fortunes, Unicode wrapping, stable redraws and silent failure/timeout fallback")
+            fortune.unlink()
+            # Explicit files, directories, piped input and headless runs must not be hijacked.
+            ui_before = home / "ui-before.lua"
+            ui_before.write_text(before.read_text() + '''
+-- Ordinary file editing may start the existing statusline's Git jobs and LSPs.
+vim.system = _G.real_system
+vim.uv.spawn = _G.real_spawn
+vim.fn.jobstart = _G.real_jobstart
+''')
+            (directory / "notes.txt").write_text("file input\n")
+            run_ui([str(directory / "notes.txt")], '''
+assert(not Snacks.dashboard.status.opened)
+assert(vim.bo.filetype == "text")
+assert(vim.api.nvim_buf_get_name(0) == vim.fn.getcwd() .. "/notes.txt")
+''', env, directory, ui_before)
+            run_ui(["."], check_directory.read_text() + '\nassert(not Snacks.dashboard.status.opened)\n',
+                   env, directory, ui_before)
+            run_ui(["-"], '''
+assert(not Snacks.dashboard.status.opened)
+assert(vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == "piped input")
+''', env, directory, ui_before, stdin=b"piped input\n")
+            run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                 "-c", 'autocmd VimEnter * lua assert(not Snacks.dashboard.status.opened); vim.cmd("qa!")'], env)
+            print("PASS: real terminal dashboard, cow, local history, reused shortcuts and startup guards")
             local.write_text('return {servers={cssls=false, pyright=true}, parsers={"bash"}, '
                              'features={format_on_save=true, eslint=true, markdown_preview=true}}\n')
             feature_checks = home / "features.lua"

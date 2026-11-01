@@ -443,13 +443,71 @@ An existing Telescope 0.1.8 installation also needs `:Lazy update telescope.nvim
 and a restart for compatible file previews; no restow or parser rebuild is
 needed solely for the Telescope update.
 
-### Isolated checks
+## Testing
+
+The primary contract is that updating these dotfiles keeps an existing shell,
+editor, and terminal workflow usable. Prefer a few real integration scenarios
+over asserting every setting or testing upstream algorithms. Add a regression
+test when a meaningful failure would otherwise escape the baseline; a trivial
+alias or visual preference does not automatically need a test.
+
+```bash
+make check                           # syntax and generated-theme consistency
+python3 scripts/prepare-test-fixtures.py /absolute/path/to/empty-fixture-directory
+make check-runtime FIXTURES=/absolute/path/to/fixture-directory
+# Or run only the affected component:
+python3 scripts/check.py shell --fixtures /absolute/path/to/fixture-directory
+python3 scripts/check.py editor --fixtures /absolute/path/to/fixture-directory
+python3 scripts/check.py toolchain --fixtures /absolute/path/to/fixture-directory
+```
+
+Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a C
+compiler. It downloads into the supplied directory, including private HOME/XDG
+state. Runtime checks additionally require Zsh, tmux, Stow, ripgrep and ShellCheck.
+Application versions live in `scripts/test-fixtures.json`; Node follows the shared
+mise pin and plugins/grammar revisions follow `lazy-lock.json`. npm's exact direct
+versions are declared; resolved transitive versions are recorded in the fixture's
+generated package lockfiles. Use a new empty directory when fixture inputs change.
+Missing prerequisites or stale fixtures fail clearly. Tests use disposable homes
+and private tmux sockets, and never install into the real home.
+
+GitHub Actions runs static checks on every PR and runtime checks for configuration
+changes on **Arch** and **Rocky Linux 9** (an EL9/glibc 2.34 compatibility baseline).
+The weekly runtime run also checks moving distro packages against the declared
+fixtures. Runtime jobs use the same commands as local checks, as an unprivileged
+user with networking disabled and the checkout mounted read-only. Run those jobs
+locally with Docker:
+
+```bash
+bash docker/runtime.sh arch
+bash docker/runtime.sh rhel9 editor
+```
+
+The runtime suite covers actual Oh My Zsh initialization and local overrides,
+the tracked tmux configuration and directory bindings, theme switching/failure
+behavior, custom shell helpers, toolchain precedence, and editor workflows with
+real plugins, parsers, language servers, Prettier and ESLint. Fixture preparation
+compiles selected generated parser sources without requiring the tree-sitter CLI.
+
+Bootstrap CI is separate: setup/linking changes run Fedora slim installation
+twice. The manual **Bootstrap compatibility** workflow selects other distros,
+profiles, or Arch Hyprland. It uses `docker/test.sh`; neither runtime job runs
+`setup.sh`, and RHEL remains outside its supported installation targets.
+The workflows' first remote/container run is pending; local suite success alone
+does not establish container compatibility or a fresh desktop installation.
+Real Windows clipboard, physical monitors and interactive desktop behavior remain
+manual checks. Rocky does not reproduce a particular machine's access restrictions.
+
+### Individual editor checks
 
 ```bash
 python3 scripts/test-nvim.py /absolute/path/to/nvim
 python3 scripts/test-nvim.py /absolute/path/to/nvim /path/to/plugin-fixtures
+python3 scripts/test-nvim.py /absolute/path/to/nvim /path/to/plugin-fixtures --scenario native-plugins
 ```
 
+Each startup scenario runs independently and reports failures without suppressing
+later scenarios. The output lists whether plugin, LSP and parser coverage is enabled.
 Fixtures contain the repositories in `lazy-lock.json` (fzf-native already built).
 Checks copy them into disposable homes, exercise local settings, completion,
 Git indicators, parser configuration, search/tree/themes, clipboard and safe

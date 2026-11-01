@@ -1,0 +1,49 @@
+name: Bootstrap compatibility
+on:
+  pull_request:
+    paths:
+      - 'setup.sh'
+      - 'Makefile'
+      - 'scripts/configure-*.sh'
+      - 'docker/test.sh'
+      - 'docker/compose.yml'
+      - 'docker/Dockerfile.arch'
+      - 'docker/Dockerfile.fedora'
+      - 'docker/Dockerfile.ubuntu'
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+    inputs:
+      distro:
+        type: choice
+        options: [fedora, arch, ubuntu]
+        default: fedora
+      profile:
+        type: choice
+        options: [slim, server, full]
+        default: slim
+      hyprland:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  bootstrap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install selected profile twice
+        shell: bash
+        env:
+          DISTRO: ${{ inputs.distro || 'fedora' }}
+          PROFILE: ${{ inputs.profile || 'slim' }}
+          HYPRLAND: ${{ inputs.hyprland }}
+        run: |
+          args=(-d "$DISTRO" -p "$PROFILE")
+          if [[ "$HYPRLAND" == true ]]; then args+=(--hyprland); fi
+          bash docker/test.sh "${args[@]}" 2>&1 | tee bootstrap.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bootstrap
+          path: bootstrap.log

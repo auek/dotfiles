@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exercise real mise/Zsh/Stow in disposable homes with pre-downloaded builds.
 
-Usage: test-mise.py /path/to/mise /path/to/node-24.19.0 /path/to/other-node /path/to/neovim-tool
+Usage: test-mise.py /path/to/mise /path/to/shared-node /path/to/other-node /path/to/neovim-tool
 Node arguments contain bin/node. The last argument is a disposable mise fixture's
 installs/aqua-neovim-neovim directory, including its generated backend metadata.
 Requires Python 3.11+, Zsh, and GNU Stow. No tools are downloaded and no real
@@ -20,6 +20,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+NODE_VERSION = tomllib.loads((ROOT / "packages/mise/.config/mise/config.toml").read_text())["tools"]["node"]
 if len(sys.argv) != 5:
     sys.exit(__doc__)
 MISE, NODE, OTHER_NODE, NVIM = [Path(arg).resolve() for arg in sys.argv[1:]]
@@ -28,8 +29,8 @@ if not STOW:
     sys.exit("GNU Stow must be on PATH")
 OTHER_VERSION = subprocess.check_output(
     [str(OTHER_NODE / "bin/node"), "--version"], text=True).strip().removeprefix("v")
-if OTHER_VERSION == "24.19.0":
-    sys.exit("The other Node fixture must differ from 24.19.0 to test switching")
+if OTHER_VERSION == NODE_VERSION:
+    sys.exit("The other Node fixture must differ from the shared pin to test switching")
 NVIM_BINARY = next(NVIM.glob("[0-9]*/*/bin/nvim"))
 NVIM_VERSION = subprocess.check_output(
     [str(NVIM_BINARY), "--version"], text=True,
@@ -48,9 +49,6 @@ class MiseTests(unittest.TestCase):
         for package in ("mise", "tealdeer", "zprofile", "zshrc"):
             shutil.copytree(ROOT / "packages" / package, self.packages / package)
         self.config = self.packages / "mise/.config/mise/config.toml"
-        self.manifest = tomllib.loads(self.config.read_text())
-        # Register only the supplied builds; avoid resolving unrelated tools.
-        self.config.write_text('[tools]\n[settings]\nidiomatic_version_file_enable_tools = ["node"]\n')
         bindir = self.home / ".local/bin"
         bindir.mkdir(parents=True)
         (bindir / "mise").symlink_to(MISE)
@@ -70,7 +68,8 @@ class MiseTests(unittest.TestCase):
                     "MISE_DATA_DIR": str(self.home / ".local/share/mise"),
                     "MISE_STATE_DIR": str(self.home / ".local/state/mise"),
                     "MISE_CACHE_DIR": str(self.home / ".cache/mise"),
-                    "MISE_HIDE_UPDATE_WARNING": "1", "SSH_AUTH_SOCK": "fixture",
+                     "MISE_HIDE_UPDATE_WARNING": "1", "SSH_AUTH_SOCK": "fixture",
+                     "MISE_ENABLE_TOOLS": "",
                     "NVIM_LOG_FILE": str(self.home / "nvim.log")}
         for key in ("ZDOTDIR", "MISE_GLOBAL_CONFIG_FILE", "MISE_NODE_VERSION", "MISE_ENV",
                     "SSH_CONNECTION", "DISPLAY", "WAYLAND_DISPLAY", "XDG_VTNR"):
@@ -80,12 +79,12 @@ class MiseTests(unittest.TestCase):
         # does not generate for explicit backends. Copy it before each check.
         shutil.copytree(NVIM, self.home / ".local/share/mise/installs/aqua-neovim-neovim",
                         symlinks=True)
-        for tool, directory in (("node@24.19.0", NODE),
+        for tool, directory in ((f"node@{NODE_VERSION}", NODE),
                                 (f"node@{OTHER_VERSION}", OTHER_NODE)):
             self.run_checked([str(MISE), "link", tool, str(directory)])
-        self.config.write_text(
-            '[tools]\nnode = "24.19.0"\n"aqua:neovim/neovim" = "latest"\n'
-            '[settings]\nidiomatic_version_file_enable_tools = ["node"]\n')
+        # Exercise the actual tracked configuration, including its settings.
+        # Only the two provisioned tools participate in this offline fixture.
+        self.env["MISE_ENABLE_TOOLS"] = "node,aqua:neovim/neovim"
         self.run_checked([str(MISE), "reshim"])
         # An old Bob launcher must lose to mise, even before the first prompt.
         legacy = self.home / "legacy-nvim"
@@ -106,25 +105,16 @@ class MiseTests(unittest.TestCase):
     def shell(self, flags, command, cwd=None):
         return self.run_checked(["zsh", flags, command], cwd)
 
-    def test_manifest_and_system_trust(self):
-        tools = self.manifest["tools"]
-        self.assertEqual(tools.pop("node"), "24.19.0")
-        self.assertTrue(tools)
-        self.assertTrue(all(version == "latest" for version in tools.values()))
-        self.assertEqual(tools["aqua:eza-community/eza"], "latest")
-        self.assertNotIn("aqua:astral-sh/uv", tools)
-        self.assertNotIn("uv", tools)
-        self.assertEqual(self.manifest["settings"]["idiomatic_version_file_enable_tools"], ["node"])
-        config = tomllib.loads((self.home / ".config/tealdeer/config.toml").read_text())
-        self.assertEqual(config["updates"]["tls_backend"], "rustls-with-native-roots")
-
     def test_first_command_in_login_and_interactive_shells(self):
         for flags in ("-lc", "-lic", "-ic"):
             with self.subTest(flags=flags):
                 output = self.shell(flags, 'node --version; npm --version; npx --version; '
                                     'command -v node; command -v nvim; nvim --version')
-                self.assertIn("v24.19.0", output)
-                self.assertEqual(output.splitlines().count("11.17.0"), 2)
+                self.assertIn(f"v{NODE_VERSION}", output)
+                # npm/npx must come from this Node installation, not a second
+                # version string duplicated from an upstream distribution.
+                npm = self.run_checked([str(NODE / "bin/node"), str(NODE / "bin/npm"), "--version"])
+                self.assertEqual(output.splitlines().count(npm), 2)
                 self.assertIn(str(self.home / ".local/share/mise"), output)
                 self.assertIn(f"NVIM v{NVIM_VERSION}", output)
 
@@ -136,7 +126,7 @@ class MiseTests(unittest.TestCase):
             for flags in ("-lc", "-ic"):
                 with self.subTest(filename=filename, flags=flags):
                     output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
-                    self.assertEqual(output.splitlines(), [f"v{OTHER_VERSION}", "v24.19.0"])
+                    self.assertEqual(output.splitlines(), [f"v{OTHER_VERSION}", f"v{NODE_VERSION}"])
 
     def test_machine_local_node_override_and_project_precedence(self):
         before = self.config.read_bytes()
@@ -151,20 +141,20 @@ class MiseTests(unittest.TestCase):
         for filename in (".nvmrc", ".node-version"):
             project = self.home / ("local-override-" + filename.removeprefix("."))
             project.mkdir()
-            (project / filename).write_text("24.19.0\n")
+            (project / filename).write_text(NODE_VERSION + "\n")
             for flags in ("-lc", "-ic"):
                 with self.subTest(filename=filename, flags=flags):
                     output = self.shell(flags, 'node --version; cd "$HOME"; node --version', project)
-                    self.assertEqual(output.splitlines(), ["v24.19.0", f"v{OTHER_VERSION}"])
+                    self.assertEqual(output.splitlines(), [f"v{NODE_VERSION}", f"v{OTHER_VERSION}"])
         self.assertEqual(self.config.read_bytes(), before)
         self.stow("--delete", "mise")
         self.assertEqual(local.read_text(), contents)
 
     def test_inherited_subprocess_path_and_neovim_node(self):
-        self.assertEqual(self.shell("-lic", "zsh -c 'node --version'"), "v24.19.0")
+        self.assertEqual(self.shell("-lic", "zsh -c 'node --version'"), f"v{NODE_VERSION}")
         lua = self.home / "node-check.lua"
         lua.write_text('local r = vim.system({"node", "--version"}, {text=true}):wait()\n'
-                       'if r.code ~= 0 or vim.trim(r.stdout) ~= "v24.19.0" then\n'
+                       f'if r.code ~= 0 or vim.trim(r.stdout) ~= "v{NODE_VERSION}" then\n'
                        '  io.stderr:write(vim.inspect(r)); vim.cmd("cquit 1")\n'
                        'end\nprint("Neovim child Node OK")\nvim.cmd("qa")\n')
         self.shell("-lic", "nvim --headless -u NONE -i NONE -l " + shlex.quote(str(lua)))
@@ -195,7 +185,7 @@ class MiseTests(unittest.TestCase):
                 log = self.home / "mise-calls"
                 log.unlink(missing_ok=True)
                 output = self.shell(flags, 'node --version; nvim --version; print -l -- $path')
-                self.assertIn("v24.19.0", output)
+                self.assertIn(f"v{NODE_VERSION}", output)
                 self.assertIn(f"NVIM v{NVIM_VERSION}", output)
                 self.assertEqual(output.splitlines().count(str(shims)), 1)
                 calls = log.read_text().splitlines() if log.exists() else []
@@ -224,27 +214,6 @@ class MiseTests(unittest.TestCase):
                                 env=self.env, capture_output=True, text=True, timeout=10)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(target.read_text(), "# existing local settings\n")
-
-    def test_bootstrap_leaves_eza_to_mise_and_uv_optional(self):
-        script = (ROOT / "setup.sh").read_text()
-        for line in script.splitlines():
-            if line.strip().startswith(("PKG_SERVER=", "PKG_COMMON=", "PKG_OPTIONAL=")):
-                packages = shlex.split(line.split("=", 1)[1])[0].split()
-                self.assertNotIn("eza", packages)
-                self.assertNotIn("uv", packages)
-        self.assertNotIn("uv/install.sh", script)
-        harness = (ROOT / "docker/test.sh").read_text()
-        zsh_commands = set()
-        for line in harness.splitlines():
-            if not line.strip().startswith(("require_commands ", "require_zsh_commands ")):
-                continue
-            commands = shlex.split(line)
-            self.assertNotIn("uv", commands[1:])
-            if commands[0] == "require_commands":
-                self.assertNotIn("eza", commands[1:])
-            else:
-                zsh_commands.update(commands[1:])
-        self.assertIn("eza", zsh_commands)
 
     def test_bootstrap_installs_declared_tools_without_rewriting_config(self):
         log = self.home / "bootstrap-log"

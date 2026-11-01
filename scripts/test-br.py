@@ -13,9 +13,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 ZSH = shutil.which("zsh")
+if not ZSH:
+    sys.exit("requires Zsh")
 
 
-@unittest.skipUnless(ZSH, "requires Zsh")
 class BrightnessTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="br-check-")
@@ -24,8 +25,10 @@ class BrightnessTests(unittest.TestCase):
         self.bin = self.home / "bin"
         self.bin.mkdir()
         self.log = self.home / "commands.jsonl"
-        self.env = {**os.environ, "HOME": str(self.home), "PATH": str(self.bin),
-                    "BR_TEST_LOG": str(self.log)}
+        self.env = {key: value for key, value in os.environ.items()
+                    if not key.startswith(("MISE_", "__MISE_", "ZSH", "ZDOT", "XDG_"))}
+        self.env.update(HOME=str(self.home), PATH=str(self.bin),
+                        BR_TEST_LOG=str(self.log), SSH_AUTH_SOCK="fixture")
         mock = self.bin / "ddcutil"
         mock.write_text(f"#!{sys.executable}\n" + '''
 import json
@@ -43,11 +46,11 @@ else:
     print("brightness set")
 ''')
         mock.chmod(0o755)
-        source = (ROOT / "packages/zshrc/.zshrc").read_text()
-        self.functions = self.home / "brightness.zsh"
-        self.functions.write_text("# ddcutil brightness helpers" + source.split(
-            "# ddcutil brightness helpers", 1)[1].split(
-            "# Cross-platform open command", 1)[0])
+        # Load the whole tracked shell file, rather than extracting by comments.
+        # Real Oh My Zsh is covered by test-runtime.py; keep helper cases small.
+        (self.home / ".oh-my-zsh").mkdir()
+        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
+        self.functions = ROOT / "packages/zshrc/.zshrc"
 
     def run_br(self, *args, code='"$@"', **env):
         return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,

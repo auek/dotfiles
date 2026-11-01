@@ -5,9 +5,9 @@ typeset -U path PATH
 path=("$HOME/.local/bin" $path)
 export PATH
 
-# Shims make managed tools available to login commands without an interactive prompt.
+# Login commands need shims, without a subprocess just to generate a PATH entry.
 if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate zsh --shims)"
+  path=("${MISE_SHIMS_DIR:-${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims}" $path)
 fi
 
 # Preferred editor

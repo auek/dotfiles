@@ -177,6 +177,31 @@ class MiseTests(unittest.TestCase):
         self.run_checked([str(MISE), "reshim"])
         self.assertEqual(self.config.read_bytes(), before)
 
+    def test_custom_shim_path_and_single_activation(self):
+        shims = self.home / "custom shims"
+        self.env["MISE_SHIMS_DIR"] = str(shims)
+        self.run_checked([str(MISE), "reshim"])
+        # Keep a real mise behind a logging wrapper so generated activation
+        # and hook-env run normally, while shim-only calls remain observable.
+        wrapper = self.home / ".local/bin/mise"
+        wrapper.unlink()
+        # Shims can point to this executable too; preserve argv[0] so mise
+        # still dispatches node/nvim instead of interpreting their arguments.
+        wrapper.write_text('#!/bin/bash\nprintf "%s\\n" "$*" >> "$HOME/mise-calls"\nexec -a "$0" '
+                           + shlex.quote(str(MISE)) + ' "$@"\n')
+        wrapper.chmod(0o755)
+        for flags in ("-lc", "-lic", "-ic"):
+            with self.subTest(flags=flags):
+                log = self.home / "mise-calls"
+                log.unlink(missing_ok=True)
+                output = self.shell(flags, 'node --version; nvim --version; print -l -- $path')
+                self.assertIn("v24.19.0", output)
+                self.assertIn(f"NVIM v{NVIM_VERSION}", output)
+                self.assertEqual(output.splitlines().count(str(shims)), 1)
+                calls = log.read_text().splitlines() if log.exists() else []
+                activations = [call for call in calls if call.startswith("activate ")]
+                self.assertEqual(activations, [] if flags == "-lc" else ["activate zsh"])
+
     def test_fixture_path_isolation(self):
         for flags in ("-lc", "-lic", "-ic"):
             with self.subTest(flags=flags):

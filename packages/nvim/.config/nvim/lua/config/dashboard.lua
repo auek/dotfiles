@@ -1,6 +1,6 @@
 local M = {}
 
--- A small built-in fortune collection keeps startup offline and subprocess-free.
+-- Used immediately, and retained if the optional local fortune command fails.
 local quotes = {
   "Simplicity is prerequisite for reliability.",
   "Make it work, make it right, make it fast.",
@@ -12,15 +12,71 @@ local quotes = {
   "Save early. Commit often. Pet the cow.",
 }
 
-local function cow()
-  local quote = quotes[os.time() % #quotes + 1]
-  return " " .. string.rep("_", #quote + 2) .. "\n< " .. quote .. " >\n "
-    .. string.rep("-", #quote + 2) .. "\n" .. [[
+local function cow(quote)
+  local lines, width = {}, 0
+  for _, paragraph in ipairs(vim.split(vim.trim(quote), "\n", { plain = true })) do
+    local line = ""
+    for word in paragraph:gmatch("%S+") do
+      if line ~= "" then
+        if vim.fn.strdisplaywidth(line .. " " .. word) > 52 then
+          lines[#lines + 1], line = line, ""
+        else
+          line = line .. " "
+        end
+      end
+      -- Split unusually long words too, without cutting UTF-8 characters.
+      for _, char in ipairs(vim.fn.split(word, [[\zs]])) do
+        if vim.fn.strdisplaywidth(line .. char) > 52 then
+          lines[#lines + 1], line = line, ""
+        end
+        line = line .. char
+      end
+    end
+    lines[#lines + 1] = line
+  end
+  -- A pathological fortune should not push all dashboard actions off screen.
+  if #lines > 8 then return nil end
+  for _, line in ipairs(lines) do width = math.max(width, vim.fn.strdisplaywidth(line)) end
+  local bubble = { " " .. string.rep("_", width + 2) }
+  for row, line in ipairs(lines) do
+    local left, right = "<", ">"
+    if #lines > 1 then
+      left = row == 1 and "/" or row == #lines and "\\" or "|"
+      right = row == 1 and "\\" or row == #lines and "/" or "|"
+    end
+    bubble[#bubble + 1] = left .. " " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " " .. right
+  end
+  bubble[#bubble + 1] = " " .. string.rep("-", width + 2)
+  return table.concat(bubble, "\n") .. "\n" .. [[
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\
                 ||----w |
                 ||     ||]]
+end
+
+local function header(self)
+  if not self._dotfiles_fortune then
+    local state = { header = cow(quotes[os.time() % #quotes + 1]) }
+    self._dotfiles_fortune = state
+    if vim.fn.executable("fortune") == 1 then
+      -- Only request a fortune when a dashboard is actually rendered, never for
+      -- explicit file/directory arguments, piped input or ordinary headless use.
+      pcall(vim.system, { "fortune", "-s" }, { text = true, timeout = 300 }, vim.schedule_wrap(function(result)
+        local text = result.stdout or ""
+        if result.code ~= 0 or #text > 4096 or vim.trim(text) == "" then return end
+        local ok, rendered = pcall(cow, text)
+        if not ok or not rendered then return end
+        state.header = rendered
+        -- A late result must never move the cursor or replace an opened file.
+        if vim.api.nvim_buf_is_valid(self.buf) and vim.api.nvim_win_is_valid(self.win)
+            and vim.api.nvim_win_get_buf(self.win) == self.buf then
+          self:update()
+        end
+      end))
+    end
+  end
+  return { header = self._dotfiles_fortune.header, padding = 1 }
 end
 
 local function shortcuts()
@@ -56,11 +112,10 @@ function M.options()
     dashboard = {
       enabled = true,
       width = 56,
-      preset = { header = cow() },
       -- No Nerd Font dependency, including the automatically generated file list.
       formats = { header = { "%s", align = "left" }, icon = { "", width = 0 } },
       sections = {
-        { section = "header", padding = 1 },
+        header,
         function()
           return { title = vim.fn.fnamemodify(vim.fn.getcwd(), ":~"), align = "center", padding = 1 }
         end,

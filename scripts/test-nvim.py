@@ -680,6 +680,9 @@ assert(listing:find("example.ts", 1, true), listing)
             dashboard_before.write_text(before.read_text() + '''
 vim.v.oldfiles = {vim.fn.getcwd() .. "/example.ts", vim.env.HOME .. "/unrelated",
   vim.fn.getcwd() .. "/removed.ts"}
+-- Keep the missing-tool fallback deterministic even when fortune is installed.
+local executable = vim.fn.executable
+vim.fn.executable = function(name) return name == "fortune" and 0 or executable(name) end
 ''')
             run_ui([], r'''
 assert(vim.bo.filetype == "snacks_dashboard", vim.bo.filetype)
@@ -741,6 +744,74 @@ assert(vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) == "" and vim.bo.mo
 assert(vim.fn.maparg("f", "n", false, true).buffer == nil, "dashboard shortcut leaked")
 assert(vim.wait(1000, function() return vim.o.laststatus ~= 0 end), "statusline not restored after dashboard")
 ''', env, directory, dashboard_before)
+            fortune = bin_dir / "fortune"
+            fortune.write_text(f"#!{sys.executable}\n" + '''import os, sys, time
+mode = os.environ["FORTUNE_CASE"]
+if mode == "slow":
+    time.sleep(2)
+if mode == "error":
+    print("fortune database unavailable", file=sys.stderr)
+    sys.exit(1)
+if mode == "empty":
+    print("   ")
+else:
+    print("Fortune fixture: åäö and 中文, with enough words to wrap the speech bubble without losing the original quote.")
+    print()
+    print("x" * 75)
+    print("-- Fixture Author")
+''')
+            fortune.chmod(0o755)
+            fortune_before = home / "fortune-before.lua"
+            fortune_before.write_text(before.read_text() + '''
+vim.uv.spawn = _G.real_spawn
+vim.system = function(command, opts, on_exit)
+  assert(vim.deep_equal(command, {"fortune", "-s"}), "unexpected dashboard subprocess")
+  vim.g.fortune_attempts = (vim.g.fortune_attempts or 0) + 1
+  if vim.env.FORTUNE_CASE == "spawn" then error("simulated spawn failure") end
+  if vim.env.FORTUNE_CASE == "late" then _G.fortune_exit = on_exit; return {} end
+  return _G.real_system(command, opts, on_exit)
+end
+vim.api.nvim_create_autocmd("User", {pattern="SnacksDashboardOpened", callback=function()
+  vim.g.initial_header = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
+end})
+''')
+            run_ui([], r'''
+assert(vim.bo.filetype == "snacks_dashboard")
+assert(not vim.g.initial_header:find("Fortune fixture", 1, true), "startup waited for fortune")
+local function listing() return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n") end
+assert(vim.wait(2000, function() return listing():find("Fortune fixture", 1, true) ~= nil end))
+local text = listing()
+assert(text:find("åäö", 1, true) and text:find("中文", 1, true) and text:find("-- Fixture Author", 1, true), text)
+assert(not text:find(string.rep("x", 75), 1, true), "long word was not wrapped")
+for _, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+  assert(vim.fn.strdisplaywidth(vim.trim(line)) <= 56, "fortune overflowed dashboard: " .. line)
+end
+Snacks.dashboard.update()
+vim.wait(50)
+assert(listing() == text and vim.g.fortune_attempts == 1, "fortune changed on redraw")
+''', {**env, "FORTUNE_CASE": "success"}, directory, fortune_before)
+            for case in ("error", "empty", "slow", "spawn"):
+                run_ui([], '''
+assert(vim.bo.filetype == "snacks_dashboard")
+vim.wait(500)
+local text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
+assert(text == vim.g.initial_header, "failed fortune replaced fallback")
+assert(text:find("< ", 1, true) and text:find("^__^", 1, true), text)
+Snacks.dashboard.update()
+assert(vim.g.fortune_attempts == 1, "failed fortune retried on redraw")
+''', {**env, "FORTUNE_CASE": case}, directory, fortune_before)
+            run_ui([], '''
+assert(type(_G.fortune_exit) == "function")
+vim.cmd.enew()
+vim.api.nvim_buf_set_lines(0, 0, -1, false, {"keep this text"})
+local buf = vim.api.nvim_get_current_buf()
+_G.fortune_exit({code=0, stdout="Late fortune fixture\\n"})
+vim.wait(50)
+assert(vim.api.nvim_get_current_buf() == buf and vim.bo.filetype ~= "snacks_dashboard")
+assert(vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == "keep this text")
+''', {**env, "FORTUNE_CASE": "late"}, directory, fortune_before)
+            print("PASS: asynchronous fortunes, Unicode wrapping, stable redraws and silent failure/timeout fallback")
+            fortune.unlink()
             # Explicit files, directories, piped input and headless runs must not be hijacked.
             ui_before = home / "ui-before.lua"
             ui_before.write_text(before.read_text() + '''

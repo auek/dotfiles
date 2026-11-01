@@ -146,8 +146,8 @@ that guard rather than hot-reloading a mix of legacy and supported modules.
 Parser builds need standalone tree-sitter CLI 0.26.1+, curl/tar and a C compiler.
 Do not add its current Aqua binaries to the shared mise baseline: Linux x86_64
 0.26.1/0.27.1 require glibc 2.39, incompatible with RHEL 9's 2.34. CLI installation
-is machine-local; README includes an opt-in Cargo source-build route whose
-target-machine verification remains pending. The CLI is not a runtime dependency.
+is machine-local; Cargo source builds remain unverified on the target machine.
+The CLI is not a runtime dependency.
 There is no automatic parser/server installation, shell formatting, or default
 format-on-save. Formatting, ESLint diagnostics, and Markdown preview are separate opt-in
 features. Lazy bootstraps and installs missing editor plugins, without update
@@ -155,8 +155,8 @@ checks or project-local plugin specs. Pins come from the tracked `lazy-lock.json
 runtime lockfile/cache/state live under `stdpath("state")/dotfiles`. Plugin and
 Mason roots remain `stdpath("data")/lazy` and `/mason`. Do not automatically
 clean, migrate, or remove existing user data. For installations using the old
-`nvim-work` package, unstow it before pulling its removal, then link `nvim`;
-see README migration notes. Basic editing survives bootstrap failure. Theme
+`nvim-work` package, unstow it before pulling its removal, then link `nvim`.
+Basic editing survives bootstrap failure. Theme
 selection follows `theme-set` with Everforest/Habamax fallbacks; real Windows
 clipboard behavior still needs manual verification. Default package selection
 remains unchanged. `make stow-hyprland`
@@ -267,10 +267,27 @@ Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
 
 ## Maintenance
 
-- When adding or modifying a stow package, update:
-  - The `What's included` table in `README.md`
+- When adding/removing a Stow package or changing its purpose/default selection,
+  update:
+  - The brief `What's included` table in `README.md`, only if its overview changes
   - The repo structure tree in `AGENTS.md`
   - The stowed packages list in `AGENTS.md`
+
+### README minimalism
+
+- Keep `README.md` a short landing page (roughly 150–200 lines), not a manual,
+  changelog, migration log, or verification report.
+- Include only the current purpose, supported platforms, installation, package
+  overview, essential everyday commands, and links to further details.
+- Change it only when that overview or essential usage changes. Routine settings,
+  implementation changes, and tests do not need README additions.
+- Prefer replacing or shortening existing text over appending sections. Link to
+  existing references or source for advanced settings; do not duplicate them.
+- Omit historical comparisons, removed features, rollback narratives, exhaustive
+  examples, internal mechanics, and machine-specific test results.
+- Mention a necessary warning once, beside the relevant command. Do not repeat
+  Stow dry runs or conflict caveats throughout the file.
+- Do not relocate discarded text wholesale or create new docs just to preserve it.
 
 ## Testing
 
@@ -287,8 +304,12 @@ the networked phase and must not target the real home. Then use
 `python3 scripts/check.py shell|editor|toolchain|runtime --fixtures /absolute/directory`
 (choose one suite). `make check-runtime FIXTURES=/absolute/directory` runs all runtime
 suites. Missing tools and stale fixtures are failures, not successful skips.
-See README's Testing section for prerequisites and fixture versions. Do not
-replace local tests with CI-only commands or silently omit expensive coverage.
+Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a C
+compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, and ShellCheck.
+Versions come from `scripts/test-fixtures.json`, the shared mise Node pin, and
+`lazy-lock.json` for plugins/grammars. Use a new empty fixture directory when
+these inputs change. Do not replace local tests with CI-only commands or
+silently omit expensive coverage.
 
 GitHub Actions runs static checks on every PR and configuration-triggered runtime
 jobs in Arch and Rocky Linux 9 containers, plus a weekly compatibility run. Runtime

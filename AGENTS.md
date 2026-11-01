@@ -297,8 +297,9 @@ jobs in Arch and Rocky Linux 9 containers, plus a weekly compatibility run. Runt
 checks run as an ordinary user, offline, against a read-only checkout. The same
 jobs are available via `bash docker/runtime.sh arch|rhel9 [suite]` (choose a distro).
 Bootstrap CI runs Fedora slim for setup/linking changes, with other combinations
-available through manual dispatch. A first remote/container run is still pending;
-local tests do not establish that those images build or that fresh setup works.
+available through manual dispatch. GitHub CI has passed both runtime images and
+Fedora slim bootstrap (two setup runs). Other fresh-install profiles and actual
+desktop sessions are not established by those results.
 
 The runtime baseline covers the actual workstation tmux config (the focused tmx
 suite intentionally uses a minimal config), real Oh My Zsh completion/plugin

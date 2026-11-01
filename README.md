@@ -493,8 +493,9 @@ Bootstrap CI is separate: setup/linking changes run Fedora slim installation
 twice. The manual **Bootstrap compatibility** workflow selects other distros,
 profiles, or Arch Hyprland. It uses `docker/test.sh`; neither runtime job runs
 `setup.sh`, and RHEL remains outside its supported installation targets.
-The workflows' first remote/container run is pending; local suite success alone
-does not establish container compatibility or a fresh desktop installation.
+GitHub CI has passed both runtime images and Fedora slim bootstrap (two setup
+runs). This does not establish other fresh-install profiles or a working desktop
+session; Arch Hyprland fresh-install verification remains deferred.
 Real Windows clipboard, physical monitors and interactive desktop behavior remain
 manual checks. Rocky does not reproduce a particular machine's access restrictions.
 

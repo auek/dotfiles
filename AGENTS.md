@@ -58,7 +58,6 @@ dotfiles/
     ├── nvim/.config/nvim/    # Shared editor with optional project-local Prettier/ESLint
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
-    ├── bob/.config/bob/      # Optional legacy Bob config for rollback
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
@@ -129,9 +128,8 @@ ordinary, untracked `${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.zsh` hook custom
 them. The hook runs in a separate `zsh -ef` process with session/window/pane IDs
 and the absolute directory as arguments; it never runs on reattachment. No
 editor or assistant is launched by shared code. Never Stow the local hook.
-Bob configuration remains optional for rollback; it is not in the default
-package selection. Neovim uses one `nvim` Stow package; machine-local options
-live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
+Neovim is managed through mise, not Bob. It uses one `nvim` Stow package;
+machine-local options live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
 `server_options` supplies per-server overrides. Never Stow the local file.
 The shared editor targets Neovim 0.12+. The baseline selects available `ts_ls`,

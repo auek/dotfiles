@@ -86,9 +86,9 @@ class MiseTests(unittest.TestCase):
         # Only the two provisioned tools participate in this offline fixture.
         self.env["MISE_ENABLE_TOOLS"] = "node,aqua:neovim/neovim"
         self.run_checked([str(MISE), "reshim"])
-        # An old Bob launcher must lose to mise, even before the first prompt.
+        # A legacy launcher must lose to mise, even before the first prompt.
         legacy = self.home / "legacy-nvim"
-        legacy.write_text("#!/bin/sh\necho 'old Bob launcher selected' >&2\nexit 91\n")
+        legacy.write_text("#!/bin/sh\necho 'legacy Neovim launcher selected' >&2\nexit 91\n")
         legacy.chmod(0o755)
         (bindir / "nvim").symlink_to(legacy)
 

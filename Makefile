@@ -8,7 +8,7 @@ STOW_TARGET = $(HOME)
 # Keep shared XDG directories writable for tools such as uv and pipx.
 STOW = stow --no-folding --dir=$(STOW_DIR) --target=$(STOW_TARGET)
 
-.PHONY: stow unstow restow stow-hyprland unstow-hyprland stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check
+.PHONY: stow unstow restow stow-hyprland unstow-hyprland stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check check check-runtime
 
 themes-generate:
 	python3 scripts/generate-themes.py generate
@@ -55,3 +55,9 @@ stow-foot:
 
 unstow-foot:
 	$(STOW) --delete $(STOW_PACKAGES_FOOT)
+
+check:
+	python3 scripts/check.py static
+
+check-runtime:
+	python3 scripts/check.py runtime --fixtures "$(FIXTURES)"

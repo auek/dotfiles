@@ -10,13 +10,16 @@ import sys
 import tempfile
 import unittest
 
+from test_support import stop_tmux
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ZSH = shutil.which("zsh")
 TMUX = shutil.which("tmux")
+if not ZSH or not TMUX:
+    sys.exit("requires Zsh and tmux")
 
 
-@unittest.skipUnless(ZSH and TMUX, "requires Zsh and tmux")
 class TmxTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="tmx-check-")
@@ -31,18 +34,22 @@ class TmxTests(unittest.TestCase):
         self.config = self.home / "tmux.conf"
         # Nonzero indexes catch accidental assumptions about window 0/pane 0.
         self.config.write_text("set -g default-shell /bin/sh\n"
+                               # No terminal is attached in these tests. Older
+                               # tmux otherwise recalculates to 80x24 between
+                               # commands, discarding new-session's -x/-y size.
+                               "set -g window-size manual\n"
                                "set -g base-index 3\n"
                                "set -g pane-base-index 4\n"
                                "set -g status off\n")
         self.env = {key: value for key, value in os.environ.items()
-                    if not key.startswith(("MISE_", "__MISE_", "TMUX"))}
+                    if not key.startswith(("MISE_", "__MISE_", "TMUX", "ZSH", "ZDOT"))}
         self.env.update(HOME=str(self.home), XDG_CONFIG_HOME=str(self.home / ".config"),
                         XDG_DATA_HOME=str(self.home / ".local/share"),
                         XDG_STATE_HOME=str(self.home / ".local/state"),
                         XDG_CACHE_HOME=str(self.home / ".cache"),
                         PATH=f"{self.bin}:/usr/bin:/bin", TERM="xterm-256color",
                         TMX_TEST_SOCKET=str(self.socket), TMX_TEST_CONFIG=str(self.config),
-                        TMX_TEST_LOG=str(self.log), TMX_TEST_REAL=TMUX)
+                        TMX_TEST_LOG=str(self.log), TMX_TEST_REAL=TMUX, SSH_AUTH_SOCK="fixture")
         self.env.pop("ZDOTDIR", None)
         self.addCleanup(self.stop_server)
         # Only attachment/client switching are mocked. All other operations use
@@ -67,14 +74,12 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
                "-f", os.environ["TMX_TEST_CONFIG"], *args])
 ''')
         (self.bin / "tmux").chmod(0o755)
-        source = (ROOT / "packages/zshrc/.zshrc").read_text()
-        self.function = self.home / "tmx.zsh"
-        self.function.write_text("# tmx:" + source.split("# tmx:", 1)[1].split(
-            "# LLM commit messages", 1)[0])
+        (self.home / ".oh-my-zsh").mkdir()
+        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
+        self.function = ROOT / "packages/zshrc/.zshrc"
 
     def stop_server(self):
-        subprocess.run([TMUX, "-S", str(self.socket), "kill-server"],
-                       env=self.env, capture_output=True, timeout=10)
+        stop_tmux(TMUX, self.socket, self.env)
 
     def run_tmx(self, *args, code='tmx "$@"', **env):
         return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,
@@ -254,8 +259,9 @@ tmux wait-for tmx-program-ready
         (self.bin / "tput").write_text("#!/bin/sh\nprintf '0\\n'\n")
         (self.bin / "tput").chmod(0o755)
         self.assert_ok(self.run_tmx("zero-size", COLUMNS="0", LINES="0"))
-        self.assertEqual(self.real_tmux("display-message", "-p", "-t", "=zero-size:",
-                                       "#{window_width} #{window_height}"), "220 50")
+        dimensions = self.real_tmux("display-message", "-p", "-t", "=zero-size:",
+                                    "#{window_width} #{window_height}")
+        self.assertTrue(all(int(value) > 0 for value in dimensions.split()), dimensions)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,25 @@
+# Runtime compatibility only: this image never invokes setup.sh.
+ARG DISTRO=arch
+FROM archlinux:base AS arch
+RUN pacman -Syu --needed --noconfirm python git curl tar xz make gcc \
+    zsh tmux stow ripgrep shellcheck openssh which procps-ng findutils diffutils
+
+# Rocky provides an accessible EL9/glibc 2.34 baseline, not an exact copy of a
+# restricted installation. Dependencies are provisioned while building the image.
+FROM rockylinux:9 AS rhel9
+RUN dnf -y install epel-release && \
+    dnf -y install --allowerasing python3.11 git curl tar xz make gcc zsh tmux stow ripgrep \
+        ShellCheck openssh-clients procps-ng findutils diffutils && \
+    mkdir -p /opt/test-bin && ln -s /usr/bin/python3.11 /opt/test-bin/python3 && \
+    dnf clean all
+
+FROM ${DISTRO} AS runtime
+ENV PATH="/opt/test-bin:/opt/fixtures/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+RUN useradd --create-home tester && mkdir /opt/fixtures && chown tester /opt/fixtures
+WORKDIR /repo
+COPY scripts/prepare-test-fixtures.py scripts/test-fixtures.json scripts/
+COPY packages/nvim/.config/nvim/ packages/nvim/.config/nvim/
+COPY packages/mise/.config/mise/config.toml packages/mise/.config/mise/config.toml
+USER tester
+RUN python3 scripts/prepare-test-fixtures.py /opt/fixtures
+CMD ["python3", "scripts/check.py", "runtime", "--fixtures", "/opt/fixtures"]

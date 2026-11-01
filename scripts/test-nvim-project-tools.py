@@ -217,13 +217,9 @@ class FormattingTests(ProjectToolsTests):
         self.check(cases, missing=True)
         self.assertFalse((self.home / "formatter-calls").exists())
 
-    def test_shell_formatting_stays_disabled(self):
-        cases = [self.case(self.project, ft + ".sh", ft, 'echo    hello\n', unchanged=True) for ft in ("sh", "bash")]
-        self.check(cases)
-        self.assertFalse((self.home / "formatter-calls").exists())
-
-    def test_other_filetypes_skip_path_tools_and_lsp(self):
+    def test_unconfigured_filetypes_skip_path_tools_and_lsp(self):
         cases = [self.case(self.project, "file." + ext, ft, text, unchanged=True) for ext, ft, text in (
+            ("sh", "sh", 'echo    hello\n'), ("bash", "bash", 'echo    hello\n'),
             ("lua", "lua", 'local x={a=1}\n'), ("py", "python", 'x={"a":1}\n'),
             ("go", "go", 'package main\n'))]
         self.check(cases)

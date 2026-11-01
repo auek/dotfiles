@@ -1,0 +1,45 @@
+name: Runtime compatibility
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'Makefile'
+      - 'docker/Dockerfile.runtime'
+      - 'docker/runtime.sh'
+      - '.github/workflows/runtime.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'Makefile'
+      - 'docker/Dockerfile.runtime'
+      - 'docker/runtime.sh'
+      - '.github/workflows/runtime.yml'
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: runtime-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, rhel9]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build fixtures and run offline runtime checks
+        shell: bash
+        run: bash docker/runtime.sh "${{ matrix.distro }}" 2>&1 | tee runtime.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: runtime-${{ matrix.distro }}
+          path: runtime.log

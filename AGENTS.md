@@ -20,6 +20,8 @@ dotfiles/
 ├── Makefile                  # Stow link/unlink targets
 ├── docker/                   # Container test harness
 │   ├── compose.yml           # Arch, Fedora 42+, and Ubuntu 24.04 test containers
+│   ├── Dockerfile.runtime    # Arch and Rocky Linux 9 runtime fixtures, without setup.sh
+│   ├── runtime.sh            # Shared local/CI offline runtime container entrypoint
 │   ├── Dockerfile.arch
 │   ├── Dockerfile.fedora
 │   ├── Dockerfile.ubuntu
@@ -33,6 +35,10 @@ dotfiles/
 │   ├── setup_hyprland.md     # Arch desktop setup, migration, and customization
 │   ├── setup_wsl.md          # WSL2-specific setup notes
 ├── scripts/                  # Repo-only utilities: theme generator, palettes, templates, misc scripts
+│   ├── check.py              # Shared local/CI static, shell, editor, toolchain and runtime entrypoint
+│   ├── prepare-test-fixtures.py # Explicit networked fixture preparation into a disposable directory
+│   ├── test-fixtures.json    # Tool and shell-framework fixture versions (plugins use lazy-lock.json)
+│   ├── test-runtime.py       # Actual Zsh/Oh My Zsh, tmux config and theme-switch workflows
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
 │   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
@@ -269,6 +275,38 @@ Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
   - The stowed packages list in `AGENTS.md`
 
 ## Testing
+
+Strategy: prioritize existing-installation workflows on Arch and EL9 over fresh
+provisioning. Use real applications with tracked configuration in disposable
+homes; mock external devices/services. Run the affected component's baseline and
+add a focused regression only when it catches a meaningful user-visible failure
+that baseline misses. Avoid duplicated configuration values, upstream algorithm
+tests, coverage quotas, and a test-per-function rule.
+
+`make check` runs syntax and theme consistency checks. Prepare fixtures explicitly
+with `python3 scripts/prepare-test-fixtures.py /absolute/empty/directory`; this is
+the networked phase and must not target the real home. Then use
+`python3 scripts/check.py shell|editor|toolchain|runtime --fixtures /absolute/directory`
+(choose one suite). `make check-runtime FIXTURES=/absolute/directory` runs all runtime
+suites. Missing tools and stale fixtures are failures, not successful skips.
+See README's Testing section for prerequisites and fixture versions. Do not
+replace local tests with CI-only commands or silently omit expensive coverage.
+
+GitHub Actions runs static checks on every PR and configuration-triggered runtime
+jobs in Arch and Rocky Linux 9 containers, plus a weekly compatibility run. Runtime
+checks run as an ordinary user, offline, against a read-only checkout. The same
+jobs are available via `bash docker/runtime.sh arch|rhel9 [suite]` (choose a distro).
+Bootstrap CI runs Fedora slim for setup/linking changes, with other combinations
+available through manual dispatch. GitHub CI has passed both runtime images and
+Fedora slim bootstrap (two setup runs). Other fresh-install profiles and actual
+desktop sessions are not established by those results.
+
+The runtime baseline covers the actual workstation tmux config (the focused tmx
+suite intentionally uses a minimal config), real Oh My Zsh completion/plugin
+initialization (the mise/helper suites use stubs), and theme selection including
+rejection/reload failures. Editor startup scenarios can be rerun with
+`scripts/test-nvim.py ... --scenario NAME`; its summary explicitly states optional
+coverage. The prepared editor suite supplies plugins, LSPs and selected parsers.
 
 Hyprland verification status: isolated checks pass, and migration on the
 existing Arch workstation has been smoke-tested through a logout/login.

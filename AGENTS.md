@@ -44,7 +44,7 @@ dotfiles/
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh config and portable tmx sessions with optional local hooks
+    ├── zshrc/.zshrc          # Zsh config, private environment overrides, and portable tmx sessions
     ├── zprofile/.zprofile    # Login environment and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
@@ -104,6 +104,9 @@ ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
 `"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
 Do not Stow that file or change the shared pin for a machine-local preference.
 Project version files still override either global default.
+`.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
+environment overrides. Keep that file outside the repository; never Stow or
+commit its contents.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an

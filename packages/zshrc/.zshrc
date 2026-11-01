@@ -374,3 +374,8 @@ if command -v fd >/dev/null 2>&1 && command -v fzf >/dev/null 2>&1; then
 
   source <(fzf --zsh)
 fi
+
+# Machine-local environment overrides; keep this file outside the repository.
+if [[ -f "$HOME/.zshrc.private" ]]; then
+  source "$HOME/.zshrc.private"
+fi

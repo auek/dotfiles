@@ -216,7 +216,7 @@ if vim.env.SCENARIO == "native-plugins" then
   local pins = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lazy-lock.json"), "\n"))
   for name, plugin in pairs(config.plugins) do assert(plugin.commit == pins[name].commit, name) end
   for _, name in ipairs({"vim-fugitive", "dashboard-nvim", "nvim-notify", "trouble.nvim", "mason-lspconfig.nvim",
-      "cmp-cmdline", "conform.nvim", "markdown-preview.nvim", "nvim-yati", "nvim-ts-autotag"}) do
+      "cmp-cmdline", "conform.nvim", "nvim-lint", "markdown-preview.nvim", "nvim-yati", "nvim-ts-autotag"}) do
     assert(not config.plugins[name], name)
   end
   assert(config.plugins["nvim-cmp"] and config.plugins["gitsigns.nvim"] and config.plugins["nvim-treesitter"])
@@ -605,11 +605,11 @@ assert(listing:find("example.ts", 1, true), listing)
                 run([NVIM, "--headless", "-i", "NONE", *args,
                       "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
             local.write_text('return {servers={cssls=false, pyright=true}, parsers={"bash"}, '
-                             'features={format_on_save=true, markdown_preview=true}}\n')
+                             'features={format_on_save=true, eslint=true, markdown_preview=true}}\n')
             feature_checks = home / "features.lua"
             feature_checks.write_text('''
 local plugins = require("lazy.core.config").plugins
-assert(plugins["conform.nvim"] and plugins["markdown-preview.nvim"])
+assert(plugins["conform.nvim"] and plugins["nvim-lint"] and plugins["markdown-preview.nvim"])
 assert(not require("config.settings").servers.cssls)
 assert(not vim.lsp.is_enabled("cssls"))
 assert(vim.deep_equal(require("config.settings").parsers, {"bash"}))

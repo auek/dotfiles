@@ -1,4 +1,5 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim themes opencode claude espanso mise tealdeer
+STOW_PACKAGES = zshrc zprofile tmux nvim themes mise tealdeer
+STOW_INCLUDE ?=
 STOW_PACKAGES_HYPRLAND = foot hypr waybar wofi mako
 STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
@@ -7,6 +8,10 @@ STOW_DIR = $(CURDIR)/packages
 STOW_TARGET = $(HOME)
 # Keep shared XDG directories writable for tools such as uv and pipx.
 STOW = stow --no-folding --dir=$(STOW_DIR) --target=$(STOW_TARGET)
+
+# Ordinary machine-local preferences, never Stow-managed.
+-include $(or $(XDG_CONFIG_HOME),$(HOME)/.config)/dotfiles/local.mk
+STOW_SELECTED_PACKAGES = $(sort $(STOW_PACKAGES) $(STOW_INCLUDE))
 
 .PHONY: stow unstow restow stow-hyprland unstow-hyprland stow-server unstow-server stow-gtk unstow-gtk stow-foot unstow-foot themes-generate themes-check check check-runtime
 
@@ -20,13 +25,13 @@ restow: STOW += --restow
 
 stow restow:
 	mkdir -p "$(STOW_TARGET)/.local/state"
-	$(STOW) $(STOW_PACKAGES)
+	$(STOW) $(STOW_SELECTED_PACKAGES)
 	@if [ ! -e "$(STOW_TARGET)/.local/state/dotfiles/theme/current" ]; then \
 		HOME="$(STOW_TARGET)" "$(STOW_TARGET)/.local/bin/theme-set" everforest; \
 	fi
 
 unstow:
-	$(STOW) --delete $(STOW_PACKAGES)
+	$(STOW) --delete $(STOW_SELECTED_PACKAGES)
 
 stow-hyprland: stow
 	$(STOW) $(STOW_PACKAGES_HYPRLAND)

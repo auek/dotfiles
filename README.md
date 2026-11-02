@@ -43,8 +43,8 @@ With `--hyprland`, the desktop starts on the next local tty1 login; see the
 | `mise` | Node, Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | System trust store for tldr downloads |
 | `themes` | Everforest and Gruvbox across terminal, editor, and desktop |
-| `opencode`, `claude` | AI coding-tool configuration |
-| `espanso` | Text expansion |
+| `opencode`, `claude` | Optional AI coding-tool configuration |
+| `espanso` | Optional text expansion |
 | `foot`, `hypr`, `waybar`, `wofi`, `mako` | Optional Hyprland desktop |
 | `bashrc-server`, `vim-server`, `tmux-server` | Minimal headless configuration |
 | `gtk` | Optional settings for an externally installed GTK theme |
@@ -56,7 +56,8 @@ selected packages; use these commands from the repository root to manage links:
 
 | Command | Action |
 |---|---|
-| `make stow` / `make restow` | Link workstation packages |
+| `make stow` | Link shared workstation defaults and local includes |
+| `make restow` | Refresh workstation links after each `git pull` |
 | `make stow-server` | Link server packages |
 | `make stow-hyprland` | Link workstation and desktop packages |
 | `make stow-foot` | Link Foot and shared themes |
@@ -75,6 +76,7 @@ Keep machine-specific settings in ordinary, untracked files:
 
 | File | Purpose |
 |---|---|
+| `~/.config/dotfiles/local.mk` | Additional Stow packages for this machine |
 | `~/.zshrc.private` | Environment variables and shell overrides |
 | `~/.config/mise/config.local.toml` | Tool versions and extra tools |
 | `~/.config/nvim/local.lua` | Language servers, parsers, and editor features |
@@ -83,6 +85,16 @@ Keep machine-specific settings in ordinary, untracked files:
 
 Config paths respect `XDG_CONFIG_HOME`. Do not Stow or commit these local files.
 Restart the relevant application after editing.
+
+To include optional AI-tool and text-expansion configuration, put this in
+`~/.config/dotfiles/local.mk`:
+
+```make
+STOW_INCLUDE = opencode claude espanso
+```
+
+Includes apply to `make stow`, `make restow`, and `make unstow`. Removing an
+include does not automatically remove its existing links.
 
 For example, to follow Node LTS on one machine, put this in the local mise file:
 

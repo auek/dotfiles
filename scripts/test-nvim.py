@@ -310,6 +310,69 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.system = _G.real_system
   vim.uv.spawn = _G.real_spawn
   vim.fn.jobstart = _G.real_jobstart
+  -- Trouble stays dormant until requested, then shows diagnostics from any
+  -- publisher (including CLI linters), without requiring an attached LSP.
+  assert(not package.loaded.trouble, "Trouble loaded at startup")
+  local trouble_main = vim.api.nvim_get_current_win()
+  local trouble_buffers = {}
+  local trouble_ns = vim.api.nvim_create_namespace("trouble-regression")
+  for index = 1, 2 do
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, vim.env.HOME .. "/diagnostic-" .. index .. ".txt")
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"diagnostic fixture"})
+    vim.diagnostic.set(trouble_ns, buf, {{lnum=0, col=0, message="Trouble fixture " .. index,
+      severity=vim.diagnostic.severity.ERROR, source="fixture"}})
+    trouble_buffers[index] = buf
+  end
+  vim.api.nvim_win_set_buf(trouble_main, trouble_buffers[1])
+  local function trouble_key(key)
+    vim.api.nvim_feedkeys(" " .. key, "xt", false)
+  end
+  trouble_key("xx")
+  local trouble = require("trouble")
+  local function trouble_items(mode, count)
+    assert(vim.wait(3000, function() return #trouble.get_items(mode) == count end), mode)
+    local windows
+    assert(vim.wait(3000, function()
+      windows = vim.tbl_filter(function(win)
+        return vim.bo[vim.api.nvim_win_get_buf(win)].filetype == "trouble"
+      end, vim.api.nvim_list_wins())
+      return #windows == 1
+    end), "Trouble panel did not open")
+    local win = windows[1]
+    assert(vim.api.nvim_win_get_position(win)[1] > vim.api.nvim_win_get_position(trouble_main)[1])
+    assert(vim.api.nvim_get_current_win() == trouble_main, "Trouble stole focus")
+    assert(vim.wait(3000, function()
+      local lines = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(win), 0, -1, false)
+      return table.concat(lines, "\n"):find("Trouble fixture", 1, true) ~= nil
+    end), "Trouble did not render results")
+    local lines = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(win), 0, -1, false)
+    for _, char in ipairs(vim.fn.str2list(table.concat(lines, "\n"), true)) do
+      assert(not (char >= 0xe000 and char <= 0xf8ff) and char < 0xf0000, "Nerd Font glyph in Trouble")
+    end
+  end
+  trouble_items("diagnostics", 2)
+  trouble_key("xx")
+  assert(not trouble.is_open("diagnostics"))
+  trouble_key("xX")
+  trouble_items("diagnostics", 1)
+  assert(trouble.get_items("diagnostics")[1].buf == trouble_buffers[1])
+  trouble_key("xX")
+  assert(not trouble.is_open("diagnostics"))
+  local list_item = {bufnr=trouble_buffers[2], lnum=1, col=1, text="Trouble fixture list"}
+  vim.fn.setqflist({list_item})
+  vim.fn.setloclist(trouble_main, {list_item})
+  for key, mode in pairs({xQ="qflist", xL="loclist"}) do
+    trouble_key(key)
+    trouble_items(mode, 1)
+    trouble_key(key)
+    assert(not trouble.is_open(mode))
+  end
+  vim.fn.setqflist({})
+  vim.fn.setloclist(trouble_main, {})
+  vim.diagnostic.reset(trouble_ns)
+  for _, buf in ipairs(trouble_buffers) do vim.api.nvim_buf_delete(buf, {force=true}) end
+  print("PASS: lazy Trouble mappings, all/buffer diagnostics, quickfix/location lists and font-safe bottom panel")
   require("lazy").load({plugins={"nvim-cmp"}})
   assert(not package.loaded["nvim-treesitter.configs"] and not package.loaded["nvim-treesitter.query_predicates"])
   assert(not package.loaded["nvim-treesitter.install"], "parser installation must not run at startup")
@@ -820,6 +883,47 @@ vim.system = _G.real_system
 vim.uv.spawn = _G.real_spawn
 vim.fn.jobstart = _G.real_jobstart
 ''')
+            if options.parsers:
+                # Exercise actual insert mappings with modern parsers and the
+                # existing autopairs plugin, not autotag's internal functions.
+                (directory / "tags.tsx").write_text("const view = <Component\n")
+                run_ui([str(directory / "tags.tsx")], r'''
+assert(vim.bo.filetype == "typescriptreact")
+assert(vim.treesitter.get_parser(0, "tsx"), "missing TSX parser fixture")
+local function feed(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
+local function edit(before, keys, after)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {before})
+  vim.api.nvim_win_set_cursor(0, {1, #before - 1})
+  feed(keys)
+  assert(vim.api.nvim_get_current_line() == after, vim.api.nvim_get_current_line())
+end
+-- Starting directly in a TSX file must attach before the first typed tag.
+edit("const view = <Component", "a>text<Esc>", "const view = <Component>text</Component>")
+vim.api.nvim_win_set_cursor(0, {1, 15})
+feed("ciwPanel<Esc>")
+assert(vim.api.nvim_get_current_line() == "const view = <Panel>text</Panel>")
+edit("const view = <div", "a><Esc>", "const view = <div></div>")
+edit("const view = <Component /", "a><Esc>", "const view = <Component />")
+-- Autopairs still handles characters inside JSX expressions; an ordinary
+-- TypeScript generic must never acquire an HTML-style closing tag.
+edit("const view = <Component", "a>{<Esc>", "const view = <Component>{}</Component>")
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "typescript"
+edit("const values: Array<string", "a><Esc>", "const values: Array<string>")
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "javascriptreact"
+assert(vim.treesitter.get_parser(0, "javascript"), "missing JSX parser fixture")
+edit("const view = <Widget", "a><Esc>", "const view = <Widget></Widget>")
+-- Parsers remain explicitly installed: missing one leaves ordinary typing
+-- usable instead of downloading it or breaking the insert mapping.
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "html"
+assert(not vim.treesitter.get_parser(0, "html"), "HTML unexpectedly present in fixture")
+edit("<div", "a><Esc>", "<div>")
+''', env, directory, ui_before)
+                print("PASS: real TSX/JSX tag closing/renaming, self-closing tags, autopairs, generics and missing-parser safety")
             (directory / "notes.txt").write_text("file input\n")
             run_ui([str(directory / "notes.txt")], '''
 assert(not Snacks.dashboard.status.opened)

@@ -122,7 +122,7 @@ def main():
     output = dest / "parsers"
     (output / "parser").mkdir(parents=True)
     shutil.copytree(treesitter / "runtime/queries", output / "queries")
-    for language in ("bash", "typescript", "markdown", "markdown_inline"):
+    for language in ("bash", "javascript", "tsx", "typescript", "markdown", "markdown_inline"):
         info = parsers[language]["install_info"]
         source = dest / "grammar-sources" / language
         checkout(info["url"].removeprefix("https://github.com/"), info["revision"], source)

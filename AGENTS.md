@@ -65,9 +65,9 @@ dotfiles/
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
-    ├── opencode/.config/opencode/  # Commands (/pr), agents, MCP, permissions, watcher
-    ├── claude/.claude/
-    └── espanso/.config/espanso/
+    ├── opencode/.config/opencode/  # Opt-in commands (/pr), agents, MCP, permissions, watcher
+    ├── claude/.claude/            # Opt-in assistant configuration
+    └── espanso/.config/espanso/   # Opt-in text expansion
 ```
 
 ## Stow package convention
@@ -83,8 +83,14 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `opencode`, `claude`, `espanso`,
-`mise`, and `tealdeer`. Zsh's optional `ddcutil` helpers `br`, `br1`, and `br2`
+`zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `mise`, and `tealdeer`.
+Optional `opencode`, `claude`, and `espanso` configuration can be added with
+`STOW_INCLUDE = opencode claude espanso` in an ordinary, untracked
+`${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local.mk`. Includes are additive
+for `make stow`, `make restow`, and `make unstow`; removing an include does not
+remove existing links. Never Stow or commit the local file. Desktop and server
+targets retain their separate package groups.
+Zsh's optional `ddcutil` helpers `br`, `br1`, and `br2`
 read current/max brightness without arguments and set it with a value; `br`
 targets both displays, while `br1`/`br2` target one each.
 The shared `nvim` profile provides LSP/snippet/path/buffer
@@ -158,8 +164,7 @@ clean, migrate, or remove existing user data. For installations using the old
 `nvim-work` package, unstow it before pulling its removal, then link `nvim`.
 Basic editing survives bootstrap failure. Theme
 selection follows `theme-set` with Everforest/Habamax fallbacks; real Windows
-clipboard behavior still needs manual verification. Default package selection
-remains unchanged. `make stow-hyprland`
+clipboard behavior still needs manual verification. `make stow-hyprland`
 additionally links the desktop group: `foot`,
 `hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations

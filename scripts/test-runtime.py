@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Daily shell/tmux/theme workflows using tracked configs and real Oh My Zsh."""
+"""Daily Stow/shell/tmux/theme workflows using tracked configs and real Oh My Zsh."""
 
 import os
 from pathlib import Path
@@ -14,6 +14,83 @@ from test_support import stop_tmux
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = Path(os.environ["DOTFILES_TEST_FIXTURES"])
 TMUX = shutil.which("tmux")
+
+
+class MakeStowTests(unittest.TestCase):
+    def test_repeat_restow_refreshes_links_and_preserves_local_state(self):
+        with tempfile.TemporaryDirectory(prefix="dotfiles-restow-") as tmp:
+            base = Path(tmp)
+            repo, home = base / "repo", base / "home"
+            shutil.copytree(ROOT / "packages", repo / "packages")
+            shutil.copy2(ROOT / "Makefile", repo / "Makefile")
+            home.mkdir()
+            env = {key: value for key, value in os.environ.items()
+                   if not key.startswith(("XDG_", "MAKE", "MFLAGS"))}
+            env.update(HOME=str(home), PATH="/usr/bin:/bin")
+
+            def make(target, success=True):
+                result = subprocess.run(["make", target], cwd=repo, env=env,
+                                        capture_output=True, text=True, timeout=30)
+                if success:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                return result
+
+            local_files = {
+                ".config/nvim/local.lua": "return {servers={cssls=false}}\n",
+                ".config/mise/config.local.toml": '[tools]\nnode = "lts"\n',
+                ".config/hypr/hyprland.lua": '-- local desktop preferences\n',
+                ".config/tmx/init.zsh": "# local session hook\n",
+                ".zshrc.private": "# local shell preferences\n",
+            }
+            for name, contents in local_files.items():
+                path = home / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(contents)
+            current = home / ".local/state/dotfiles/theme/current"
+            current.parent.mkdir(parents=True)
+            selection = repo / "packages/themes/.local/share/dotfiles/themes/gruvbox"
+            current.symlink_to(selection, target_is_directory=True)
+            # Existing selections must not be reinitialized. Poison the copied
+            # command so even a regression cannot contact host reload services.
+            (repo / "packages/themes/.local/bin/theme-set").write_text("#!/bin/sh\nexit 99\n")
+            foot = home / ".config/foot/foot.ini"
+            foot.parent.mkdir()
+            foot_source = repo / "packages/foot/.config/foot/foot.ini"
+            foot.symlink_to(foot_source)
+            source = repo / "packages/nvim/.config/nvim/lua/config"
+            old, removed = source / "old.lua", source / "removed.lua"
+            old.write_text("-- renamed after pull\n")
+            removed.write_text("-- deleted after pull\n")
+            make("stow")
+            old.rename(source / "new.lua")
+            removed.unlink()
+            (source / "added.lua").write_text("-- added after pull\n")
+            for _ in range(2):
+                make("restow")
+                config = home / ".config/nvim/lua/config"
+                for name in ("old.lua", "removed.lua"):
+                    self.assertFalse(os.path.lexists(config / name), name)
+                for name in ("new.lua", "added.lua"):
+                    self.assertTrue((config / name).is_symlink())
+                    self.assertEqual((config / name).resolve(), source / name)
+                for name, contents in local_files.items():
+                    self.assertFalse((home / name).is_symlink(), name)
+                    self.assertEqual((home / name).read_text(), contents)
+                self.assertEqual(current.readlink(), selection)
+                self.assertEqual(foot.readlink(), foot_source)
+                for name in ("waybar", "wofi", "mako"):
+                    self.assertFalse((home / ".config" / name).exists(), name)
+                self.assertFalse((home / ".config/hypr/dotfiles.lua").exists())
+            # A newly tracked path must not overwrite a machine-local file.
+            conflict = home / ".config/nvim/lua/config/conflict.lua"
+            conflict.write_text("-- preserve local file\n")
+            (source / "conflict.lua").write_text("-- shared file\n")
+            make("restow", success=False)
+            self.assertFalse(conflict.is_symlink())
+            self.assertEqual(conflict.read_text(), "-- preserve local file\n")
+            self.assertEqual((source / "conflict.lua").read_text(), "-- shared file\n")
 
 
 class RuntimeTests(unittest.TestCase):

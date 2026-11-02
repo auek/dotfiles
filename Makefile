@@ -16,7 +16,9 @@ themes-generate:
 themes-check:
 	python3 scripts/generate-themes.py check
 
-stow:
+restow: STOW += --restow
+
+stow restow:
 	mkdir -p "$(STOW_TARGET)/.local/state"
 	$(STOW) $(STOW_PACKAGES)
 	@if [ ! -e "$(STOW_TARGET)/.local/state/dotfiles/theme/current" ]; then \
@@ -25,8 +27,6 @@ stow:
 
 unstow:
 	$(STOW) --delete $(STOW_PACKAGES)
-
-restow: stow
 
 stow-hyprland: stow
 	$(STOW) $(STOW_PACKAGES_HYPRLAND)

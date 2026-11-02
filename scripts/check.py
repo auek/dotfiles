@@ -21,7 +21,7 @@ def main():
     args = parser.parse_args()
     env = os.environ.copy()
     commands = []
-    required = {"static": ["bash", "zsh"], "shell": ["zsh", "tmux"],
+    required = {"static": ["bash", "zsh"], "shell": ["zsh", "tmux", "make", "stow"],
                 "editor": ["stow", "rg", "shellcheck"], "toolchain": ["zsh", "stow"]}
     suites = ["shell", "editor", "toolchain"] if args.suite == "runtime" else [args.suite]
     if args.suite != "static":

@@ -56,7 +56,8 @@ selected packages; use these commands from the repository root to manage links:
 
 | Command | Action |
 |---|---|
-| `make stow` / `make restow` | Link workstation packages |
+| `make stow` | Link workstation packages |
+| `make restow` | Refresh workstation links after each `git pull` |
 | `make stow-server` | Link server packages |
 | `make stow-hyprland` | Link workstation and desktop packages |
 | `make stow-foot` | Link Foot and shared themes |

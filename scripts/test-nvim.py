@@ -883,6 +883,47 @@ vim.system = _G.real_system
 vim.uv.spawn = _G.real_spawn
 vim.fn.jobstart = _G.real_jobstart
 ''')
+            if options.parsers:
+                # Exercise actual insert mappings with modern parsers and the
+                # existing autopairs plugin, not autotag's internal functions.
+                (directory / "tags.tsx").write_text("const view = <Component\n")
+                run_ui([str(directory / "tags.tsx")], r'''
+assert(vim.bo.filetype == "typescriptreact")
+assert(vim.treesitter.get_parser(0, "tsx"), "missing TSX parser fixture")
+local function feed(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
+local function edit(before, keys, after)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {before})
+  vim.api.nvim_win_set_cursor(0, {1, #before - 1})
+  feed(keys)
+  assert(vim.api.nvim_get_current_line() == after, vim.api.nvim_get_current_line())
+end
+-- Starting directly in a TSX file must attach before the first typed tag.
+edit("const view = <Component", "a>text<Esc>", "const view = <Component>text</Component>")
+vim.api.nvim_win_set_cursor(0, {1, 15})
+feed("ciwPanel<Esc>")
+assert(vim.api.nvim_get_current_line() == "const view = <Panel>text</Panel>")
+edit("const view = <div", "a><Esc>", "const view = <div></div>")
+edit("const view = <Component /", "a><Esc>", "const view = <Component />")
+-- Autopairs still handles characters inside JSX expressions; an ordinary
+-- TypeScript generic must never acquire an HTML-style closing tag.
+edit("const view = <Component", "a>{<Esc>", "const view = <Component>{}</Component>")
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "typescript"
+edit("const values: Array<string", "a><Esc>", "const values: Array<string>")
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "javascriptreact"
+assert(vim.treesitter.get_parser(0, "javascript"), "missing JSX parser fixture")
+edit("const view = <Widget", "a><Esc>", "const view = <Widget></Widget>")
+-- Parsers remain explicitly installed: missing one leaves ordinary typing
+-- usable instead of downloading it or breaking the insert mapping.
+vim.cmd.enew({bang=true})
+vim.bo.filetype = "html"
+assert(not vim.treesitter.get_parser(0, "html"), "HTML unexpectedly present in fixture")
+edit("<div", "a><Esc>", "<div>")
+''', env, directory, ui_before)
+                print("PASS: real TSX/JSX tag closing/renaming, self-closing tags, autopairs, generics and missing-parser safety")
             (directory / "notes.txt").write_text("file input\n")
             run_ui([str(directory / "notes.txt")], '''
 assert(not Snacks.dashboard.status.opened)

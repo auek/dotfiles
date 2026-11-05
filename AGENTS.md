@@ -336,7 +336,7 @@ the networked phase and must not target the real home. Then use
 (choose one suite). `make check-runtime FIXTURES=/absolute/directory` runs all runtime
 suites. Missing tools and stale fixtures are failures, not successful skips.
 Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a C
-compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, and ShellCheck.
+compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, fzf, and ShellCheck.
 Versions come from `scripts/test-fixtures.json` (including an exact Node fixture
 independent of the shared LTS default) and
 `lazy-lock.json` for plugins/grammars. Use a new empty fixture directory when

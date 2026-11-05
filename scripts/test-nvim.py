@@ -222,6 +222,9 @@ end
         checks = home / "checks.lua"
         checks.write_text(r'''
 local function read(path) return vim.fn.readfile(path, "b") end
+local function press(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
 local settings = require("config.settings")
 assert(settings.servers.ts_ls and settings.servers.yamlls and settings.servers.bashls)
@@ -248,6 +251,27 @@ if vim.env.SCENARIO ~= "native-plugins" then
   end
 end
 assert(vim.fn.filereadable(vim.env.HOME .. "/calls") == 0)
+do
+  local lines, columns = vim.o.lines, vim.o.columns
+  vim.o.lines, vim.o.columns = 40, 120
+  vim.cmd.split()
+  local win = vim.api.nvim_get_current_win()
+  local height = vim.api.nvim_win_get_height(win)
+  press("<C-Up>")
+  assert(vim.api.nvim_win_get_height(win) == height + 2)
+  press("<C-Down>")
+  assert(vim.api.nvim_win_get_height(win) == height)
+  vim.cmd.close()
+  vim.cmd.vsplit()
+  win = vim.api.nvim_get_current_win()
+  local width = vim.api.nvim_win_get_width(win)
+  press("<C-Left>")
+  assert(vim.api.nvim_win_get_width(win) == width - 5)
+  press("<C-Right>")
+  assert(vim.api.nvim_win_get_width(win) == width)
+  vim.cmd.close()
+  vim.o.lines, vim.o.columns = lines, columns
+end
 if vim.env.SCENARIO == "wsl" then
   assert(vim.g.clipboard.name == "WSL Windows clipboard")
   vim.system = _G.real_system
@@ -274,6 +298,44 @@ if vim.env.SCENARIO == "wsl" then
   assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == table.concat(lines, "\n") .. "\n", vim.inspect(read(vim.env.HOME .. "/copied")))
   vim.fn.writefile({"provider\r", "paste"}, vim.env.HOME .. "/paste", "b")
   assert(vim.deep_equal(vim.fn.getreg("*", 1, true), {"provider", "paste"}))
+  -- Exercise the path-copy keys through the actual WSL clipboard provider.
+  -- Spaces, Unicode and shell-looking text must remain data, without a newline.
+  do
+    local notify = vim.notify
+    local notifications = {}
+    vim.notify = function(message) table.insert(notifications, message) end
+    local copied = table.concat(read(vim.env.HOME .. "/copied"), "\n")
+    press(" fy") -- unnamed buffers must not replace clipboard contents
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == copied)
+    assert(notifications[#notifications]:find("no file path", 1, true))
+    local original_cwd = vim.fn.getcwd()
+    local directory = vim.env.HOME .. "/path project"
+    vim.fn.mkdir(directory .. "/src", "p")
+    vim.cmd.cd(vim.fn.fnameescape(directory))
+    local relative = [[src/åäö 'quoted' $(not-code).tsx]]
+    local absolute = directory .. "/" .. relative
+    vim.api.nvim_buf_set_name(0, absolute)
+    vim.fn.setreg('"', "preserve ordinary register", "v")
+    press(" fy")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == absolute)
+    assert(notifications[#notifications] == "Copied path: " .. absolute)
+    assert(vim.fn.getreg('"') == "preserve ordinary register")
+    press(" fY")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == relative)
+    assert(notifications[#notifications] == "Copied path: " .. relative)
+    vim.bo.buftype = "nofile"
+    press(" fy")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == relative)
+    vim.bo.buftype = ""
+    local setreg = vim.fn.setreg
+    vim.fn.setreg = function() error("fixture clipboard failure") end
+    press(" fy")
+    assert(notifications[#notifications]:find("Could not copy file path", 1, true))
+    vim.fn.setreg = setreg
+    vim.api.nvim_buf_set_name(0, "")
+    vim.cmd.cd(vim.fn.fnameescape(original_cwd))
+    vim.notify = notify
+  end
   local calls = vim.fn.readfile(vim.env.HOME .. "/calls")
   for _, call in ipairs(calls) do
     local args = vim.json.decode(call)
@@ -561,13 +623,26 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.cmd.close()
   assert(not package.loaded["nvim-tree"])
   vim.cmd.edit(project .. "/code.txt")
-  vim.cmd.NvimTreeFindFileToggle()
+  press("<Esc>") -- Telescope's prompt can leave insert mode pending in this script
+  press(" fE") -- reveal also loads the tree on first use
   assert(vim.bo.filetype == "NvimTree")
   local tree = require("nvim-tree.api")
   assert(tree.tree.is_visible())
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/code.txt")
+  local tree_window = vim.api.nvim_get_current_win()
   local listing = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
   assert(listing:find("code.txt", 1, true) and listing:find(".hidden", 1, true), listing)
   assert(not listing:find("HEAD", 1, true))
+  vim.cmd.wincmd("p")
+  vim.cmd.edit(project .. "/.hidden")
+  press(" fE") -- an open tree must reveal the new file, not close
+  assert(vim.api.nvim_get_current_win() == tree_window)
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/.hidden")
+  press(" fe")
+  assert(not tree.tree.is_visible())
+  press(" fe") -- preserve the existing toggle-and-reveal behavior
+  assert(tree.tree.is_visible())
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/.hidden")
   tree.tree.close()
   assert(not tree.tree.is_visible())
   local themes = vim.env.HOME .. "/.local/state/dotfiles/theme/"
@@ -716,6 +791,95 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
         if scenario == "unrestowed":
             assert "restow the nvim package" in result.stderr
         if scenario == "native-plugins":
+            scoped_project = home / "scoped monorepo"
+            scope_name = "foo app åäö 'quoted' $(not-code)"
+            for name, text in {
+                "main.txt": "starting buffer\n",
+                ".gitignore": "ignored.txt\nnode_modules/\n",
+                f"{scope_name}/match.txt": "scoped-needle inside selected directory\n",
+                f"{scope_name}/.hidden": "scoped-needle hidden file\n",
+                f"{scope_name}/ignored.txt": "scoped-needle ignored file\n",
+                f"{scope_name}/node_modules/dependency.txt": "scoped-needle ignored dependency\n",
+                "bar-app/match.txt": "scoped-needle outside selected directory\n",
+            }.items():
+                path = scoped_project / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text)
+            run(["git", "init", "-q", str(scoped_project)], env)
+            (scoped_project / ".git/hidden-result").write_text("scoped-needle Git metadata\n")
+            scoped_checks = home / "tree-search.lua"
+            scoped_checks.write_text(r'''
+vim.system, vim.uv.spawn, vim.fn.jobstart = _G.real_system, _G.real_spawn, _G.real_jobstart
+local project = vim.env.HOME .. "/scoped monorepo"
+local scope_name = [[foo app åäö 'quoted' $(not-code)]]
+local scope = project .. "/" .. scope_name
+local function press(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
+vim.cmd.cd(vim.fn.fnameescape(project))
+vim.cmd.edit(vim.fn.fnameescape(project .. "/main.txt"))
+local editor_window = vim.api.nvim_get_current_win()
+assert(not package.loaded["telescope.builtin"])
+vim.cmd.NvimTreeToggle()
+local tree = require("nvim-tree.api")
+tree.tree.find_file({buf=scope, open=true, focus=true})
+assert(vim.fn.maparg(" fg", "n", false, true).buffer == 1)
+assert(vim.fn.maparg("<CR>", "n", false, true).buffer == 1, "default tree mappings lost")
+local function results(expected, select_result)
+  local prompt = vim.api.nvim_get_current_buf()
+  local picker = require("telescope.actions.state").get_current_picker(prompt)
+  local completed = false
+  picker:register_completion_callback(function() completed = true end)
+  picker:set_prompt("scoped-needle")
+  assert(vim.wait(5000, function() return completed end), "scoped search timed out")
+  local found = {}
+  for entry in picker.manager:iter() do found[entry.filename] = true end
+  assert(vim.deep_equal(found, expected), vim.inspect(found))
+  if select_result then
+    require("telescope.actions").select_default(prompt)
+    assert(vim.bo.buftype == "", "result replaced the file tree")
+    if editor_window then assert(vim.api.nvim_get_current_win() == editor_window) end
+    assert(vim.startswith(vim.api.nvim_buf_get_name(0), scope .. "/"))
+    assert(tree.tree.is_visible())
+  else
+    require("telescope.actions").close(prompt)
+  end
+  press("<Esc>")
+  assert(vim.fn.getcwd() == project, "scoped search changed global cwd")
+end
+for _, selected in ipairs({scope, scope .. "/match.txt"}) do
+  tree.tree.find_file({buf=selected, open=true, focus=true})
+  press(" fg")
+  local prompt = vim.api.nvim_get_current_buf()
+  local picker = require("telescope.actions.state").get_current_picker(prompt)
+  assert(picker.cwd == scope, vim.inspect(picker.cwd))
+  assert(picker.prompt_title:find(scope_name, 1, true))
+  results({["match.txt"]=true, [".hidden"]=true}, selected ~= scope)
+end
+assert(vim.fn.maparg(" fg", "n", false, true).buffer == 0)
+press(" fg")
+results({[scope_name .. "/match.txt"]=true, [scope_name .. "/.hidden"]=true,
+  ["bar-app/match.txt"]=true}, false)
+-- A tree-only layout should open a result in a new editor split.
+tree.tree.find_file({buf=scope, open=true, focus=true})
+vim.api.nvim_win_close(editor_window, true)
+editor_window = nil
+press(" fg")
+results({["match.txt"]=true, [".hidden"]=true}, true)
+tree.tree.find_file({buf=scope, open=true, focus=true})
+local executable, notify = vim.fn.executable, vim.notify
+local warning
+vim.fn.executable = function(cmd) return cmd == "rg" and 0 or executable(cmd) end
+vim.notify = function(message) warning = message end
+press(" fg")
+assert(warning:find("requires ripgrep", 1, true))
+assert(vim.bo.filetype == "NvimTree")
+vim.fn.executable, vim.notify = executable, notify
+print("PASS: tree-scoped directory/file searches, lazy Telescope, Unicode/spaces, ignore rules, result selection and project-wide search")
+''')
+            result = run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                          "-c", f"luafile {scoped_checks}", "-c", "qa!"], env)
+            print((result.stdout + result.stderr).strip())
             selection = home / ".local/state/dotfiles/theme/current"
             selection.unlink()
             selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)

@@ -96,6 +96,14 @@ targets both displays, while `br1`/`br2` target one each.
 The shared `nvim` profile provides LSP/snippet/path/buffer
 completion, Git indicators, selected Treesitter highlighting, search/tree,
 themes, status line, key hints, pairs/surround, and safe tmux navigation.
+Ctrl+arrows resize editor splits; tmux pane resizing keeps prefix+Ctrl+arrows.
+`<leader>fe` toggles the tree and `<leader>fE` reveals the current source file
+without closing an open tree. Explicit `<leader>fy`/`<leader>fY` copies use the
+system clipboard provider for absolute/cwd-relative paths, preserving spaces
+and Unicode without a trailing newline. Unnamed and special buffers are skipped.
+The tree-local `<leader>fg` uses Telescope live grep with the selected directory
+as picker cwd (a file selects its parent). Global cwd stays unchanged. Default
+tree mappings and the project-wide search outside the tree remain available.
 `features.format_on_save` enables project-local Prettier through Conform;
 `features.eslint` enables project-local ESLint CLI diagnostics through pinned
 nvim-lint on open/save. Both default off. Diagnostics never apply fixes.

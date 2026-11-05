@@ -19,7 +19,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../../..'
 
-alias gst='git status --short'
+alias gst='git status --short --branch'
 alias gb='git branch --sort=-committerdate'
 alias glg='git log'
 alias gl='git pull'

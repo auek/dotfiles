@@ -56,9 +56,10 @@ def main():
     def download(url, output):
         run("curl", "--fail", "--location", "--retry", "3", "--silent", "--show-error", url, "-o", output)
 
-    def archive(url, target, checksums=None, sha256=None):
+    def archive(url, target, checksums=None, sha256=None, download_dir=None):
         filename = url.rsplit("/", 1)[1]
-        output = dest / filename
+        output = (download_dir or dest) / filename
+        output.parent.mkdir(parents=True, exist_ok=True)
         download(url, output)
         checksum_file = dest / (filename + ".checksums")
         if checksums:
@@ -72,7 +73,8 @@ def main():
             raise RuntimeError(f"Checksum mismatch or missing entry: {filename}")
         target.mkdir()
         run("tar", "xf", output, "--strip-components=1", "-C", target)
-        output.unlink()
+        if download_dir is None:
+            output.unlink()
         checksum_file.unlink(missing_ok=True)
 
     for version, name in ((node, "node"), (config["other-node"], "other-node")):
@@ -80,7 +82,11 @@ def main():
         archive(f"{base}/node-v{version}-linux-x64.tar.xz", dest / name, f"{base}/SHASUMS256.txt")
     version = config["neovim"]
     base = f"https://github.com/neovim/neovim/releases/download/v{version}"
-    archive(f"{base}/nvim-linux-x86_64.tar.gz", dest / "neovim", sha256=config["neovim-sha256"])
+    # Reuse this SHA256-verified archive for the real Aqua installation below.
+    # A second download of the same large release asset can fail independently.
+    nvim_downloads = dest / "mise-data/downloads/aqua-neovim-neovim" / version
+    archive(f"{base}/nvim-linux-x86_64.tar.gz", dest / "neovim",
+            sha256=config["neovim-sha256"], download_dir=nvim_downloads)
     version = config["mise"]
     base = f"https://github.com/jdx/mise/releases/download/v{version}"
     archive(f"{base}/mise-v{version}-linux-x64.tar.xz", dest / "mise", f"{base}/SHASUMS256.txt")
@@ -146,7 +152,11 @@ def main():
     checkout("microsoft/azure-pipelines-vscode", config["azure-schema"], dest / "azure-schema")
     shutil.copy2(dest / "azure-schema/service-schema.json", mason / "azure-schema.json")
     # Preserve the Aqua backend metadata required by the real mise tests.
+    # The pinned mise version otherwise cleans downloads before installation.
+    # Keep its normal checksum verification, then discard the build-only archive.
+    env["MISE_ALWAYS_KEEP_DOWNLOAD"] = "1"
     run("mise", "install", f"aqua:neovim/neovim@{config['neovim']}", cwd=home)
+    shutil.rmtree(nvim_downloads)
     ready.write_text(json.dumps({"identity": identity, "versions": config}, indent=2) + "\n")
     print(f"Fixtures ready: {dest}")
 

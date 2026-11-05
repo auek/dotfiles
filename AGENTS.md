@@ -136,6 +136,17 @@ an earlier `compinit` or disable its audits. Login/interactive startup adds mise
 shim PATH entries directly (respecting its data/shim and XDG overrides), then
 interactive Zsh performs one full mise activation. Keep its initial environment
 hook: deferring it only to improve an exit benchmark changes first-command behavior.
+Zsh's `gst` includes the branch header, and `gmm` fetches origin before merging
+`origin/main` into the current branch. `gwl` lists worktrees; `gwc [name|branch|path]`
+enters a registered worktree root (fzf picker without arguments).
+`gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
+origin branch, or creates from already-fetched `origin/main` without an upstream.
+It enters the new worktree by default. Destinations default to siblings of the
+original checkout; an ordinary per-repository `dotfiles.worktreeDir` Git setting
+can override the parent (relative values resolve from the original checkout).
+`gwr [--no-cd] <name|branch|path>` keeps branches and never forces removal. It
+moves out of the target to the original checkout, restoring cwd on failure;
+`--no-cd` refuses removal from inside the target. Existing worktrees are not moved.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an
@@ -325,7 +336,7 @@ the networked phase and must not target the real home. Then use
 (choose one suite). `make check-runtime FIXTURES=/absolute/directory` runs all runtime
 suites. Missing tools and stale fixtures are failures, not successful skips.
 Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a C
-compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, and ShellCheck.
+compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, fzf, and ShellCheck.
 Versions come from `scripts/test-fixtures.json` (including an exact Node fixture
 independent of the shared LTS default) and
 `lazy-lock.json` for plugins/grammars. Use a new empty fixture directory when
@@ -405,6 +416,7 @@ Run the lightweight isolated checks with:
 python3 scripts/test-hyprland-bootstrap.py
 python3 scripts/test-tmx.py
 python3 scripts/test-server.py
+python3 scripts/test-worktrees.py
 bash -n setup.sh scripts/configure-hyprland.sh docker/test.sh
 zsh -n packages/zprofile/.zprofile
 make themes-check
@@ -419,6 +431,9 @@ hooks, program startup, hook isolation/failures, and terminal-size fallbacks.
 The server checks require Bash, Git, Make, Stow, and tmux; they cover actual
 shell startup, private overrides, read-oriented Git aliases, Stow preservation,
 and the server tmux config's new-window/split directory behavior in disposable homes.
+The worktree checks use real Git with local remotes in disposable homes, mocked
+picker interactions, and a real fzf filter-mode check; they never access host
+repositories or the network.
 Python's `tempfile` manages creation and cleanup, with no dependency on an
 agent-specific directory.
 

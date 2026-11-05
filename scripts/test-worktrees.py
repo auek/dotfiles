@@ -113,6 +113,15 @@ sys.stdout.buffer.write(target + b"\\0")
         self.assertIn("## main...origin/main", result.stdout)
         self.assertIn("[theme1]", result.stdout)
 
+    def test_add_help_is_readable_and_available_outside_a_repository(self):
+        for flag in ("-h", "--help"):
+            with self.subTest(flag=flag):
+                result = self.shell('gwa "$1"', flag, cwd=self.home)
+                for section in ("Branch selection:", "Options:", "Examples:", "Location:"):
+                    self.assertIn(f"\n\n{section}\n", result.stdout)
+                self.assertIn("    git config --local dotfiles.worktreeDir ../worktrees\n", result.stdout)
+                self.assertTrue(all(len(line) <= 80 for line in result.stdout.splitlines()))
+
     def test_new_branch_enters_sibling_without_tracking_main(self):
         result = self.shell('gwa theme1 && printf "CWD:%s\\n" "$PWD"', cwd=self.main / "app1")
         tree = self.container / "theme1"

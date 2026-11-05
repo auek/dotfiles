@@ -430,13 +430,33 @@ gwa() {
     shift
   fi
   if [[ "$1" == -h || "$1" == --help ]]; then
-    print -r -- 'Usage: gwa [--no-cd] <directory-name> [<branch>]'
-    print -r -- 'Reuse a local branch, track origin/<branch>, or create from origin/main with no upstream.'
-    print -r -- 'Uses already-fetched refs; fetch origin first when needed. Enters the new worktree unless --no-cd.'
-    print -r -- 'Destination: siblings of the original checkout, or git config dotfiles.worktreeDir.'
-    print -r -- 'To use a worktrees/ directory beside the original checkout, run once in this repository:'
-    print -r -- '  git config --local dotfiles.worktreeDir ../worktrees'
-    print -r -- 'Relative paths resolve from the original checkout, not your current directory.'
+    print -r -- 'Usage: gwa [--no-cd] <directory-name> [<branch>]
+
+Create a worktree and enter it. Branch defaults to directory-name.
+
+Branch selection:
+  1. Reuse the local branch, if it exists.
+  2. Otherwise, track the matching origin/<branch>, if it exists.
+  3. Otherwise, create from origin/main with no upstream.
+
+  Uses fetched refs. Run git fetch origin first to refresh them.
+
+Options:
+  --no-cd       Create without changing your current directory.
+  -h, --help    Show this help.
+
+Examples:
+  gwa theme1                  Create and enter theme1.
+  gwa theme1 feature/story    Use a different branch name.
+  gwa --no-cd theme2          Create theme2 without entering it.
+
+Location:
+  Default: beside the original checkout (flat layout).
+  To use a worktrees/ directory instead, run once per repository:
+
+    git config --local dotfiles.worktreeDir ../worktrees
+
+  Relative paths resolve from the original checkout, not your current directory.'
     return 0
   fi
   if (( $# < 1 || $# > 2 )) || [[ -z "$1" || "$1" == -* || "$1" == */* || "$1" == . || "$1" == .. ]]; then

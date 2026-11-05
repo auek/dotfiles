@@ -42,7 +42,8 @@ dotfiles/
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
 │   ├── configure-hyprland.sh # Preserve local entrypoint and opt into tty1 autostart
 │   ├── test-hyprland-bootstrap.py # Isolated bootstrap and login-guard checks
-│   ├── test-tmx.py           # Isolated Zsh session/local-hook checks with private tmux sockets
+│   ├── test-tmx.py           # Isolated Zsh/Bash session/local-hook checks with private tmux sockets
+│   ├── test-server.py        # Server Bash, private overrides, Stow, and tmux runtime checks
 │   ├── test-br.py            # Isolated Zsh brightness read/set checks with mocked ddcutil
 │   ├── test-nvim.py          # Shared editor, local settings, clipboard, plugins, and LSP fixtures
 │   ├── test-nvim-project-tools.py # Real project-local Prettier/ESLint and forbidden-fallback checks
@@ -142,6 +143,12 @@ ordinary, untracked `${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.zsh` hook custom
 them. The hook runs in a separate `zsh -ef` process with session/window/pane IDs
 and the absolute directory as arguments; it never runs on reattachment. No
 editor or assistant is launched by shared code. Never Stow the local hook.
+The server Bash `tmx` follows the same behavior with an ordinary, untracked
+`${XDG_CONFIG_HOME:-$HOME/.config}/tmx/init.bash` hook, run in a separate
+`bash --noprofile --norc -ef` process with the same arguments. Server Bash also
+sources an ordinary `~/.bashrc.private` at the end for machine-local overrides.
+Never Stow or commit either file. Server Git aliases cover status, navigation,
+and pulling, not commit/push shortcuts.
 Neovim is managed through mise, not Bob. It uses one `nvim` Stow package;
 machine-local options live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
@@ -397,6 +404,7 @@ Run the lightweight isolated checks with:
 ```bash
 python3 scripts/test-hyprland-bootstrap.py
 python3 scripts/test-tmx.py
+python3 scripts/test-server.py
 bash -n setup.sh scripts/configure-hyprland.sh docker/test.sh
 zsh -n packages/zprofile/.zprofile
 make themes-check
@@ -404,10 +412,13 @@ make themes-check
 
 The Python checks use disposable homes and mocked commands in the system
 temporary directory; they do not execute host setup, Stow, or service-manager
-operations. The `tmx` checks require Zsh and tmux and use real private tmux
+operations. The `tmx` checks require Bash, Zsh and tmux and use real private tmux
 sockets with attach/switch commands mocked; they never access host sessions.
 They cover listing, exact-name attachment, directory handling, 80/20 and 50/50
 hooks, program startup, hook isolation/failures, and terminal-size fallbacks.
+The server checks require Bash, Git, Make, Stow, and tmux; they cover actual
+shell startup, private overrides, read-oriented Git aliases, Stow preservation,
+and the server tmux config's new-window/split directory behavior in disposable homes.
 Python's `tempfile` manages creation and cleanup, with no dependency on an
 agent-specific directory.
 

@@ -11,6 +11,7 @@ __pycache__/
 
 # Machine-local shell environment (never commit)
 .zshrc.private
+.bashrc.private
 
 # opencode runtime files
 packages/opencode/.config/opencode/node_modules/

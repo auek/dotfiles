@@ -63,7 +63,7 @@ class ServerTests(unittest.TestCase):
     def test_git_status_and_navigation_without_writing_shortcuts(self):
         self.checked("git", "init", "-b", "main")
         (self.home / "pending.txt").write_text("pending\n")
-        self.assertEqual(self.bash('gst -- pending.txt', True), "?? pending.txt")
+        self.assertEqual(self.bash('gst -- pending.txt', True), "## No commits yet on main\n?? pending.txt")
         self.assertEqual(self.bash('alias gco'), "alias gco='git checkout'")
         self.bash('for name in gp gpsup gcane gcam gcmsg gcb; do '
                   'if alias "$name" >/dev/null 2>&1; then exit 1; fi; done')

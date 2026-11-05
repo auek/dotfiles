@@ -96,11 +96,12 @@ STOW_INCLUDE = opencode claude espanso
 Includes apply to `make stow`, `make restow`, and `make unstow`. Removing an
 include does not automatically remove its existing links.
 
-For example, to follow Node LTS on one machine, put this in the local mise file:
+Node follows LTS by default. To select a specific major on one machine, put this
+in the local mise file:
 
 ```toml
 [tools]
-node = "lts"
+node = "24"
 ```
 
 ## Everyday use

@@ -112,12 +112,12 @@ Lua/Python and generic LSP fallbacks.
 It has no assistant completion provider or separate Git command plugin.
 Telescope 0.2.1 is pinned for native Treesitter previews; do not revert to the
 0.1.8 previewer, which calls APIs removed by the supported Treesitter rewrite.
-The `mise` package defaults to Node 24.19.0 and selects
+The `mise` package defaults to Node `lts` and selects
 latest stable Aqua releases of Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch,
 ripgrep, fd, and fzf. A machine may override Node or add optional tools with an
-ordinary, untracked `~/.config/mise/config.local.toml` (`node = "lts"` and
-`"aqua:astral-sh/uv" = "latest"` on the Arch workstation).
-Do not Stow that file or change the shared pin for a machine-local preference.
+ordinary, untracked `~/.config/mise/config.local.toml` (for example, `node = "24"`
+or `"aqua:astral-sh/uv" = "latest"`).
+Do not Stow that file or change the shared default for a machine-local preference.
 Project version files still override either global default.
 `.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
 environment overrides. Keep that file outside the repository; never Stow or
@@ -311,7 +311,8 @@ the networked phase and must not target the real home. Then use
 suites. Missing tools and stale fixtures are failures, not successful skips.
 Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a C
 compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, and ShellCheck.
-Versions come from `scripts/test-fixtures.json`, the shared mise Node pin, and
+Versions come from `scripts/test-fixtures.json` (including an exact Node fixture
+independent of the shared LTS default) and
 `lazy-lock.json` for plugins/grammars. Use a new empty fixture directory when
 these inputs change. Do not replace local tests with CI-only commands or
 silently omit expensive coverage.
@@ -406,7 +407,7 @@ agent-specific directory.
 and Neovim selection, machine-local Node overrides, project Node version files,
 inherited subprocess PATHs, PATH deduplication, declarative bootstrap behavior,
 and Stow conflicts/removal
-in disposable homes. Pass the mise executable, unpacked Node 24.19.0 and
+in disposable homes. Pass the mise executable, the unpacked Node LTS fixture and
 another Node installation root, and a disposable fixture's
 `installs/aqua-neovim-neovim` directory produced by a real Aqua install.
 It copies the Neovim fixture and registers the supplied Node builds locally;

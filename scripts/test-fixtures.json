@@ -2,6 +2,7 @@
   "neovim": "0.12.6",
   "neovim-sha256": "474430d53e6264f6d6dd18db42d6dc9df3a1b56ca9e88a325bbf860e1a811d87",
   "mise": "2026.10.24",
+  "node": "26.13.0",
   "other-node": "22.22.0",
   "ohmyzsh": "17a2b4c3a5855524ad4772a17ada0dc474e2fdf3",
   "autosuggestions": "v0.7.1",

@@ -15,7 +15,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,7 +37,7 @@ def main():
         parser.error("use an empty directory (existing fixtures differ or preparation was interrupted)")
     dest.mkdir(parents=True, exist_ok=True)
     config = json.loads(inputs[0].read_text())
-    node = tomllib.loads(inputs[3].read_text())["tools"]["node"]
+    node = config["node"]
     home = dest / "home"
     home.mkdir()
     env = {key: value for key, value in os.environ.items()

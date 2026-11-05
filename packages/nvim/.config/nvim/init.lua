@@ -23,8 +23,8 @@ vim.cmd("filetype plugin indent on")
 vim.cmd("syntax enable")
 if not package.loaded["config.theme"] then vim.cmd.colorscheme("habamax") end
 
-local map = function(mode, lhs, rhs)
-  vim.keymap.set(mode, lhs, rhs, { silent = true })
+local map = function(mode, lhs, rhs, desc)
+  vim.keymap.set(mode, lhs, rhs, { silent = true, desc = desc })
 end
 map("i", "jj", "<Esc>")
 for direction, name in pairs({ h = "Left", j = "Down", k = "Up", l = "Right" }) do
@@ -36,6 +36,33 @@ for direction, name in pairs({ h = "Left", j = "Down", k = "Up", l = "Right" }) 
     end
   end)
 end
+-- Unprefixed Ctrl+arrows reach Neovim; tmux uses prefix+Ctrl+arrows for panes.
+map("n", "<C-Up>", "<cmd>resize +2<CR>", "Increase split height")
+map("n", "<C-Down>", "<cmd>resize -2<CR>", "Decrease split height")
+map("n", "<C-Left>", "<cmd>vertical resize -5<CR>", "Decrease split width")
+map("n", "<C-Right>", "<cmd>vertical resize +5<CR>", "Increase split width")
+
+local function copy_file_path(relative)
+  local name = vim.api.nvim_buf_get_name(0)
+  if name == "" or vim.bo.buftype ~= "" or vim.fn.isdirectory(name) == 1 then
+    vim.notify("Current buffer has no file path to copy", vim.log.levels.WARN)
+    return
+  end
+  if vim.fn.has("clipboard") ~= 1 then
+    vim.notify("No system clipboard provider available", vim.log.levels.WARN)
+    return
+  end
+  local path = vim.fn.fnamemodify(name, relative and ":." or ":p")
+  -- Explicit characterwise copy: no trailing newline or shell interpretation.
+  local ok, err = pcall(vim.fn.setreg, "+", path, "v")
+  if not ok then
+    vim.notify("Could not copy file path: " .. tostring(err), vim.log.levels.ERROR)
+    return
+  end
+  vim.notify("Copied path: " .. path)
+end
+map("n", "<leader>fy", function() copy_file_path(false) end, "Copy absolute file path")
+map("n", "<leader>fY", function() copy_file_path(true) end, "Copy file path relative to cwd")
 map("n", "<leader>w", "<cmd>write<CR>")
 map("n", "<leader>q", "<cmd>quit<CR>")
 map("n", "<C-n>", "<cmd>bnext<CR>")

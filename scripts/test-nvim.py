@@ -222,6 +222,9 @@ end
         checks = home / "checks.lua"
         checks.write_text(r'''
 local function read(path) return vim.fn.readfile(path, "b") end
+local function press(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
 local settings = require("config.settings")
 assert(settings.servers.ts_ls and settings.servers.yamlls and settings.servers.bashls)
@@ -248,6 +251,27 @@ if vim.env.SCENARIO ~= "native-plugins" then
   end
 end
 assert(vim.fn.filereadable(vim.env.HOME .. "/calls") == 0)
+do
+  local lines, columns = vim.o.lines, vim.o.columns
+  vim.o.lines, vim.o.columns = 40, 120
+  vim.cmd.split()
+  local win = vim.api.nvim_get_current_win()
+  local height = vim.api.nvim_win_get_height(win)
+  press("<C-Up>")
+  assert(vim.api.nvim_win_get_height(win) == height + 2)
+  press("<C-Down>")
+  assert(vim.api.nvim_win_get_height(win) == height)
+  vim.cmd.close()
+  vim.cmd.vsplit()
+  win = vim.api.nvim_get_current_win()
+  local width = vim.api.nvim_win_get_width(win)
+  press("<C-Left>")
+  assert(vim.api.nvim_win_get_width(win) == width - 5)
+  press("<C-Right>")
+  assert(vim.api.nvim_win_get_width(win) == width)
+  vim.cmd.close()
+  vim.o.lines, vim.o.columns = lines, columns
+end
 if vim.env.SCENARIO == "wsl" then
   assert(vim.g.clipboard.name == "WSL Windows clipboard")
   vim.system = _G.real_system
@@ -274,6 +298,44 @@ if vim.env.SCENARIO == "wsl" then
   assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == table.concat(lines, "\n") .. "\n", vim.inspect(read(vim.env.HOME .. "/copied")))
   vim.fn.writefile({"provider\r", "paste"}, vim.env.HOME .. "/paste", "b")
   assert(vim.deep_equal(vim.fn.getreg("*", 1, true), {"provider", "paste"}))
+  -- Exercise the path-copy keys through the actual WSL clipboard provider.
+  -- Spaces, Unicode and shell-looking text must remain data, without a newline.
+  do
+    local notify = vim.notify
+    local notifications = {}
+    vim.notify = function(message) table.insert(notifications, message) end
+    local copied = table.concat(read(vim.env.HOME .. "/copied"), "\n")
+    press(" fy") -- unnamed buffers must not replace clipboard contents
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == copied)
+    assert(notifications[#notifications]:find("no file path", 1, true))
+    local original_cwd = vim.fn.getcwd()
+    local directory = vim.env.HOME .. "/path project"
+    vim.fn.mkdir(directory .. "/src", "p")
+    vim.cmd.cd(vim.fn.fnameescape(directory))
+    local relative = [[src/åäö 'quoted' $(not-code).tsx]]
+    local absolute = directory .. "/" .. relative
+    vim.api.nvim_buf_set_name(0, absolute)
+    vim.fn.setreg('"', "preserve ordinary register", "v")
+    press(" fy")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == absolute)
+    assert(notifications[#notifications] == "Copied path: " .. absolute)
+    assert(vim.fn.getreg('"') == "preserve ordinary register")
+    press(" fY")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == relative)
+    assert(notifications[#notifications] == "Copied path: " .. relative)
+    vim.bo.buftype = "nofile"
+    press(" fy")
+    assert(table.concat(read(vim.env.HOME .. "/copied"), "\n") == relative)
+    vim.bo.buftype = ""
+    local setreg = vim.fn.setreg
+    vim.fn.setreg = function() error("fixture clipboard failure") end
+    press(" fy")
+    assert(notifications[#notifications]:find("Could not copy file path", 1, true))
+    vim.fn.setreg = setreg
+    vim.api.nvim_buf_set_name(0, "")
+    vim.cmd.cd(vim.fn.fnameescape(original_cwd))
+    vim.notify = notify
+  end
   local calls = vim.fn.readfile(vim.env.HOME .. "/calls")
   for _, call in ipairs(calls) do
     local args = vim.json.decode(call)
@@ -561,13 +623,26 @@ if vim.env.SCENARIO == "native-plugins" then
   vim.cmd.close()
   assert(not package.loaded["nvim-tree"])
   vim.cmd.edit(project .. "/code.txt")
-  vim.cmd.NvimTreeFindFileToggle()
+  press("<Esc>") -- Telescope's prompt can leave insert mode pending in this script
+  press(" fE") -- reveal also loads the tree on first use
   assert(vim.bo.filetype == "NvimTree")
   local tree = require("nvim-tree.api")
   assert(tree.tree.is_visible())
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/code.txt")
+  local tree_window = vim.api.nvim_get_current_win()
   local listing = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
   assert(listing:find("code.txt", 1, true) and listing:find(".hidden", 1, true), listing)
   assert(not listing:find("HEAD", 1, true))
+  vim.cmd.wincmd("p")
+  vim.cmd.edit(project .. "/.hidden")
+  press(" fE") -- an open tree must reveal the new file, not close
+  assert(vim.api.nvim_get_current_win() == tree_window)
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/.hidden")
+  press(" fe")
+  assert(not tree.tree.is_visible())
+  press(" fe") -- preserve the existing toggle-and-reveal behavior
+  assert(tree.tree.is_visible())
+  assert(tree.tree.get_node_under_cursor().absolute_path == project .. "/.hidden")
   tree.tree.close()
   assert(not tree.tree.is_visible())
   local themes = vim.env.HOME .. "/.local/state/dotfiles/theme/"

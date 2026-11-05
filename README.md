@@ -160,6 +160,11 @@ and tar. Formatting, ESLint diagnostics, and Markdown preview are opt-in through
 See [`settings.lua`](packages/nvim/.config/nvim/lua/config/settings.lua) for
 available settings. Press Space for keybinding hints.
 
+Ctrl+arrows resize editor splits. `<leader>fe` toggles the file tree;
+`<leader>fE` reveals the current file without closing the tree. `<leader>fy`
+copies the absolute file path to the system clipboard; `<leader>fY` copies it
+relative to Neovim's current directory where possible.
+
 ## Checks
 
 ```bash

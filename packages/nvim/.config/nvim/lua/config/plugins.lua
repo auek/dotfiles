@@ -78,9 +78,10 @@ local function configure()
     },
     {
       "nvim-tree/nvim-tree.lua",
-      cmd = { "NvimTreeToggle", "NvimTreeFindFileToggle" },
+      cmd = { "NvimTreeToggle", "NvimTreeFindFileToggle", "NvimTreeFindFile" },
       keys = {
         { "<leader>fe", "<cmd>NvimTreeFindFileToggle<CR>", desc = "Toggle file tree" },
+        { "<leader>fE", "<cmd>NvimTreeFindFile<CR>", desc = "Reveal file in tree" },
       },
       init = function()
         vim.g.loaded_netrw = 1

@@ -101,6 +101,9 @@ Ctrl+arrows resize editor splits; tmux pane resizing keeps prefix+Ctrl+arrows.
 without closing an open tree. Explicit `<leader>fy`/`<leader>fY` copies use the
 system clipboard provider for absolute/cwd-relative paths, preserving spaces
 and Unicode without a trailing newline. Unnamed and special buffers are skipped.
+The tree-local `<leader>fg` uses Telescope live grep with the selected directory
+as picker cwd (a file selects its parent). Global cwd stays unchanged. Default
+tree mappings and the project-wide search outside the tree remain available.
 `features.format_on_save` enables project-local Prettier through Conform;
 `features.eslint` enables project-local ESLint CLI diagnostics through pinned
 nvim-lint on open/save. Both default off. Diagnostics never apply fixes.

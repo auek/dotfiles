@@ -791,6 +791,95 @@ if vim.env.SCENARIO == "native-plugins" then assert(vim.g.colors_name == "everfo
         if scenario == "unrestowed":
             assert "restow the nvim package" in result.stderr
         if scenario == "native-plugins":
+            scoped_project = home / "scoped monorepo"
+            scope_name = "foo app åäö 'quoted' $(not-code)"
+            for name, text in {
+                "main.txt": "starting buffer\n",
+                ".gitignore": "ignored.txt\nnode_modules/\n",
+                f"{scope_name}/match.txt": "scoped-needle inside selected directory\n",
+                f"{scope_name}/.hidden": "scoped-needle hidden file\n",
+                f"{scope_name}/ignored.txt": "scoped-needle ignored file\n",
+                f"{scope_name}/node_modules/dependency.txt": "scoped-needle ignored dependency\n",
+                "bar-app/match.txt": "scoped-needle outside selected directory\n",
+            }.items():
+                path = scoped_project / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text)
+            run(["git", "init", "-q", str(scoped_project)], env)
+            (scoped_project / ".git/hidden-result").write_text("scoped-needle Git metadata\n")
+            scoped_checks = home / "tree-search.lua"
+            scoped_checks.write_text(r'''
+vim.system, vim.uv.spawn, vim.fn.jobstart = _G.real_system, _G.real_spawn, _G.real_jobstart
+local project = vim.env.HOME .. "/scoped monorepo"
+local scope_name = [[foo app åäö 'quoted' $(not-code)]]
+local scope = project .. "/" .. scope_name
+local function press(keys)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
+end
+vim.cmd.cd(vim.fn.fnameescape(project))
+vim.cmd.edit(vim.fn.fnameescape(project .. "/main.txt"))
+local editor_window = vim.api.nvim_get_current_win()
+assert(not package.loaded["telescope.builtin"])
+vim.cmd.NvimTreeToggle()
+local tree = require("nvim-tree.api")
+tree.tree.find_file({buf=scope, open=true, focus=true})
+assert(vim.fn.maparg(" fg", "n", false, true).buffer == 1)
+assert(vim.fn.maparg("<CR>", "n", false, true).buffer == 1, "default tree mappings lost")
+local function results(expected, select_result)
+  local prompt = vim.api.nvim_get_current_buf()
+  local picker = require("telescope.actions.state").get_current_picker(prompt)
+  local completed = false
+  picker:register_completion_callback(function() completed = true end)
+  picker:set_prompt("scoped-needle")
+  assert(vim.wait(5000, function() return completed end), "scoped search timed out")
+  local found = {}
+  for entry in picker.manager:iter() do found[entry.filename] = true end
+  assert(vim.deep_equal(found, expected), vim.inspect(found))
+  if select_result then
+    require("telescope.actions").select_default(prompt)
+    assert(vim.bo.buftype == "", "result replaced the file tree")
+    if editor_window then assert(vim.api.nvim_get_current_win() == editor_window) end
+    assert(vim.startswith(vim.api.nvim_buf_get_name(0), scope .. "/"))
+    assert(tree.tree.is_visible())
+  else
+    require("telescope.actions").close(prompt)
+  end
+  press("<Esc>")
+  assert(vim.fn.getcwd() == project, "scoped search changed global cwd")
+end
+for _, selected in ipairs({scope, scope .. "/match.txt"}) do
+  tree.tree.find_file({buf=selected, open=true, focus=true})
+  press(" fg")
+  local prompt = vim.api.nvim_get_current_buf()
+  local picker = require("telescope.actions.state").get_current_picker(prompt)
+  assert(picker.cwd == scope, vim.inspect(picker.cwd))
+  assert(picker.prompt_title:find(scope_name, 1, true))
+  results({["match.txt"]=true, [".hidden"]=true}, selected ~= scope)
+end
+assert(vim.fn.maparg(" fg", "n", false, true).buffer == 0)
+press(" fg")
+results({[scope_name .. "/match.txt"]=true, [scope_name .. "/.hidden"]=true,
+  ["bar-app/match.txt"]=true}, false)
+-- A tree-only layout should open a result in a new editor split.
+tree.tree.find_file({buf=scope, open=true, focus=true})
+vim.api.nvim_win_close(editor_window, true)
+editor_window = nil
+press(" fg")
+results({["match.txt"]=true, [".hidden"]=true}, true)
+tree.tree.find_file({buf=scope, open=true, focus=true})
+local executable, notify = vim.fn.executable, vim.notify
+local warning
+vim.fn.executable = function(cmd) return cmd == "rg" and 0 or executable(cmd) end
+vim.notify = function(message) warning = message end
+press(" fg")
+assert(warning:find("requires ripgrep", 1, true))
+assert(vim.bo.filetype == "NvimTree")
+vim.fn.executable, vim.notify = executable, notify
+print("PASS: tree-scoped directory/file searches, lazy Telescope, Unicode/spaces, ignore rules, result selection and project-wide search")
+''')
+            result = run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
+                          "-c", f"luafile {scoped_checks}", "-c", "qa!"], env)
+            print((result.stdout + result.stderr).strip())
             selection = home / ".local/state/dotfiles/theme/current"
             selection.unlink()
             selection.symlink_to(selection.parent / "gruvbox", target_is_directory=True)

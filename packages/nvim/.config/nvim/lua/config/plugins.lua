@@ -45,6 +45,19 @@ local function bootstrap()
   return true
 end
 
+local function open_picker(name, opts)
+  if not configured or not vim.uv.fs_stat(root .. "/telescope.nvim/lua/telescope/init.lua")
+      or not vim.uv.fs_stat(root .. "/plenary.nvim/lua/plenary/init.lua") then
+    vim.notify("Use :Lazy to install missing plugins; if Lazy is unavailable, check Git/network access and restart", vim.log.levels.WARN)
+    return
+  end
+  if name == "live_grep" and vim.fn.executable("rg") ~= 1 then
+    vim.notify("Project text search requires ripgrep (rg) on PATH", vim.log.levels.WARN)
+    return
+  end
+  require("telescope.builtin")[name](opts)
+end
+
 local function configure()
   if configured then return true end
   if not bootstrap() then return false end
@@ -98,6 +111,37 @@ local function configure()
         })
       end,
       opts = {
+        on_attach = function(bufnr)
+          local api = require("nvim-tree.api")
+          api.map.on_attach.default(bufnr)
+          vim.keymap.set("n", "<leader>fg", function()
+            local node = api.tree.get_node_under_cursor()
+            local path = node and node.absolute_path
+            local stat = path and vim.uv.fs_stat(path)
+            if not stat then
+              vim.notify("Select an existing file or directory to search", vim.log.levels.WARN)
+              return
+            end
+            local directory = stat.type == "directory" and path or vim.fn.fnamemodify(path, ":h")
+            local editor_windows = vim.api.nvim_tabpage_list_wins(0)
+            table.insert(editor_windows, 1, vim.fn.win_getid(vim.fn.winnr("#")))
+            open_picker("live_grep", {
+              cwd = directory,
+              prompt_title = "Search: " .. vim.fn.fnamemodify(directory, ":~:."),
+              get_selection_window = function()
+                -- Prefer the last editing window; never replace the file tree.
+                for _, win in ipairs(editor_windows) do
+                  if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_config(win).relative == ""
+                      and vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
+                    return win
+                  end
+                end
+                vim.cmd.vnew()
+                return vim.api.nvim_get_current_win()
+              end,
+            })
+          end, { buffer = bufnr, silent = true, nowait = true, desc = "Search text in selected directory" })
+        end,
         git = { enable = false },
         filters = { dotfiles = false, custom = { "^\\.git$" } },
         renderer = {
@@ -179,16 +223,7 @@ function M.setup()
   }
   for key, picker in pairs(pickers) do
     vim.keymap.set(picker[4] or "n", key, function()
-      if not configured or not vim.uv.fs_stat(root .. "/telescope.nvim/lua/telescope/init.lua")
-          or not vim.uv.fs_stat(root .. "/plenary.nvim/lua/plenary/init.lua") then
-        vim.notify("Use :Lazy to install missing plugins; if Lazy is unavailable, check Git/network access and restart", vim.log.levels.WARN)
-        return
-      end
-      if picker[1] == "live_grep" and vim.fn.executable("rg") ~= 1 then
-        vim.notify("Project text search requires ripgrep (rg) on PATH", vim.log.levels.WARN)
-        return
-      end
-      require("telescope.builtin")[picker[1]](picker[3])
+      open_picker(picker[1], picker[3])
     end, { silent = true, desc = picker[2] })
   end
 end

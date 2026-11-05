@@ -15,22 +15,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NODE_VERSION = tomllib.loads((ROOT / "packages/mise/.config/mise/config.toml").read_text())["tools"]["node"]
 if len(sys.argv) != 5:
     sys.exit(__doc__)
 MISE, NODE, OTHER_NODE, NVIM = [Path(arg).resolve() for arg in sys.argv[1:]]
 STOW = shutil.which("stow")
 if not STOW:
     sys.exit("GNU Stow must be on PATH")
+NODE_VERSION = subprocess.check_output(
+    [str(NODE / "bin/node"), "--version"], text=True).strip().removeprefix("v")
 OTHER_VERSION = subprocess.check_output(
     [str(OTHER_NODE / "bin/node"), "--version"], text=True).strip().removeprefix("v")
 if OTHER_VERSION == NODE_VERSION:
-    sys.exit("The other Node fixture must differ from the shared pin to test switching")
+    sys.exit("The other Node fixture must differ from the default fixture to test switching")
 NVIM_BINARY = next(NVIM.glob("[0-9]*/*/bin/nvim"))
 NVIM_VERSION = subprocess.check_output(
     [str(NVIM_BINARY), "--version"], text=True,

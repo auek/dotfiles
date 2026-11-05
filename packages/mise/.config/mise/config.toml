@@ -1,5 +1,5 @@
 [tools]
-node = "24.19.0"
+node = "lts"
 "aqua:sharkdp/bat" = "latest"
 "aqua:eza-community/eza" = "latest"
 "aqua:dbrgn/tealdeer" = "latest"

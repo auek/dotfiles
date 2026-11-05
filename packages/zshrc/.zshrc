@@ -434,6 +434,9 @@ gwa() {
     print -r -- 'Reuse a local branch, track origin/<branch>, or create from origin/main with no upstream.'
     print -r -- 'Uses already-fetched refs; fetch origin first when needed. Enters the new worktree unless --no-cd.'
     print -r -- 'Destination: siblings of the original checkout, or git config dotfiles.worktreeDir.'
+    print -r -- 'To use a worktrees/ directory beside the original checkout, run once in this repository:'
+    print -r -- '  git config --local dotfiles.worktreeDir ../worktrees'
+    print -r -- 'Relative paths resolve from the original checkout, not your current directory.'
     return 0
   fi
   if (( $# < 1 || $# > 2 )) || [[ -z "$1" || "$1" == -* || "$1" == */* || "$1" == . || "$1" == .. ]]; then

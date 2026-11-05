@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the shared tmx function using disposable homes and tmux sockets."""
+"""Exercise workstation/server tmx using disposable homes and tmux sockets."""
 
 import json
 import os
@@ -15,12 +15,17 @@ from test_support import stop_tmux
 
 ROOT = Path(__file__).resolve().parents[1]
 ZSH = shutil.which("zsh")
+BASH = shutil.which("bash")
 TMUX = shutil.which("tmux")
-if not ZSH or not TMUX:
-    sys.exit("requires Zsh and tmux")
+if not ZSH or not BASH or not TMUX:
+    sys.exit("requires Bash, Zsh and tmux")
 
 
 class TmxTests(unittest.TestCase):
+    shell = [ZSH, "-f"]
+    function = ROOT / "packages/zshrc/.zshrc"
+    hook_name = "init.zsh"
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="tmx-check-")
         self.addCleanup(self.temp.cleanup)
@@ -51,6 +56,8 @@ class TmxTests(unittest.TestCase):
                         TMX_TEST_SOCKET=str(self.socket), TMX_TEST_CONFIG=str(self.config),
                         TMX_TEST_LOG=str(self.log), TMX_TEST_REAL=TMUX, SSH_AUTH_SOCK="fixture")
         self.env.pop("ZDOTDIR", None)
+        for key in ("BASH_ENV", "ENV", "CDPATH"):
+            self.env.pop(key, None)
         self.addCleanup(self.stop_server)
         # Only attachment/client switching are mocked. All other operations use
         # a real server on our private socket, never the user's running server.
@@ -76,13 +83,12 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         (self.bin / "tmux").chmod(0o755)
         (self.home / ".oh-my-zsh").mkdir()
         (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
-        self.function = ROOT / "packages/zshrc/.zshrc"
 
     def stop_server(self):
         stop_tmux(TMUX, self.socket, self.env)
 
     def run_tmx(self, *args, code='tmx "$@"', **env):
-        return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,
+        return subprocess.run([*self.shell, "-c", 'source "$1"; shift; ' + code,
                                "tmx-check", str(self.function), *args],
                               cwd=self.project, env={**self.env, **env},
                               text=True, capture_output=True, timeout=10)
@@ -97,7 +103,7 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
 
     def hook(self, body, config_home=None):
-        hook = (config_home or self.home / ".config") / "tmx/init.zsh"
+        hook = (config_home or self.home / ".config") / "tmx" / self.hook_name
         hook.parent.mkdir(parents=True, exist_ok=True)
         hook.write_text(body)
         return hook
@@ -106,8 +112,8 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_loading_defines_only_tmx_without_running_commands_or_hook(self):
-        self.hook('print ran > "$HOME/hook-ran"\n')
-        self.assert_ok(self.run_tmx(code='(( ${+functions[tmx]} && ! ${+functions[dev]} ))'))
+        self.hook('printf "ran\\n" > "$HOME/hook-ran"\n')
+        self.assert_ok(self.run_tmx(code='command -v tmx >/dev/null && ! command -v dev >/dev/null'))
         self.assertEqual(self.commands(), [])
         self.assertFalse((self.home / "hook-ran").exists())
 
@@ -125,7 +131,7 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         self.assertEqual(self.commands(), [])
 
     def test_listing_without_creation_or_hook(self):
-        self.hook('print ran > "$HOME/hook-ran"\n')
+        self.hook('printf "ran\\n" > "$HOME/hook-ran"\n')
         result = self.run_tmx()
         self.assert_ok(result)
         self.assertIn("No tmux sessions", result.stdout)
@@ -141,7 +147,7 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
 
     def test_plain_session_defaults_to_current_directory(self):
         # A project-local file must never be treated as the machine-local hook.
-        (self.project / "init.zsh").write_text('print unsafe > "$HOME/unsafe"\n')
+        (self.project / self.hook_name).write_text('printf "unsafe\\n" > "$HOME/unsafe"\n')
         result = self.run_tmx("plain", COLUMNS="200", LINES="60")
         self.assert_ok(result)
         panes = self.real_tmux("list-panes", "-t", "=plain", "-F",
@@ -155,12 +161,15 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
     def test_relative_directory_and_literal_session_name(self):
         nested = self.project / "nested path"
         nested.mkdir()
-        self.assert_ok(self.run_tmx("name with spaces; echo unsafe", "nested path"))
+        # A local CDPATH must not redirect a supplied project-relative directory.
+        shadow = self.home / "cdpath"
+        (shadow / "nested path").mkdir(parents=True)
+        self.assert_ok(self.run_tmx("name with spaces; echo unsafe", "nested path", CDPATH=str(shadow)))
         self.assertEqual(self.real_tmux("list-panes", "-t", "=name with spaces; echo unsafe",
                                        "-F", "#{pane_current_path}"), str(nested))
 
     def test_existing_session_ignores_location_and_does_not_rerun_hook(self):
-        self.hook('print ran >> "$HOME/hook-ran"\n')
+        self.hook('printf "ran\\n" >> "$HOME/hook-ran"\n')
         self.assert_ok(self.run_tmx("project", str(self.project)))
         self.assert_ok(self.run_tmx("project", "/missing/location"))
         self.assertEqual((self.home / "hook-ran").read_text(), "ran\n")
@@ -168,8 +177,8 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
         self.assertEqual(self.commands()[-1], ["attach-session", "-t", "=project"])
 
     def test_relative_xdg_directory_cannot_load_project_hook(self):
-        self.hook('print local > "$HOME/hook-ran"\n')
-        self.hook('print unsafe > "$HOME/unsafe"\n', self.project / "relative-config")
+        self.hook('printf "local\\n" > "$HOME/hook-ran"\n')
+        self.hook('printf "unsafe\\n" > "$HOME/unsafe"\n', self.project / "relative-config")
         self.assert_ok(self.run_tmx("relative-xdg", XDG_CONFIG_HOME="relative-config"))
         self.assertEqual((self.home / "hook-ran").read_text(), "local\n")
         self.assertFalse((self.home / "unsafe").exists())
@@ -184,7 +193,7 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
     def test_hook_ids_split_ratios_and_program_startup(self):
         self.hook('''
 session=$1 window=$2 pane=$3 directory=$4
-print -r -- "$session|$window|$pane|$directory" > "$HOME/hook-args"
+printf '%s|%s|%s|%s\\n' "$session" "$window" "$pane" "$directory" > "$HOME/hook-args"
 tmux split-window -d -h -p "$TMX_TEST_PERCENT" -t "$pane" -c "$directory"
 tmux send-keys -t "$pane" -l 'printf ready > "$HOME/program-ran"'
 tmux send-keys -t "$pane" Enter
@@ -215,8 +224,8 @@ tmux wait-for tmx-program-ready
 
     def test_xdg_hook_isolation_and_failure_preserves_session(self):
         xdg = self.home / "custom config"
-        self.hook('print wrong > "$HOME/wrong-hook"\n')
-        self.hook('cd /\nexport TMX_LEAK=bad\nfalse\nprint unreachable\n', xdg)
+        self.hook('printf "wrong\\n" > "$HOME/wrong-hook"\n')
+        self.hook('cd /\nexport TMX_LEAK=bad\nfalse\nprintf "unreachable\\n"\n', xdg)
         result = self.run_tmx("failed-hook", XDG_CONFIG_HOME=str(xdg),
                               code='tmx "$@"; result=$?; '
                                    '[[ "$PWD" == "$EXPECTED_PWD" && -z "$TMX_LEAK" ]] || exit 9; '
@@ -232,7 +241,7 @@ tmux wait-for tmx-program-ready
         self.assertNotIn("hook failed", result.stderr)
 
     def test_creation_failure_and_invalid_directory_do_not_run_hook(self):
-        self.hook('print ran > "$HOME/hook-ran"\n')
+        self.hook('printf "ran\\n" > "$HOME/hook-ran"\n')
         for args, env in ((("bad-dir", "/missing/location"), {}),
                           (("empty-dir", ""), {}),
                           (("bad-create",), {"TMX_TEST_FAIL_CREATE": "1"})):
@@ -262,6 +271,12 @@ tmux wait-for tmx-program-ready
         dimensions = self.real_tmux("display-message", "-p", "-t", "=zero-size:",
                                     "#{window_width} #{window_height}")
         self.assertTrue(all(int(value) > 0 for value in dimensions.split()), dimensions)
+
+
+class BashTmxTests(TmxTests):
+    shell = [BASH, "--noprofile", "--norc"]
+    function = ROOT / "packages/bashrc-server/.bashrc"
+    hook_name = "init.bash"
 
 
 if __name__ == "__main__":

@@ -269,7 +269,64 @@ sys.stdout.buffer.write(target + b"\\0")
         self.assertTrue((tree / "new-main.txt").is_file())
         self.assertEqual(self.git("-C", self.main, "rev-parse", "main").stdout, old_main)
         self.git("-C", self.main, "remote", "set-url", "origin", self.home / "missing-remote")
+        before = self.git("-C", tree, "rev-parse", "HEAD").stdout
         self.shell("gmm", cwd=tree, success=False)
+        self.assertEqual(self.git("-C", tree, "rev-parse", "HEAD").stdout, before)
+
+    def test_gmm_merges_fresh_master_in_a_master_only_repository(self):
+        self.git("-C", self.seed, "branch", "-m", "main", "master")
+        self.git("-C", self.seed, "push", "origin", "master")
+        self.git("--git-dir", self.remote, "symbolic-ref", "HEAD", "refs/heads/master")
+        self.git("-C", self.seed, "push", "origin", "--delete", "main")
+        checkout = self.container / "master clone"
+        self.git("clone", self.remote, checkout)
+        self.git("-C", checkout, "switch", "-c", "feature/topic")
+        old_master = self.git("-C", checkout, "rev-parse", "master").stdout
+        (self.seed / "new-master.txt").write_text("latest master\n")
+        self.git("-C", self.seed, "add", ".")
+        self.git("-C", self.seed, "commit", "-m", "Advance master")
+        self.git("-C", self.seed, "push", "origin", "master")
+        result = self.shell('gmm && printf "CWD:%s\\n" "$PWD"', cwd=checkout / "app1")
+        self.assert_cwd(result, checkout / "app1")
+        self.assertTrue((checkout / "new-master.txt").is_file())
+        self.assertEqual(self.branch(checkout), "feature/topic")
+        self.assertEqual(self.git("-C", checkout, "rev-parse", "master").stdout, old_master)
+
+    def test_gmm_refreshes_stale_head_and_prefers_default_master_when_both_exist(self):
+        tree = self.add("theme1")
+        self.assertEqual(self.git("-C", tree, "symbolic-ref", "--short", "refs/remotes/origin/HEAD").stdout.strip(),
+                         "origin/main")
+        self.git("-C", self.seed, "switch", "-c", "master")
+        (self.seed / "master-default.txt").write_text("default is master\n")
+        self.git("-C", self.seed, "add", ".")
+        self.git("-C", self.seed, "commit", "-m", "Advance default master")
+        self.git("-C", self.seed, "push", "origin", "master")
+        self.git("--git-dir", self.remote, "symbolic-ref", "HEAD", "refs/heads/master")
+        self.shell("gmm", cwd=tree)
+        self.assertTrue((tree / "master-default.txt").is_file())
+        self.assertEqual(self.git("-C", tree, "symbolic-ref", "--short", "refs/remotes/origin/HEAD").stdout.strip(),
+                         "origin/master")
+        self.assertEqual(self.git("-C", tree, "rev-parse", "HEAD").stdout,
+                         self.git("-C", self.seed, "rev-parse", "master").stdout)
+
+    def test_gmm_stops_when_remote_head_cannot_be_determined(self):
+        before = self.git("-C", self.main, "rev-parse", "HEAD").stdout
+        self.git("--git-dir", self.remote, "symbolic-ref", "HEAD", "refs/heads/missing")
+        self.shell("gmm", success=False)
+        self.assertEqual(self.git("-C", self.main, "rev-parse", "HEAD").stdout, before)
+
+    def test_gmm_rejects_a_default_branch_other_than_main_or_master(self):
+        self.git("-C", self.seed, "switch", "-c", "develop")
+        (self.seed / "develop-only.txt").write_text("do not merge this branch\n")
+        self.git("-C", self.seed, "add", ".")
+        self.git("-C", self.seed, "commit", "-m", "Advance develop")
+        self.git("-C", self.seed, "push", "origin", "develop")
+        self.git("--git-dir", self.remote, "symbolic-ref", "HEAD", "refs/heads/develop")
+        before = self.git("-C", self.main, "rev-parse", "HEAD").stdout
+        result = self.shell("gmm", success=False)
+        self.assertIn("expected main or master", result.stderr)
+        self.assertEqual(self.git("-C", self.main, "rev-parse", "HEAD").stdout, before)
+        self.assertFalse((self.main / "develop-only.txt").exists())
 
 
 if __name__ == "__main__":

@@ -98,6 +98,7 @@ class ServerTests(unittest.TestCase):
         self.tmux("new-session", "-d", "-s", "server", "-c", str(project),
                   "-x", "120", "-y", "40", shell_command)
         self.tmux("wait-for", "server-shell-ready")
+        self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), "1")
         self.tmux("source-file", str(self.home / ".tmux.conf"))
         self.tmux("set-option", "-g", "default-command", shell_command)
         for key in ('"', "%", "c"):
@@ -107,6 +108,14 @@ class ServerTests(unittest.TestCase):
                 self.tmux("wait-for", "server-shell-ready")
                 self.assertEqual(self.tmux("display-message", "-p", "#{pane_current_path}"), str(project))
         self.assertEqual(self.tmux("display-message", "-p", "#{session_windows}"), "2")
+        for index in range(3, 11):
+            self.tmux("new-window", "-d", "-t", f":{index}", "sleep 60")
+        for index in range(1, 11):
+            key = f"M-{index % 10}"
+            with self.subTest(key=key):
+                binding = shlex.split(self.tmux("list-keys", "-T", "root", key))
+                self.tmux(*binding[binding.index(key) + 1:])
+                self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), str(index))
 
 
 if __name__ == "__main__":

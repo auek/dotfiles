@@ -208,6 +208,7 @@ class RuntimeTests(unittest.TestCase):
         project.mkdir()
         self.tmux("new-session", "-d", "-s", "runtime", "-c", str(project), "-x", "120", "-y", "40")
         self.tmux("wait-for", "shell-ready")
+        self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), "1")
         # Explicit sourcing surfaces errors that initial detached startup can hide.
         self.tmux("source-file", str(self.home / ".tmux.conf"))
         for key in ('"', "%", "c"):
@@ -218,6 +219,14 @@ class RuntimeTests(unittest.TestCase):
                 self.tmux("wait-for", "shell-ready")
                 self.assertEqual(self.tmux("display-message", "-p", "#{pane_current_path}"), str(project))
         self.assertEqual(self.tmux("display-message", "-p", "#{session_windows}"), "2")
+        for index in range(3, 11):
+            self.tmux("new-window", "-d", "-t", f":{index}", "sleep 60")
+        for index in range(1, 11):
+            key = f"M-{index % 10}"
+            with self.subTest(key=key):
+                binding = shlex.split(self.tmux("list-keys", "-T", "root", key))
+                self.tmux(*binding[binding.index(key) + 1:])
+                self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), str(index))
 
     def test_theme_switch_rejection_and_reload_failure(self):
         # Make every reload observable and harmless, including process signals.

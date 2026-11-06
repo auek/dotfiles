@@ -107,6 +107,14 @@ class ServerTests(unittest.TestCase):
                 self.tmux("wait-for", "server-shell-ready")
                 self.assertEqual(self.tmux("display-message", "-p", "#{pane_current_path}"), str(project))
         self.assertEqual(self.tmux("display-message", "-p", "#{session_windows}"), "2")
+        for index in range(2, 10):
+            self.tmux("new-window", "-d", "-t", f":{index}", "sleep 60")
+        for index in range(10):
+            key = f"M-{index}"
+            with self.subTest(key=key):
+                binding = shlex.split(self.tmux("list-keys", "-T", "root", key))
+                self.tmux(*binding[binding.index(key) + 1:])
+                self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), str(index))
 
 
 if __name__ == "__main__":

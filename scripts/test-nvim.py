@@ -824,13 +824,14 @@ vim.cmd.NvimTreeToggle()
 local tree = require("nvim-tree.api")
 tree.tree.find_file({buf=scope, open=true, focus=true})
 assert(vim.fn.maparg(" fg", "n", false, true).buffer == 1)
+assert(vim.fn.maparg(" ff", "n", false, true).buffer == 1)
 assert(vim.fn.maparg("<CR>", "n", false, true).buffer == 1, "default tree mappings lost")
-local function results(expected, select_result)
+local function results(expected, select_result, query)
   local prompt = vim.api.nvim_get_current_buf()
   local picker = require("telescope.actions.state").get_current_picker(prompt)
   local completed = false
   picker:register_completion_callback(function() completed = true end)
-  picker:set_prompt("scoped-needle")
+  picker:set_prompt(query or "scoped-needle")
   assert(vim.wait(5000, function() return completed end), "scoped search timed out")
   local found = {}
   for entry in picker.manager:iter() do found[entry.filename] = true end
@@ -847,6 +848,18 @@ local function results(expected, select_result)
   press("<Esc>")
   assert(vim.fn.getcwd() == project, "scoped search changed global cwd")
 end
+-- File finding must also lazy-load Telescope and exclude sibling applications.
+for _, selected in ipairs({scope, scope .. "/match.txt"}) do
+  tree.tree.find_file({buf=selected, open=true, focus=true})
+  press(" ff")
+  local picker = require("telescope.actions.state").get_current_picker(vim.api.nvim_get_current_buf())
+  assert(picker.cwd == scope, vim.inspect(picker.cwd))
+  assert(picker.prompt_title:find(scope_name, 1, true))
+  results({["match.txt"]=true, [".hidden"]=true}, selected ~= scope, "")
+end
+assert(vim.fn.maparg(" ff", "n", false, true).buffer == 0)
+press(" ff")
+results({[scope_name .. "/match.txt"]=true, ["bar-app/match.txt"]=true}, false, "match")
 for _, selected in ipairs({scope, scope .. "/match.txt"}) do
   tree.tree.find_file({buf=selected, open=true, focus=true})
   press(" fg")
@@ -860,12 +873,15 @@ assert(vim.fn.maparg(" fg", "n", false, true).buffer == 0)
 press(" fg")
 results({[scope_name .. "/match.txt"]=true, [scope_name .. "/.hidden"]=true,
   ["bar-app/match.txt"]=true}, false)
--- A tree-only layout should open a result in a new editor split.
-tree.tree.find_file({buf=scope, open=true, focus=true})
-vim.api.nvim_win_close(editor_window, true)
-editor_window = nil
-press(" fg")
-results({["match.txt"]=true, [".hidden"]=true}, true)
+-- Either picker in a tree-only layout should open a new editor split.
+for _, key in ipairs({" ff", " fg"}) do
+  tree.tree.find_file({buf=scope, open=true, focus=true})
+  vim.api.nvim_win_close(editor_window, true)
+  editor_window = nil
+  press(key)
+  results({["match.txt"]=true, [".hidden"]=true}, true, key == " ff" and "" or nil)
+  editor_window = vim.api.nvim_get_current_win()
+end
 tree.tree.find_file({buf=scope, open=true, focus=true})
 local executable, notify = vim.fn.executable, vim.notify
 local warning
@@ -875,7 +891,7 @@ press(" fg")
 assert(warning:find("requires ripgrep", 1, true))
 assert(vim.bo.filetype == "NvimTree")
 vim.fn.executable, vim.notify = executable, notify
-print("PASS: tree-scoped directory/file searches, lazy Telescope, Unicode/spaces, ignore rules, result selection and project-wide search")
+print("PASS: tree-scoped file finding/text search, lazy Telescope, Unicode/spaces, ignores, result selection and project-wide search")
 ''')
             result = run([NVIM, "--headless", "-i", "NONE", "--cmd", f"luafile {before}",
                           "-c", f"luafile {scoped_checks}", "-c", "qa!"], env)

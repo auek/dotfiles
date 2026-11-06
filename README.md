@@ -165,8 +165,9 @@ Ctrl+arrows resize editor splits. `<leader>fe` toggles the file tree;
 `<leader>fE` reveals the current file without closing the tree. `<leader>fy`
 copies the absolute file path to the system clipboard; `<leader>fY` copies it
 relative to Neovim's current directory where possible.
-Inside the file tree, `<leader>fg` searches the selected directory (or a
-selected file's parent); outside the tree it searches the project.
+Inside the file tree, `<leader>ff` finds files and `<leader>fg` searches text
+in the selected directory (or a selected file's parent). Outside the tree,
+both search the project.
 
 ## Checks
 

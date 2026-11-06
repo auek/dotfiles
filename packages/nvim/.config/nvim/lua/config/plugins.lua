@@ -114,7 +114,7 @@ local function configure()
         on_attach = function(bufnr)
           local api = require("nvim-tree.api")
           api.map.on_attach.default(bufnr)
-          vim.keymap.set("n", "<leader>fg", function()
+          local function search(name, title)
             local node = api.tree.get_node_under_cursor()
             local path = node and node.absolute_path
             local stat = path and vim.uv.fs_stat(path)
@@ -125,9 +125,9 @@ local function configure()
             local directory = stat.type == "directory" and path or vim.fn.fnamemodify(path, ":h")
             local editor_windows = vim.api.nvim_tabpage_list_wins(0)
             table.insert(editor_windows, 1, vim.fn.win_getid(vim.fn.winnr("#")))
-            open_picker("live_grep", {
+            open_picker(name, {
               cwd = directory,
-              prompt_title = "Search: " .. vim.fn.fnamemodify(directory, ":~:."),
+              prompt_title = title .. vim.fn.fnamemodify(directory, ":~:."),
               get_selection_window = function()
                 -- Prefer the last editing window; never replace the file tree.
                 for _, win in ipairs(editor_windows) do
@@ -140,7 +140,11 @@ local function configure()
                 return vim.api.nvim_get_current_win()
               end,
             })
-          end, { buffer = bufnr, silent = true, nowait = true, desc = "Search text in selected directory" })
+          end
+          vim.keymap.set("n", "<leader>fg", function() search("live_grep", "Search: ") end,
+            { buffer = bufnr, silent = true, nowait = true, desc = "Search text in selected directory" })
+          vim.keymap.set("n", "<leader>ff", function() search("find_files", "Files: ") end,
+            { buffer = bufnr, silent = true, nowait = true, desc = "Find files in selected directory" })
         end,
         git = { enable = false },
         filters = { dotfiles = false, custom = { "^\\.git$" } },

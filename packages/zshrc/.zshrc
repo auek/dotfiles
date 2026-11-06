@@ -13,7 +13,7 @@ export ZSH="$HOME/.oh-my-zsh"
 
 if command -v less >/dev/null 2>&1; then
   export PAGER=less
-  export LESS='-R'
+  export LESS='-QR'
 fi
 
 # mise (also available in interactive shells that are not login shells).

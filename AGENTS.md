@@ -102,9 +102,11 @@ Ctrl+arrows resize editor splits; tmux pane resizing keeps prefix+Ctrl+arrows.
 without closing an open tree. Explicit `<leader>fy`/`<leader>fY` copies use the
 system clipboard provider for absolute/cwd-relative paths, preserving spaces
 and Unicode without a trailing newline. Unnamed and special buffers are skipped.
-The tree-local `<leader>fg` uses Telescope live grep with the selected directory
-as picker cwd (a file selects its parent). Global cwd stays unchanged. Default
-tree mappings and the project-wide search outside the tree remain available.
+The tree-local `<leader>ff`/`<leader>fg` mappings use Telescope file finding/live
+grep with the selected directory as picker cwd (a file selects its parent).
+Global cwd stays unchanged. Both pickers open results in an editing window,
+preserving the tree. Default tree mappings and project-wide searches outside
+the tree remain available.
 `features.format_on_save` enables project-local Prettier through Conform;
 `features.eslint` enables project-local ESLint CLI diagnostics through pinned
 nvim-lint on open/save. Both default off. Diagnostics never apply fixes.
@@ -136,8 +138,10 @@ an earlier `compinit` or disable its audits. Login/interactive startup adds mise
 shim PATH entries directly (respecting its data/shim and XDG overrides), then
 interactive Zsh performs one full mise activation. Keep its initial environment
 hook: deferring it only to improve an exit benchmark changes first-command behavior.
-Zsh's `gst` includes the branch header, and `gmm` fetches origin before merging
-`origin/main` into the current branch. `gwl` lists worktrees; `gwc [name|branch|path]`
+Zsh's `gst` includes the branch header. `gmm` fetches origin, refreshes its HEAD
+reference from the remote, and merges that default branch when named `main` or
+`master`. Fetch/default-branch lookup failures stop the merge; other names are
+rejected. `gwl` lists worktrees; `gwc [name|branch|path]`
 enters a registered worktree root (fzf picker without arguments).
 `gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
 origin branch, or creates from already-fetched `origin/main` without an upstream.

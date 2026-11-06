@@ -343,9 +343,19 @@ alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
 alias gwl="git worktree list"
 
-# Merge freshly fetched main into the current branch, not stale local main.
+# Merge origin's freshly fetched default branch, whether named main or master.
 gmm() {
-  command git fetch origin && command git merge origin/main
+  local trunk
+  command git fetch origin || return
+  command git remote set-head origin --auto || return
+  trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || return
+  case "$trunk" in
+    origin/main|origin/master) command git merge "$trunk" ;;
+    *)
+      print -u2 -- "gmm: origin's default branch is '$trunk'; expected main or master."
+      return 1
+      ;;
+  esac
 }
 
 # Worktree helpers use Git's registry, not a machine-specific repository path.

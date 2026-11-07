@@ -42,7 +42,7 @@ end
 local function cow_output(result)
   local output = result.stdout or ""
   if result.code ~= 0 or #output > 4096 or vim.trim(output) == "" then return nil end
-  output = output:gsub("\n+$", "")
+  output = output:gsub("%s+$", "")
   local lines = vim.split(output, "\n", { plain = true })
   if #lines > 15 then return nil end
   for _, line in ipairs(lines) do
@@ -55,18 +55,13 @@ local function fallback_cow(text)
   local lines, width = vim.split(text, "\n", { plain = true }), 0
   for _, line in ipairs(lines) do width = math.max(width, vim.fn.strdisplaywidth(line)) end
   local bubble = { " " .. string.rep("_", width + 2) }
-  for row, line in ipairs(lines) do
-    local left, right = "<", ">"
-    if #lines > 1 then
-      left = row == 1 and "/" or row == #lines and "\\" or "|"
-      right = row == 1 and "\\" or row == #lines and "/" or "|"
-    end
-    bubble[#bubble + 1] = left .. " " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " " .. right
+  for _, line in ipairs(lines) do
+    bubble[#bubble + 1] = "( " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " )"
   end
   bubble[#bubble + 1] = " " .. string.rep("-", width + 2)
   return table.concat(bubble, "\n") .. "\n" .. [[
-        \   ^__^
-         \  (oo)\_______
+        o   ^__^
+         o  (oo)\_______
             (__)\       )\/\
                 ||----w |
                 ||     ||]]
@@ -74,7 +69,8 @@ end
 
 local function pad_header(text)
   local lines = vim.split(text, "\n", { plain = true })
-  while #lines < 15 do lines[#lines + 1] = "" end
+  -- Keep the animal beside the menu; unused space belongs above the quote.
+  while #lines < 15 do table.insert(lines, 1, "") end
   return table.concat(lines, "\n")
 end
 
@@ -96,9 +92,9 @@ local function header(self)
     local function render_quote(text)
       if not active() or state.done then return end
       local fallback = fallback_cow(text)
-      if vim.fn.executable("cowsay") == 1 then
+      if vim.fn.executable("cowthink") == 1 then
         -- Try one random animal with our UTF-8-safe wrapping and no shell parsing.
-        local ok = pcall(vim.system, { "cowsay", "-n", "-r" },
+        local ok = pcall(vim.system, { "cowthink", "-n", "-r" },
           { stdin = text, text = true, timeout = 300 }, vim.schedule_wrap(function(result)
             finish(cow_output(result) or fallback)
           end))

@@ -919,8 +919,49 @@ assert(listing:find("example.ts", 1, true), listing)
             for args in (["."], [str(directory)], ["-c", "edit " + str(directory).replace(" ", "\\ ")]):
                 run([NVIM, "--headless", "-i", "NONE", *args,
                       "-c", f"luafile {check_directory}", "-c", "qa!"], env, cwd=directory)
+            capture_header = r'''
+local dashboard = require("config.dashboard")
+local options = dashboard.options
+dashboard.options = function()
+  local opts = options()
+  local header = opts.dashboard.sections[1]
+  opts.dashboard.sections[1] = function(self)
+    _G.quote_dashboard = self
+    local result = header(self)
+    _G.rendered_headers = _G.rendered_headers or {}
+    if result.header ~= _G.rendered_headers[#_G.rendered_headers] then
+      table.insert(_G.rendered_headers, result.header)
+    end
+    return result
+  end
+  return opts
+end
+function _G.dashboard_actions()
+  local actions = {}
+  for _, item in ipairs(_G.quote_dashboard.items) do
+    if item.key and item.action then actions[item.key] = {item._.row, item._.col} end
+  end
+  return actions
+end
+vim.api.nvim_create_autocmd("User", {pattern="SnacksDashboardOpened", callback=function()
+  vim.g.initial_header = _G.quote_dashboard._dotfiles_fortune.header
+  vim.g.initial_actions = _G.dashboard_actions()
+end})
+function _G.assert_header_finished()
+  assert(#_G.rendered_headers == 2, "header was not published exactly once")
+  assert(vim.trim(_G.rendered_headers[1]) == "", "initial header was not blank")
+  for _, text in ipairs(_G.rendered_headers) do
+    assert(#vim.split(text, "\n", {plain=true}) == 15, "header height changed")
+    for _, line in ipairs(vim.split(text, "\n", {plain=true})) do
+      assert(vim.fn.strdisplaywidth(line) <= 56, "header overflowed dashboard")
+    end
+  end
+  assert(vim.deep_equal(_G.dashboard_actions(), vim.g.initial_actions), "actions moved when header appeared")
+  assert(_G.quote_dashboard._dotfiles_fortune.done)
+end
+'''
             dashboard_before = home / "dashboard-before.lua"
-            dashboard_before.write_text(before.read_text() + '''
+            dashboard_before.write_text(before.read_text() + capture_header + '''
 vim.v.oldfiles = {vim.fn.getcwd() .. "/example.ts", vim.env.HOME .. "/unrelated",
   vim.fn.getcwd() .. "/removed.ts"}
 -- Keep the missing-tool fallback deterministic even when optional tools are installed.
@@ -928,8 +969,6 @@ local executable = vim.fn.executable
 vim.fn.executable = function(name)
   return (name == "fortune" or name == "cowsay") and 0 or executable(name)
 end
--- Comparing a fresh header below must not pick a different quote at a second boundary.
-os.time = function() return 0 end
 ''')
             run_ui([], r'''
 assert(vim.bo.filetype == "snacks_dashboard", vim.bo.filetype)
@@ -955,9 +994,8 @@ for _, name in ipairs({"picker", "explorer", "notifier", "scroll", "input", "ima
 end
 local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 local listing = table.concat(lines, "\n")
-assert(not listing:find("^__^", 1, true) and not listing:find("< ", 1, true), listing)
-local header = require("config.dashboard").options().dashboard.sections[1]({}).header
-assert(header ~= "" and listing:find(header, 1, true), "built-in quote missing")
+assert(listing:find("^__^", 1, true) and listing:find("< ", 1, true), "built-in cow/quote missing: " .. listing)
+_G.assert_header_finished()
 assert(listing:find("directory with spaces", 1, true), listing)
 assert(listing:find("Recent in this directory", 1, true) and listing:find("example.ts", 1, true), listing)
 assert(not listing:find("unrelated", 1, true) and not listing:find("removed.ts", 1, true), listing)
@@ -989,9 +1027,9 @@ assert(vim.wait(1000, function() return vim.o.laststatus ~= 0 end), "statusline 
 ''', env, directory, dashboard_before)
             cowsay = bin_dir / "cowsay"
             cowsay.write_text(f"#!{sys.executable}\n" + '''import os, sys, time
+mode = os.environ["COWSAY_CASE"]
 assert sys.argv[1:] == ["-n", "-r"]
 text = sys.stdin.read()
-mode = os.environ["COWSAY_CASE"]
 if mode == "slow":
     time.sleep(2)
 if mode == "error":
@@ -1019,6 +1057,10 @@ if mode == "error":
     sys.exit(1)
 if mode == "empty":
     print("   ")
+elif mode == "oversized":
+    print("x" * 4097)
+elif mode == "tall":
+    print("line\\n" * 9)
 else:
     print("Fortune fixture: åäö and 中文, with enough words to wrap the speech bubble without losing the original quote.")
     print()
@@ -1027,7 +1069,7 @@ else:
 ''')
             fortune.chmod(0o755)
             fortune_before = home / "fortune-before.lua"
-            fortune_before.write_text(before.read_text() + '''
+            fortune_before.write_text(before.read_text() + capture_header + '''
 vim.uv.spawn = _G.real_spawn
 local executable = vim.fn.executable
 vim.fn.executable = function(name)
@@ -1045,8 +1087,7 @@ vim.system = function(command, opts, on_exit)
     vim.g.cowsay_attempts = (vim.g.cowsay_attempts or 0) + 1
     if vim.env.COWSAY_CASE == "spawn" then error("simulated spawn failure") end
     if vim.env.COWSAY_CASE == "late" then
-      _G.cowsay_exits = _G.cowsay_exits or {}
-      table.insert(_G.cowsay_exits, {callback=on_exit, text=opts.stdin})
+      _G.cowsay_exit, _G.cowsay_text = on_exit, opts.stdin
       return {}
     end
     return _G.real_system(command, opts, on_exit)
@@ -1057,9 +1098,6 @@ vim.system = function(command, opts, on_exit)
   if vim.env.FORTUNE_CASE == "late" then _G.fortune_exit = on_exit; return {} end
   return _G.real_system(command, opts, on_exit)
 end
-vim.api.nvim_create_autocmd("User", {pattern="SnacksDashboardOpened", callback=function()
-  vim.g.initial_header = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
-end})
 ''')
             tool_env = {**env, "FORTUNE_CASE": "success", "COWSAY_CASE": "missing"}
             run_ui([], r'''
@@ -1069,7 +1107,7 @@ local function listing() return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1
 assert(vim.wait(2000, function() return listing():find("Fortune fixture", 1, true) ~= nil end))
 local text = listing()
 assert(text:find("åäö", 1, true) and text:find("中文", 1, true) and text:find("-- Fixture Author", 1, true), text)
-assert(not text:find("^__^", 1, true) and not text:find("external cow fixture", 1, true), text)
+assert(text:find("^__^", 1, true) and not text:find("external cow fixture", 1, true), text)
 assert(not vim.g.cowsay_attempts, "missing cowsay was invoked")
 assert(not text:find(string.rep("x", 75), 1, true), "long word was not wrapped")
 for _, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
@@ -1078,16 +1116,18 @@ end
 Snacks.dashboard.update()
 vim.wait(50)
 assert(listing() == text and vim.g.fortune_attempts == 1, "fortune changed on redraw")
+_G.assert_header_finished()
 ''', tool_env, directory, fortune_before)
-            for case in ("error", "empty", "slow", "spawn"):
+            for case in ("error", "empty", "slow", "spawn", "oversized", "tall"):
                 run_ui([], '''
 assert(vim.bo.filetype == "snacks_dashboard")
-vim.wait(500)
+assert(vim.wait(2000, function() return _G.quote_dashboard._dotfiles_fortune.done end))
 local text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\\n")
-assert(text == vim.g.initial_header, "failed fortune replaced fallback")
-assert(not text:find("< ", 1, true) and not text:find("^__^", 1, true), text)
+assert(text:find("< ", 1, true) and text:find("^__^", 1, true), text)
+assert(not text:find("Fortune fixture", 1, true), "failed fortune replaced built-in quote")
 Snacks.dashboard.update()
 assert(vim.g.fortune_attempts == 1, "failed fortune retried on redraw")
+_G.assert_header_finished()
 ''', {**tool_env, "FORTUNE_CASE": case}, directory, fortune_before)
             run_ui([], '''
 assert(type(_G.fortune_exit) == "function")
@@ -1098,8 +1138,9 @@ _G.fortune_exit({code=0, stdout="Late fortune fixture\\n"})
 vim.wait(50)
 assert(vim.api.nvim_get_current_buf() == buf and vim.bo.filetype ~= "snacks_dashboard")
 assert(vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == "keep this text")
+assert(#_G.rendered_headers == 1, "late fortune rendered into a closed dashboard")
 ''', {**tool_env, "FORTUNE_CASE": "late"}, directory, fortune_before)
-            print("PASS: asynchronous fortunes, Unicode wrapping, stable redraws and silent failure/timeout fallback")
+            print("PASS: asynchronous fortunes, Unicode wrapping, fixed-height built-in cow and failure/timeout fallback")
             for fortune_case in ("missing", "success", "error"):
                 run_ui([], r'''
 local function listing() return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n") end
@@ -1110,7 +1151,7 @@ assert(vim.wait(2000, function()
     and (vim.env.FORTUNE_CASE ~= "success" or text:find("Fortune fixture", 1, true))
 end), listing())
 local text, attempts = listing(), vim.g.cowsay_attempts
-assert(attempts == (vim.env.FORTUNE_CASE == "success" and 2 or 1))
+assert(attempts == 1, "animal rerolled while preparing quote")
 assert((text:find("Fortune fixture", 1, true) ~= nil) == (vim.env.FORTUNE_CASE == "success"), text)
 if vim.env.FORTUNE_CASE == "success" then
   assert(text:find("åäö", 1, true) and text:find("中文", 1, true) and text:find("-- Fixture Author", 1, true))
@@ -1125,40 +1166,62 @@ end
 Snacks.dashboard.update()
 vim.wait(50)
 assert(listing() == text and vim.g.cowsay_attempts == attempts, "cowsay reran on redraw")
+_G.assert_header_finished()
 ''', {**tool_env, "FORTUNE_CASE": fortune_case, "COWSAY_CASE": "success"}, directory, fortune_before)
             for case in ("error", "empty", "slow", "spawn", "oversized", "wide", "tall"):
                 run_ui([], r'''
 local function listing() return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n") end
 assert(vim.wait(2000, function() return listing():find("Fortune fixture", 1, true) ~= nil end))
-vim.wait(500)
-local text = listing()
+local text, attempts = listing(), vim.g.cowsay_attempts
 assert(text:find("-- Fixture Author", 1, true), "failed cowsay lost fortune")
-assert(not text:find("external cow fixture", 1, true) and not text:find("^__^", 1, true), text)
+assert(not text:find("external cow fixture", 1, true) and text:find("^__^", 1, true), text)
+assert(attempts == 1, "failed/oversize animal was retried")
 Snacks.dashboard.update()
-assert(listing() == text and vim.g.cowsay_attempts == 2, "failed cowsay retried on redraw")
+vim.wait(50)
+assert(listing() == text and vim.g.cowsay_attempts == attempts, "failed cowsay retried on redraw")
+_G.assert_header_finished()
 ''', {**tool_env, "COWSAY_CASE": case}, directory, fortune_before)
             run_ui([], r'''
-assert(#_G.cowsay_exits == 1)
-_G.fortune_exit({code=0, stdout="New fortune fixture\n"})
+local function header() return _G.quote_dashboard._dotfiles_fortune.header end
+assert(type(_G.fortune_exit) == "function" and not vim.g.cowsay_attempts, "cowsay ran before fortune completed")
+assert(vim.trim(header()) == "" and #_G.rendered_headers == 1)
+-- Dashboard actions remain usable while the quote/animal area is empty.
+local picked = false
+package.loaded["telescope.builtin"] = {find_files=function() picked = true end}
+vim.api.nvim_feedkeys("f", "xt", false)
+assert(picked and vim.bo.filetype == "snacks_dashboard")
+local quit = _G.dashboard_actions().q
+vim.api.nvim_win_set_cursor(0, {quit[1], quit[2] + 1})
 vim.wait(50)
-assert(#_G.cowsay_exits == 2)
-local old, new = _G.cowsay_exits[1], _G.cowsay_exits[2]
-new.callback({code=0, stdout=new.text .. "\n  (new cow)\n"})
+local cursor = vim.api.nvim_win_get_cursor(0)
+_G.fortune_exit({code=0, stdout="Deferred quote fixture\n"})
 vim.wait(50)
-old.callback({code=0, stdout=old.text .. "\n  (stale cow)\n"})
+assert(vim.g.cowsay_attempts == 1 and _G.cowsay_text == "Deferred quote fixture")
+assert(vim.trim(header()) == "" and #_G.rendered_headers == 1, "showed an intermediate quote/cow")
+Snacks.dashboard.update()
+assert(vim.trim(header()) == "" and vim.g.cowsay_attempts == 1 and vim.g.fortune_attempts == 1)
+_G.cowsay_exit({code=0, stdout=_G.cowsay_text .. "\n  (external cow fixture)\n"})
 vim.wait(50)
-local text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
-assert(text:find("New fortune fixture", 1, true) and text:find("(new cow)", 1, true), text)
-assert(not text:find("stale cow", 1, true), "old cowsay replaced the newer fortune")
+assert(header():find("Deferred quote fixture", 1, true) and header():find("external cow fixture", 1, true))
+assert(vim.deep_equal(vim.api.nvim_win_get_cursor(0), cursor), "header update moved cursor")
+_G.assert_header_finished()
+local completed = header()
+_G.cowsay_exit({code=0, stdout="late duplicate result\n"})
+vim.wait(50)
+assert(header() == completed and #_G.rendered_headers == 2, "completed header was replaced")
+''', {**tool_env, "FORTUNE_CASE": "late", "COWSAY_CASE": "late"}, directory, fortune_before)
+            run_ui([], r'''
+assert(type(_G.cowsay_exit) == "function")
 vim.cmd.enew()
 vim.api.nvim_buf_set_lines(0, 0, -1, false, {"keep this text"})
 local buf = vim.api.nvim_get_current_buf()
-new.callback({code=0, stdout=new.text .. "\n  (late cow)\n"})
+_G.cowsay_exit({code=0, stdout=_G.cowsay_text .. "\n  (late cow)\n"})
 vim.wait(50)
 assert(vim.api.nvim_get_current_buf() == buf and vim.bo.filetype ~= "snacks_dashboard")
 assert(vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == "keep this text")
-''', {**tool_env, "FORTUNE_CASE": "late", "COWSAY_CASE": "late"}, directory, fortune_before)
-            print("PASS: independent optional cowsay, plain-text fallback, stdin, bounded output and stale/late results")
+assert(#_G.rendered_headers == 1, "late animal rendered into a closed dashboard")
+''', {**tool_env, "FORTUNE_CASE": "missing", "COWSAY_CASE": "late"}, directory, fortune_before)
+            print("PASS: one-shot asynchronous header, working shortcuts, stationary actions/cursor, random animal and built-in cow fallback")
             fortune.unlink()
             cowsay.unlink()
             # Explicit files, directories, piped input and headless runs must not be hijacked.

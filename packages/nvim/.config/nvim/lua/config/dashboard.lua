@@ -12,8 +12,8 @@ local quotes = {
   "Save early. Commit often. Pet the cow.",
 }
 
-local function cow(quote)
-  local lines, width = {}, 0
+local function wrap_quote(quote)
+  local lines = {}
   for _, paragraph in ipairs(vim.split(vim.trim(quote), "\n", { plain = true })) do
     local line = ""
     for word in paragraph:gmatch("%S+") do
@@ -36,43 +36,51 @@ local function cow(quote)
   end
   -- A pathological fortune should not push all dashboard actions off screen.
   if #lines > 8 then return nil end
-  for _, line in ipairs(lines) do width = math.max(width, vim.fn.strdisplaywidth(line)) end
-  local bubble = { " " .. string.rep("_", width + 2) }
-  for row, line in ipairs(lines) do
-    local left, right = "<", ">"
-    if #lines > 1 then
-      left = row == 1 and "/" or row == #lines and "\\" or "|"
-      right = row == 1 and "\\" or row == #lines and "/" or "|"
-    end
-    bubble[#bubble + 1] = left .. " " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " " .. right
-  end
-  bubble[#bubble + 1] = " " .. string.rep("-", width + 2)
-  return table.concat(bubble, "\n") .. "\n" .. [[
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||]]
+  return table.concat(lines, "\n")
 end
 
 local function header(self)
   if not self._dotfiles_fortune then
-    local state = { header = cow(quotes[os.time() % #quotes + 1]) }
+    local state = {}
     self._dotfiles_fortune = state
+    local function refresh()
+      -- A late result must never move the cursor or replace an opened file.
+      if vim.api.nvim_buf_is_valid(self.buf) and vim.api.nvim_win_is_valid(self.win)
+          and vim.api.nvim_win_get_buf(self.win) == self.buf then
+        self:update()
+      end
+    end
+    local function set_quote(text)
+      state.quote, state.header = text, text
+      if vim.fn.executable("cowsay") ~= 1 then return end
+      -- Keep our display-width-aware wrapping, including Unicode and long words.
+      -- stdin avoids shell interpretation and quotes being treated as options.
+      pcall(vim.system, { "cowsay", "-n" }, { stdin = text, text = true, timeout = 300 },
+        vim.schedule_wrap(function(result)
+          if state.quote ~= text or result.code ~= 0 then return end
+          local output = result.stdout or ""
+          if #output > 4096 or vim.trim(output) == "" then return end
+          output = output:gsub("\n+$", "")
+          local lines = vim.split(output, "\n", { plain = true })
+          if #lines > 15 then return end
+          for _, line in ipairs(lines) do
+            if vim.fn.strdisplaywidth(line) > 56 then return end
+          end
+          state.header = output
+          refresh()
+        end))
+    end
+    set_quote(wrap_quote(quotes[os.time() % #quotes + 1]))
     if vim.fn.executable("fortune") == 1 then
       -- Only request a fortune when a dashboard is actually rendered, never for
       -- explicit file/directory arguments, piped input or ordinary headless use.
       pcall(vim.system, { "fortune", "-s" }, { text = true, timeout = 300 }, vim.schedule_wrap(function(result)
         local text = result.stdout or ""
         if result.code ~= 0 or #text > 4096 or vim.trim(text) == "" then return end
-        local ok, rendered = pcall(cow, text)
+        local ok, rendered = pcall(wrap_quote, text)
         if not ok or not rendered then return end
-        state.header = rendered
-        -- A late result must never move the cursor or replace an opened file.
-        if vim.api.nvim_buf_is_valid(self.buf) and vim.api.nvim_win_is_valid(self.win)
-            and vim.api.nvim_win_get_buf(self.win) == self.buf then
-          self:update()
-        end
+        set_quote(rendered)
+        refresh()
       end))
     end
   end

@@ -55,6 +55,39 @@ bindkey "\e\e[D" backward-word
 bindkey "\e\e[C" forward-word
 
 ### Functions ###
+# Refuse npm in projects declaring another manager; `command npm` bypasses this.
+npm() {
+  local manager
+  # Node is already npm's runtime; read JSON without loading project code.
+  # Workspace manifests inherit from parents, up to and including the Git root.
+  manager=$(command node -e '
+    const fs = require("node:fs");
+    const path = require("node:path");
+    let dir = process.cwd();
+    for (;;) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+        if (typeof pkg.packageManager === "string" && pkg.packageManager) {
+          process.stdout.write(pkg.packageManager);
+          break;
+        }
+      } catch {}
+      // Both repository directories and worktree/submodule .git files bound the search.
+      if (fs.existsSync(path.join(dir, ".git"))) break;
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  ' 2>/dev/null)
+  case "$manager" in
+    pnpm|pnpm@*|yarn|yarn@*|bun|bun@*)
+      print -u2 -r -- "npm: this project declares packageManager '$manager'; use ${manager%%@*} instead (or command npm to bypass)."
+      return 1
+      ;;
+  esac
+  command npm "$@"
+}
+
 # Retained for occasional commands that need a scoped secrets environment.
 # No current aliases or functions depend on it.
 with_secrets() {

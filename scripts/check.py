@@ -55,7 +55,8 @@ def main():
                          ("packages/zshrc/.zshrc", "packages/zprofile/.zprofile")])
         script("generate-themes.py", "check")
     if "shell" in suites:
-        for name in ("test-runtime.py", "test-tmx.py", "test-server.py", "test-br.py", "test-worktrees.py", "test-hyprland-bootstrap.py"):
+        for name in ("test-runtime.py", "test-tmx.py", "test-server.py", "test-br.py",
+                     "test-npm.py", "test-worktrees.py", "test-hyprland-bootstrap.py"):
             script(name)
     if "editor" in suites:
         script("test-nvim.py", fixtures / "bin/nvim", fixtures / "plugins", fixtures / "mason", fixtures / "parsers")

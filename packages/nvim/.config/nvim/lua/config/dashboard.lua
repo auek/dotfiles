@@ -1,6 +1,6 @@
 local M = {}
 
--- Used immediately, and retained if the optional local fortune command fails.
+-- Used if the optional local fortune command is missing or fails.
 local quotes = {
   "Simplicity is prerequisite for reliability.",
   "Make it work, make it right, make it fast.",
@@ -12,8 +12,8 @@ local quotes = {
   "Save early. Commit often. Pet the cow.",
 }
 
-local function cow(quote)
-  local lines, width = {}, 0
+local function wrap_quote(quote)
+  local lines = {}
   for _, paragraph in ipairs(vim.split(vim.trim(quote), "\n", { plain = true })) do
     local line = ""
     for word in paragraph:gmatch("%S+") do
@@ -36,45 +36,90 @@ local function cow(quote)
   end
   -- A pathological fortune should not push all dashboard actions off screen.
   if #lines > 8 then return nil end
+  return table.concat(lines, "\n")
+end
+
+local function cow_output(result)
+  local output = result.stdout or ""
+  if result.code ~= 0 or #output > 4096 or vim.trim(output) == "" then return nil end
+  output = output:gsub("%s+$", "")
+  local lines = vim.split(output, "\n", { plain = true })
+  if #lines > 15 then return nil end
+  for _, line in ipairs(lines) do
+    if vim.fn.strdisplaywidth(line) > 56 then return nil end
+  end
+  return output
+end
+
+local function fallback_cow(text)
+  local lines, width = vim.split(text, "\n", { plain = true }), 0
   for _, line in ipairs(lines) do width = math.max(width, vim.fn.strdisplaywidth(line)) end
   local bubble = { " " .. string.rep("_", width + 2) }
-  for row, line in ipairs(lines) do
-    local left, right = "<", ">"
-    if #lines > 1 then
-      left = row == 1 and "/" or row == #lines and "\\" or "|"
-      right = row == 1 and "\\" or row == #lines and "/" or "|"
-    end
-    bubble[#bubble + 1] = left .. " " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " " .. right
+  for _, line in ipairs(lines) do
+    bubble[#bubble + 1] = "( " .. line .. string.rep(" ", width - vim.fn.strdisplaywidth(line)) .. " )"
   end
   bubble[#bubble + 1] = " " .. string.rep("-", width + 2)
   return table.concat(bubble, "\n") .. "\n" .. [[
-        \   ^__^
-         \  (oo)\_______
+        o   ^__^
+         o  (oo)\_______
             (__)\       )\/\
                 ||----w |
                 ||     ||]]
 end
 
+local function pad_header(text)
+  local lines = vim.split(text, "\n", { plain = true })
+  -- Keep the animal beside the menu; unused space belongs above the quote.
+  while #lines < 15 do table.insert(lines, 1, "") end
+  return table.concat(lines, "\n")
+end
+
 local function header(self)
   if not self._dotfiles_fortune then
-    local state = { header = cow(quotes[os.time() % #quotes + 1]) }
+    -- Reserve the final height before any jobs finish, keeping actions stationary.
+    local state = { header = pad_header("") }
     self._dotfiles_fortune = state
-    if vim.fn.executable("fortune") == 1 then
-      -- Only request a fortune when a dashboard is actually rendered, never for
-      -- explicit file/directory arguments, piped input or ordinary headless use.
-      pcall(vim.system, { "fortune", "-s" }, { text = true, timeout = 300 }, vim.schedule_wrap(function(result)
-        local text = result.stdout or ""
-        if result.code ~= 0 or #text > 4096 or vim.trim(text) == "" then return end
-        local ok, rendered = pcall(cow, text)
-        if not ok or not rendered then return end
-        state.header = rendered
-        -- A late result must never move the cursor or replace an opened file.
-        if vim.api.nvim_buf_is_valid(self.buf) and vim.api.nvim_win_is_valid(self.win)
-            and vim.api.nvim_win_get_buf(self.win) == self.buf then
-          self:update()
-        end
-      end))
+    local function active()
+      return vim.api.nvim_buf_is_valid(self.buf) and vim.api.nvim_win_is_valid(self.win)
+        and vim.api.nvim_win_get_buf(self.win) == self.buf
     end
+    local function finish(output)
+      if state.done then return end
+      state.done, state.header = true, pad_header(output)
+      -- Publish only the final result. Never replace a file opened in the meantime.
+      if active() then self:update() end
+    end
+    local function render_quote(text)
+      if not active() or state.done then return end
+      local fallback = fallback_cow(text)
+      if vim.fn.executable("cowthink") == 1 then
+        -- Try one random animal with our UTF-8-safe wrapping and no shell parsing.
+        local ok = pcall(vim.system, { "cowthink", "-n", "-r" },
+          { stdin = text, text = true, timeout = 300 }, vim.schedule_wrap(function(result)
+            finish(cow_output(result) or fallback)
+          end))
+        if ok then return end
+      end
+      finish(fallback)
+    end
+    -- Start only for a rendered dashboard, after its blank header is in place.
+    vim.schedule(function()
+      if not active() then return end
+      local fallback = wrap_quote(quotes[os.time() % #quotes + 1])
+      if vim.fn.executable("fortune") == 1 then
+        local started = pcall(vim.system, { "fortune", "-s" }, { text = true, timeout = 300 },
+          vim.schedule_wrap(function(result)
+            local text = result.stdout or ""
+            local ok, wrapped = false, nil
+            if result.code == 0 and #text <= 4096 and vim.trim(text) ~= "" then
+              ok, wrapped = pcall(wrap_quote, text)
+            end
+            render_quote(ok and wrapped or fallback)
+          end))
+        if started then return end
+      end
+      render_quote(fallback)
+    end)
   end
   return { header = self._dotfiles_fortune.header, padding = 1 }
 end

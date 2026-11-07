@@ -6,7 +6,7 @@ HISTSIZE=500000
 SAVEHIST=400000
 
 typeset -U path PATH
-path=("$HOME/.local/bin" "$HOME/.opencode/bin" $path)
+path=("$HOME/.local/bin" $path)
 export PATH
 export PIP_REQUIRE_VIRTUALENV=true
 export ZSH="$HOME/.oh-my-zsh"

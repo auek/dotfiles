@@ -19,7 +19,6 @@ DO_UPDATE=0
 INSTALL_HYPRLAND=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZSH_AUTOSUGGESTIONS_VERSION="v0.7.1"
-DOTFILES_LINK="$HOME/.dotfiles"
 IS_WSL=0
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
@@ -224,21 +223,11 @@ else
   fi
 fi
 
-# ─── Step 6: Symlink repo to ~/.dotfiles ──────────────────────────────────────
+# ─── Step 6: Create required directories ─────────────────────────────────────
 
-step "6/12 — Symlinking repo to ~/.dotfiles"
+step "6/12 — Creating required directories"
 
-# Ensure required directories exist
 mkdir -p "$HOME/.ssh" "$HOME/.config"
-
-if [ "$DOTFILES_LINK" -ef "$REPO_DIR" ]; then
-  info "~/.dotfiles already points to $REPO_DIR"
-elif [ -e "$DOTFILES_LINK" ]; then
-  die "~/.dotfiles already exists and is not a symlink to $REPO_DIR — remove it manually"
-else
-  ln -s "$REPO_DIR" "$DOTFILES_LINK"
-  success "Created ~/.dotfiles -> $REPO_DIR"
-fi
 
 # ─── Step 7: Stow dotfiles ────────────────────────────────────────────────────
 

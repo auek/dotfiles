@@ -107,7 +107,7 @@ class BootstrapTests(unittest.TestCase):
         # no Stow command or host symlink operation is executed.
         self.mock("make", 'printf "%s\\n" "$*" >> "$CHECK_LOG"\nexit "${MAKE_RESULT:-0}"')
         source = (ROOT / "setup.sh").read_text()
-        phase = "# ─── Step 7:" + source.split("# ─── Step 7:", 1)[1]
+        phase = "# ─── Step 6:" + source.split("# ─── Step 6:", 1)[1]
         phase = phase.split("# ─── Step 8:", 1)[0]
         prelude = ('set -eu; REPO_DIR="$1"; PROFILE="$2"; INSTALL_HYPRLAND="$3"; '
                    'step() { :; }; success() { :; }; die() { exit 1; };\n')
@@ -120,6 +120,9 @@ class BootstrapTests(unittest.TestCase):
                 marker.unlink(missing_ok=True)
                 result = self.run_shell(prelude + phase, args=(str(ROOT), profile, desktop))
                 self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue((self.home / ".ssh").is_dir())
+                self.assertTrue((self.home / ".config").is_dir())
+                self.assertFalse(os.path.lexists(self.home / ".dotfiles"))
                 self.assertEqual(self.log.read_text().splitlines()[0], f"-C {ROOT} {target}")
                 self.assertEqual(marker.exists(), desktop == "1")
         marker.unlink()

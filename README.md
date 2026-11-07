@@ -12,8 +12,9 @@ Start with an installed OS, networking, Git, and sudo access. Desktop hardware
 support (graphics, audio, Bluetooth) should already be configured.
 
 ```bash
-git clone <repo-url> ~/.dotfiles
-cd ~/.dotfiles
+mkdir -p ~/code
+git clone <repo-url> ~/code/dotfiles
+cd ~/code/dotfiles
 bash setup.sh --full
 ```
 

@@ -989,7 +989,7 @@ assert(vim.wait(1000, function() return vim.o.laststatus ~= 0 end), "statusline 
 ''', env, directory, dashboard_before)
             cowsay = bin_dir / "cowsay"
             cowsay.write_text(f"#!{sys.executable}\n" + '''import os, sys, time
-assert sys.argv[1:] == ["-n"]
+assert sys.argv[1:] == ["-n", "-r"]
 text = sys.stdin.read()
 mode = os.environ["COWSAY_CASE"]
 if mode == "slow":
@@ -1037,7 +1037,7 @@ vim.fn.executable = function(name)
 end
 vim.system = function(command, opts, on_exit)
   if command[1] == "cowsay" then
-    assert(vim.deep_equal(command, {"cowsay", "-n"}))
+    assert(vim.deep_equal(command, {"cowsay", "-n", "-r"}))
     assert(type(opts.stdin) == "string" and opts.stdin ~= "", "quote not passed via stdin")
     for _, line in ipairs(vim.split(opts.stdin, "\\n", {plain=true})) do
       assert(vim.fn.strdisplaywidth(line) <= 52, "cowsay input was not wrapped")

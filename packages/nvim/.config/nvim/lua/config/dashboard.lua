@@ -55,7 +55,7 @@ local function header(self)
       if vim.fn.executable("cowsay") ~= 1 then return end
       -- Keep our display-width-aware wrapping, including Unicode and long words.
       -- stdin avoids shell interpretation and quotes being treated as options.
-      pcall(vim.system, { "cowsay", "-n" }, { stdin = text, text = true, timeout = 300 },
+      pcall(vim.system, { "cowsay", "-n", "-r" }, { stdin = text, text = true, timeout = 300 },
         vim.schedule_wrap(function(result)
           if state.quote ~= text or result.code ~= 0 then return end
           local output = result.stdout or ""

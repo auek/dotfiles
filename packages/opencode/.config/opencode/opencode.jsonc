@@ -12,10 +12,15 @@
     ]
   },
   "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "enabled": true
+    "servers": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "oauth": false,
+        "headers": {
+          "CONTEXT7_API_KEY": "{file:~/.secrets/context7-api-key}"
+        }
+      }
     }
   },
   "permission": {

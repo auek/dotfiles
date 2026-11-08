@@ -51,6 +51,7 @@ dotfiles/
 │   └── templates/            # One template per fragment (per-theme overrides supported)
 └── packages/                 # GNU Stow package sources
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
+    ├── readline/.inputrc     # Shared Bash keybindings for workstation and server shells
     ├── vim-server/.vimrc     # Minimal Vim config for servers
     ├── zshrc/.zshrc          # Zsh startup, private overrides, portable tmx sessions, and brightness helpers
     ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
@@ -84,13 +85,15 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 ```
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
-`zshrc`, `zprofile`, `tmux`, `nvim`, `themes`, `mise`, and `tealdeer`.
+`zshrc`, `zprofile`, `readline`, `tmux`, `nvim`, `themes`, `mise`, and `tealdeer`.
 Optional `opencode`, `claude`, and `espanso` configuration can be added with
 `STOW_INCLUDE = opencode claude espanso` in an ordinary, untracked
 `${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local.mk`. Includes are additive
 for `make stow`, `make restow`, and `make unstow`; removing an include does not
 remove existing links. Never Stow or commit the local file. Desktop and server
-targets retain their separate package groups.
+targets retain their separate package groups. Both groups include `readline`:
+its `.inputrc` retains system Readline settings and binds Alt+K to clear-screen
+in Bash, including occasional workstation Bash shells. Zsh binds it separately.
 Zsh's optional `ddcutil` helpers `br`, `br1`, and `br2`
 read current/max brightness without arguments and set it with a value; `br`
 targets both displays, while `br1`/`br2` target one each.

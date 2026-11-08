@@ -39,6 +39,7 @@ With `--hyprland`, the desktop starts on the next local tty1 login; see the
 | Stow packages | Contents |
 |---|---|
 | `zshrc`, `zprofile` | Zsh, completion, shell helpers, and login environment |
+| `readline` | Shared Bash keybindings for workstation and server shells |
 | `tmux` | Terminal multiplexer with editor navigation |
 | `nvim` | Neovim with completion, LSP, Git indicators, highlighting, and search |
 | `mise` | Node, Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |

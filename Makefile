@@ -1,7 +1,7 @@
-STOW_PACKAGES = zshrc zprofile tmux nvim themes mise tealdeer
+STOW_PACKAGES = zshrc zprofile readline tmux nvim themes mise tealdeer
 STOW_INCLUDE ?=
 STOW_PACKAGES_HYPRLAND = foot hypr waybar wofi mako
-STOW_PACKAGES_SERVER = bashrc-server tmux-server vim-server
+STOW_PACKAGES_SERVER = bashrc-server readline tmux-server vim-server
 STOW_PACKAGES_GTK = gtk
 STOW_PACKAGES_FOOT = foot
 STOW_DIR = $(CURDIR)/packages

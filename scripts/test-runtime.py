@@ -27,6 +27,8 @@ class MakeStowTests(unittest.TestCase):
         self.home.mkdir()
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith(("XDG_", "MAKE", "MFLAGS", "STOW_"))}
+        for key in ("INPUTRC", "BASH_ENV", "ENV"):
+            self.env.pop(key, None)
         self.env.update(HOME=str(self.home), PATH="/usr/bin:/bin")
         self.current = self.home / ".local/state/dotfiles/theme/current"
         self.current.parent.mkdir(parents=True)
@@ -44,6 +46,14 @@ class MakeStowTests(unittest.TestCase):
         else:
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
+
+    def test_bash_clear_shortcut_in_workstation_profile(self):
+        self.make("stow")
+        self.assertTrue((self.home / ".inputrc").is_symlink())
+        result = subprocess.run(["bash", "--noprofile", "--norc", "-ic", "bind -q clear-screen"],
+                                cwd=self.home, env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('"\\ek"', result.stdout)
 
     def test_repeat_restow_refreshes_links_and_preserves_local_state(self):
         local_files = {
@@ -195,6 +205,7 @@ class RuntimeTests(unittest.TestCase):
                 if "i" in flags:
                     code += ('[[ "$DOTFILES_LOCAL" == loaded ]] || exit 1; '
                              '(( $+functions[compdef] && $+functions[_zsh_autosuggest_start] )) || exit 2; '
+                             '[[ $(bindkey "\\ek") == *clear-screen ]] || exit 3; '
                              'tmx --help || exit; ')
                 code += 'print startup-ok'
                 self.assertIn("startup-ok", self.run_checked("zsh", flags, code))
@@ -210,7 +221,10 @@ class RuntimeTests(unittest.TestCase):
         self.tmux("wait-for", "shell-ready")
         self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), "1")
         # Explicit sourcing surfaces errors that initial detached startup can hide.
+        self.tmux("bind-key", "-n", "M-n", "next-window")
+        self.tmux("bind-key", "-n", "M-p", "previous-window")
         self.tmux("source-file", str(self.home / ".tmux.conf"))
+        self.assertNotRegex(self.tmux("list-keys", "-T", "root"), r"\sM-[np]\s")
         for key in ('"', "%", "c"):
             with self.subTest(key=key):
                 binding = shlex.split(self.tmux("list-keys", "-T", "prefix", key))

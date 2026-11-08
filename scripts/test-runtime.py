@@ -27,6 +27,8 @@ class MakeStowTests(unittest.TestCase):
         self.home.mkdir()
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith(("XDG_", "MAKE", "MFLAGS", "STOW_"))}
+        for key in ("INPUTRC", "BASH_ENV", "ENV"):
+            self.env.pop(key, None)
         self.env.update(HOME=str(self.home), PATH="/usr/bin:/bin")
         self.current = self.home / ".local/state/dotfiles/theme/current"
         self.current.parent.mkdir(parents=True)
@@ -44,6 +46,14 @@ class MakeStowTests(unittest.TestCase):
         else:
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
+
+    def test_bash_clear_shortcut_in_workstation_profile(self):
+        self.make("stow")
+        self.assertTrue((self.home / ".inputrc").is_symlink())
+        result = subprocess.run(["bash", "--noprofile", "--norc", "-ic", "bind -q clear-screen"],
+                                cwd=self.home, env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('"\\ek"', result.stdout)
 
     def test_repeat_restow_refreshes_links_and_preserves_local_state(self):
         local_files = {

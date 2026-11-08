@@ -1,0 +1,7 @@
+# Retain system-wide Readline settings.
+$include /etc/inputrc
+
+$if Bash
+# Match Zsh's Alt+K without losing the current input.
+"\ek": clear-screen
+$endif

@@ -24,7 +24,7 @@ class ServerTests(unittest.TestCase):
         self.home = Path(self.temp.name)
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith(("TMUX", "XDG_", "MAKE", "MFLAGS", "STOW_", "BASH_FUNC_"))}
-        for key in ("BASH_ENV", "ENV", "CDPATH", "PROMPT_COMMAND"):
+        for key in ("BASH_ENV", "ENV", "CDPATH", "PROMPT_COMMAND", "INPUTRC"):
             self.env.pop(key, None)
         self.env.update(HOME=str(self.home), PATH="/usr/bin:/bin", SHELL=BASH,
                         TERM="xterm-256color", GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1")
@@ -54,6 +54,7 @@ class ServerTests(unittest.TestCase):
         for interactive in (False, True):
             with self.subTest(interactive=interactive):
                 self.assertEqual(self.bash(code, interactive), f"{self.home}/.bash_history|500000")
+        self.assertIn('"\\ek"', self.bash("bind -q clear-screen", True))
         private = self.home / ".bashrc.private"
         private.write_text('export DOTFILES_SERVER_LOCAL=loaded\nalias p="printf private-override"\n')
         self.assertEqual(self.bash('printf "%s|" "$DOTFILES_SERVER_LOCAL"; eval p', True),
@@ -83,7 +84,7 @@ class ServerTests(unittest.TestCase):
                 path = self.home / name
                 self.assertFalse(path.is_symlink())
                 self.assertEqual(path.read_text(), contents)
-        for name in (".bashrc", ".tmux.conf", ".vimrc"):
+        for name in (".bashrc", ".inputrc", ".tmux.conf", ".vimrc"):
             self.assertFalse(os.path.lexists(self.home / name))
         self.assertFalse((self.home / ".zshrc").exists())
         self.assertFalse((self.home / ".config/mise").exists())

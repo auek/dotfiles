@@ -195,6 +195,7 @@ class RuntimeTests(unittest.TestCase):
                 if "i" in flags:
                     code += ('[[ "$DOTFILES_LOCAL" == loaded ]] || exit 1; '
                              '(( $+functions[compdef] && $+functions[_zsh_autosuggest_start] )) || exit 2; '
+                             '[[ $(bindkey "\\ek") == *clear-screen ]] || exit 3; '
                              'tmx --help || exit; ')
                 code += 'print startup-ok'
                 self.assertIn("startup-ok", self.run_checked("zsh", flags, code))
@@ -210,7 +211,10 @@ class RuntimeTests(unittest.TestCase):
         self.tmux("wait-for", "shell-ready")
         self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), "1")
         # Explicit sourcing surfaces errors that initial detached startup can hide.
+        self.tmux("bind-key", "-n", "M-n", "next-window")
+        self.tmux("bind-key", "-n", "M-p", "previous-window")
         self.tmux("source-file", str(self.home / ".tmux.conf"))
+        self.assertNotRegex(self.tmux("list-keys", "-T", "root"), r"\sM-[np]\s")
         for key in ('"', "%", "c"):
             with self.subTest(key=key):
                 binding = shlex.split(self.tmux("list-keys", "-T", "prefix", key))

@@ -99,7 +99,10 @@ class ServerTests(unittest.TestCase):
                   "-x", "120", "-y", "40", shell_command)
         self.tmux("wait-for", "server-shell-ready")
         self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), "1")
+        self.tmux("bind-key", "-n", "M-n", "next-window")
+        self.tmux("bind-key", "-n", "M-p", "previous-window")
         self.tmux("source-file", str(self.home / ".tmux.conf"))
+        self.assertNotRegex(self.tmux("list-keys", "-T", "root"), r"\sM-[np]\s")
         self.tmux("set-option", "-g", "default-command", shell_command)
         for key in ('"', "%", "c"):
             with self.subTest(key=key):

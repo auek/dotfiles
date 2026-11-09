@@ -482,9 +482,12 @@ Create a worktree and enter it. Branch defaults to directory-name.
 Branch selection:
   1. Reuse the local branch, if it exists.
   2. Otherwise, track the matching origin/<branch>, if it exists.
-  3. Otherwise, create from origin/main with no upstream.
+  3. Otherwise, create from origin/main or origin/master with no upstream.
 
+  Prefers cached origin/HEAD when it names an available main or master.
+  Otherwise uses the only fetched trunk; refuses ambiguous main/master refs.
   Uses fetched refs. Run git fetch origin first to refresh them.
+  Refresh the default-branch hint: git remote set-head origin --auto
 
 Options:
   --no-cd       Create without changing your current directory.
@@ -520,7 +523,26 @@ Location:
   elif command git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
     command git -C "$gwt_main" worktree add --track -b "$branch" -- "$destination" "origin/$branch" || return
   else
-    command git -C "$gwt_main" worktree add --no-track -b "$branch" -- "$destination" origin/main || return
+    local trunk candidate
+    trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+    if [[ "$trunk" != origin/main && "$trunk" != origin/master ]] ||
+        ! command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+      trunk=
+      for candidate in main master; do
+        if command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+          if [[ -n "$trunk" ]]; then
+            print -u2 -r -- 'gwa: both main and master exist; refresh the default with git remote set-head origin --auto.'
+            return 1
+          fi
+          trunk="origin/$candidate"
+        fi
+      done
+    fi
+    if [[ -z "$trunk" ]]; then
+      print -u2 -r -- 'gwa: no fetched origin/main or origin/master; run git fetch origin first.'
+      return 1
+    fi
+    command git -C "$gwt_main" worktree add --no-track -b "$branch" -- "$destination" "$trunk" || return
   fi
   if (( ! no_cd )); then
     builtin cd -- "$destination" || return

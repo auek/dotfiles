@@ -147,7 +147,10 @@ reference from the remote, and merges that default branch when named `main` or
 rejected. `gwl` lists worktrees; `gwc [name|branch|path]`
 enters a registered worktree root (fzf picker without arguments).
 `gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
-origin branch, or creates from already-fetched `origin/main` without an upstream.
+origin branch, or creates from already-fetched `origin/main` or `origin/master`
+without an upstream. It prefers a valid cached `origin/HEAD` main/master hint;
+otherwise a single available trunk is used. Ambiguous/missing trunks fail before
+creating a branch or worktree. `gwa` does not fetch or query the remote.
 It enters the new worktree by default. Destinations default to siblings of the
 original checkout; an ordinary per-repository `dotfiles.worktreeDir` Git setting
 can override the parent (relative values resolve from the original checkout).

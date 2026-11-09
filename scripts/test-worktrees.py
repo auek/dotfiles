@@ -101,6 +101,14 @@ sys.stdout.buffer.write(target + b"\\0")
         self.shell('gwa "$@"', name, *([branch] if branch else []))
         return self.container / name
 
+    def publish_master(self):
+        self.git("-C", self.seed, "switch", "-c", "master")
+        (self.seed / "master-only.txt").write_text("master trunk\n")
+        self.git("-C", self.seed, "add", ".")
+        self.git("-C", self.seed, "commit", "-m", "Advance master")
+        self.git("-C", self.seed, "push", "origin", "master")
+        self.git("-C", self.main, "fetch", "origin")
+
     def branch(self, directory):
         return self.git("-C", directory, "branch", "--show-current").stdout.strip()
 
@@ -140,6 +148,73 @@ sys.stdout.buffer.write(target + b"\\0")
         result = self.shell('gwa --no-cd "theme å; literal" feature/story && printf "CWD:%s\\n" "$PWD"', cwd=cwd)
         self.assert_cwd(result, cwd)
         self.assertEqual(self.branch(self.container / "theme å; literal"), "feature/story")
+
+    def test_new_branch_uses_master_with_valid_missing_or_dangling_head(self):
+        self.publish_master()
+        self.git("--git-dir", self.remote, "symbolic-ref", "HEAD", "refs/heads/master")
+        self.git("-C", self.seed, "push", "origin", "--delete", "main")
+        self.git("-C", self.main, "fetch", "--prune", "origin")
+        expected = self.git("-C", self.main, "rev-parse", "origin/master").stdout
+        # Creation from fetched refs must keep working without remote access.
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for hint in ("master", None, "main"):
+            with self.subTest(hint=hint):
+                if hint is None:
+                    self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+                else:
+                    self.git("-C", self.main, "symbolic-ref", "refs/remotes/origin/HEAD", f"refs/remotes/origin/{hint}")
+                name = "topic-" + (hint or "no-head")
+                result = self.shell('gwa "$1" && printf "CWD:%s\\n" "$PWD"', name, cwd=self.main / "app1")
+                tree = self.container / name
+                self.assert_cwd(result, tree)
+                self.assertEqual(self.branch(tree), name)
+                self.assertEqual(self.git("-C", tree, "rev-parse", "HEAD").stdout, expected)
+                self.assertTrue((tree / "master-only.txt").exists())
+                self.assertNotEqual(self.git("-C", tree, "rev-parse", "--verify", "@{upstream}", success=False).returncode, 0)
+
+    def test_new_branch_uses_cached_default_when_both_trunk_names_exist(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for trunk in ("main", "master"):
+            with self.subTest(trunk=trunk):
+                self.git("-C", self.main, "remote", "set-head", "origin", trunk)
+                tree = self.add("from-" + trunk)
+                self.assertEqual(self.git("-C", tree, "rev-parse", "HEAD").stdout,
+                                 self.git("-C", self.main, "rev-parse", "origin/" + trunk).stdout)
+                self.assertEqual((tree / "master-only.txt").exists(), trunk == "master")
+
+    def test_new_branch_ambiguous_or_missing_trunk_has_no_side_effects(self):
+        self.publish_master()
+        self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for name, message in (("ambiguous", "both main and master"), ("missing", "no fetched origin/main or origin/master")):
+            with self.subTest(name=name):
+                if name == "missing":
+                    for trunk in ("main", "master"):
+                        self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/" + trunk)
+                cwd = self.main / "app1"
+                result = self.shell('gwa "$1"; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"',
+                                    name, cwd=cwd, success=False)
+                self.assertIn(message, result.stderr)
+                self.assert_cwd(result, cwd)
+                self.assertFalse((self.container / name).exists())
+                self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", "refs/heads/" + name,
+                                             success=False).returncode, 0)
+
+    def test_existing_branch_selection_works_without_trunk_or_remote_access(self):
+        self.git("-C", self.main, "branch", "local-feature")
+        self.git("-C", self.seed, "branch", "feature/remote")
+        self.git("-C", self.seed, "push", "origin", "feature/remote")
+        self.git("-C", self.main, "fetch", "origin")
+        self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+        self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/main")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        local_tree = self.add("local-tree", "local-feature")
+        remote_tree = self.add("remote-tree", "feature/remote")
+        self.assertEqual(self.branch(local_tree), "local-feature")
+        self.assertEqual(self.branch(remote_tree), "feature/remote")
+        self.assertEqual(self.git("-C", remote_tree, "rev-parse", "--abbrev-ref", "@{upstream}").stdout.strip(),
+                         "origin/feature/remote")
 
     def test_existing_local_branch_is_reused(self):
         self.git("-C", self.main, "branch", "local-feature")

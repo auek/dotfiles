@@ -83,6 +83,7 @@ Keep machine-specific settings in ordinary, untracked files:
 | `~/.config/mise/config.local.toml` | Tool versions and extra tools |
 | `~/.config/nvim/local.lua` | Language servers, parsers, and editor features |
 | `~/.config/tmx/init.zsh` | Layout and startup commands for new tmux sessions |
+| `~/.tmux.conf.local` | Local tmux settings and [optional recovery plugins](docs/setup_wsl.md#optional-tmux-recovery-on-a-limited-rhelwsl-machine) |
 | `~/.config/hypr/hyprland.lua` | Desktop entrypoint and monitor/hardware overrides |
 
 Config paths respect `XDG_CONFIG_HOME`. Do not Stow or commit these local files.

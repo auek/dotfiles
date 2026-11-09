@@ -62,6 +62,7 @@ class MakeStowTests(unittest.TestCase):
             ".config/hypr/hyprland.lua": '-- local desktop preferences\n',
             ".config/tmx/init.zsh": "# local session hook\n",
             ".zshrc.private": "# local shell preferences\n",
+            ".tmux.conf.local": "# local tmux preferences\n",
         }
         for name, contents in local_files.items():
             path = self.home / name
@@ -241,6 +242,39 @@ class RuntimeTests(unittest.TestCase):
                 binding = shlex.split(self.tmux("list-keys", "-T", "root", key))
                 self.tmux(*binding[binding.index(key) + 1:])
                 self.assertEqual(self.tmux("display-message", "-p", "#{window_index}"), str(index))
+
+    def test_optional_tmux_local_config_survives_theme_changes(self):
+        self.tmux("new-session", "-d", "-s", "local", "sleep 120")
+        self.tmux("source-file", str(self.home / ".tmux.conf"))
+        self.assertNotIn("LOCAL", self.tmux("show-options", "-gv", "status-right"))
+        # Route theme-set to this private server, including a HOME with spaces.
+        self.mock("tmux", 'if [ "$1" = info ]; then exit 0; fi\n'
+                  f'exec {shlex.quote(TMUX)} -S {shlex.quote(str(self.socket))} "$@"')
+        for name in ("pgrep", "hyprctl", "systemctl"):
+            self.mock(name, "exit 1")
+        for name in ("pkill", "makoctl", "foot-reload"):
+            self.mock(name, "exit 0")
+        command = ROOT / "packages/themes/.local/bin/theme-set"
+        self.run_checked("bash", str(command), "gruvbox")
+        local = self.home / ".tmux.conf.local"
+        contents = 'set -ag status-right " LOCAL"\nset -g @local-tmux loaded\n'
+        local.write_text(contents)
+        for theme in ("everforest", "gruvbox", "everforest"):
+            self.tmux("source-file", str(self.home / ".tmux.conf"))
+            self.tmux("set-option", "-gu", "@local-tmux")
+            self.run_checked("bash", str(command), theme)
+            status = self.tmux("show-options", "-gv", "status-right")
+            self.assertEqual(status.count("LOCAL"), 1, status)
+            self.assertEqual(self.tmux("show-options", "-gv", "@local-tmux"), "loaded")
+            self.assertIn("send-prefix", self.tmux("list-keys", "-T", "prefix", "C-s"))
+            self.assertEqual(local.read_text(), contents)
+        # Bad local settings are reported while the chosen theme stays active.
+        local.write_text("not-a-tmux-command\n")
+        result = subprocess.run(["bash", str(command), "gruvbox"], env=self.env,
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("warning: could not reload local tmux config", result.stderr)
+        self.assertEqual(self.current.resolve().name, "gruvbox")
 
     def test_theme_switch_rejection_and_reload_failure(self):
         # Make every reload observable and harmless, including process signals.

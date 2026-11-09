@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise Zsh worktree workflows with real Git and disposable local remotes."""
+"""Exercise worktree and Bash/Zsh trunk workflows with real Git and local remotes."""
 
 import json
 import os
@@ -14,10 +14,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 ZSH = shutil.which("zsh")
+BASH = shutil.which("bash")
 GIT = shutil.which("git")
 FZF = shutil.which("fzf")
-if not ZSH or not GIT or not FZF:
-    sys.exit("requires Zsh, Git and fzf")
+if not BASH or not ZSH or not GIT or not FZF:
+    sys.exit("requires Bash, Zsh, Git and fzf")
 
 
 class WorktreeTests(unittest.TestCase):
@@ -33,7 +34,7 @@ class WorktreeTests(unittest.TestCase):
         self.remote = self.home / "origin.git"
         self.seed = self.home / "seed"
         self.env = {key: value for key, value in os.environ.items()
-                    if not key.startswith(("GIT_", "MISE_", "__MISE_", "XDG_", "ZSH", "ZDOT", "FZF_"))}
+                    if not key.startswith(("GIT_", "MISE_", "__MISE_", "XDG_", "ZSH", "ZDOT", "FZF_", "BASH_FUNC_"))}
         self.env.update(HOME=str(self.home), PATH=f"{self.bin}:/usr/bin:/bin",
                         XDG_CONFIG_HOME=str(self.home / ".config"),
                         XDG_DATA_HOME=str(self.home / ".data"),
@@ -84,10 +85,16 @@ sys.stdout.buffer.write(target + b"\\0")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
 
-    def shell(self, code, *args, cwd=None, success=True, **env):
-        source = ROOT / "packages/zshrc/.zshrc"
+    def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, **env):
+        source = ROOT / ("packages/zshrc/.zshrc" if shell == "zsh" else "packages/bashrc-server/.bashrc")
+        runner = [ZSH, "-f", "-c"] if shell == "zsh" else [BASH, "--noprofile", "--norc", "-c"]
+        loader = 'source "$1"; shift; test_code=$1; shift; eval "$test_code"'
+        if legacy_gcm:
+            loader = 'alias gcm="git checkout main || git checkout master"; ' + loader
+            if shell == "bash":
+                loader = "shopt -s expand_aliases; " + loader
         # Parse commands only after sourcing, so the real aliases expand too.
-        result = subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; test_code=$1; shift; eval "$test_code"',
+        result = subprocess.run([*runner, loader,
                                  "worktree-check", str(source), code, *map(str, args)],
                                 cwd=cwd or self.main, env={**self.env, **env},
                                 capture_output=True, text=True, timeout=15)
@@ -108,6 +115,12 @@ sys.stdout.buffer.write(target + b"\\0")
         self.git("-C", self.seed, "commit", "-m", "Advance master")
         self.git("-C", self.seed, "push", "origin", "master")
         self.git("-C", self.main, "fetch", "origin")
+
+    def feature_checkout(self, name):
+        checkout = self.container / name
+        self.git("clone", self.remote, checkout)
+        self.git("-C", checkout, "switch", "-c", "feature/topic")
+        return checkout
 
     def branch(self, directory):
         return self.git("-C", directory, "branch", "--show-current").stdout.strip()
@@ -347,6 +360,76 @@ sys.stdout.buffer.write(target + b"\\0")
         before = self.git("-C", tree, "rev-parse", "HEAD").stdout
         self.shell("gmm", cwd=tree, success=False)
         self.assertEqual(self.git("-C", tree, "rev-parse", "HEAD").stdout, before)
+
+    def test_gcm_checks_out_local_main_or_master_without_origin(self):
+        for shell in ("zsh", "bash"):
+            for trunk in ("main", "master"):
+                with self.subTest(shell=shell, trunk=trunk):
+                    checkout = self.container / f"local-{shell}-{trunk}"
+                    self.git("init", "-b", trunk, checkout)
+                    (checkout / "file.txt").write_text("local repository\n")
+                    self.git("-C", checkout, "add", ".")
+                    self.git("-C", checkout, "commit", "-m", "Baseline")
+                    self.git("-C", checkout, "switch", "-c", "feature/topic")
+                    self.shell("gcm --quiet", shell=shell, cwd=checkout)
+                    self.assertEqual(self.branch(checkout), trunk)
+
+    def test_gcm_uses_cached_default_and_tracks_origin_when_needed(self):
+        self.publish_master()
+        for shell in ("zsh", "bash"):
+            for trunk in ("main", "master"):
+                with self.subTest(shell=shell, trunk=trunk):
+                    checkout = self.feature_checkout(f"default-{shell}-{trunk}")
+                    self.git("-C", checkout, "remote", "set-head", "origin", trunk)
+                    self.git("-C", checkout, "remote", "set-url", "origin", self.home / "offline-remote")
+                    self.shell("gcm", shell=shell, cwd=checkout / "app1")
+                    self.assertEqual(self.branch(checkout), trunk)
+                    self.assertEqual(self.git("-C", checkout, "rev-parse", "HEAD").stdout,
+                                     self.git("-C", checkout, "rev-parse", "origin/" + trunk).stdout)
+                    self.assertEqual(self.git("-C", checkout, "rev-parse", "--abbrev-ref", "@{upstream}").stdout.strip(),
+                                     "origin/" + trunk)
+
+    def test_gcm_refuses_ambiguous_or_missing_trunks_without_changing_branches(self):
+        self.publish_master()
+        for shell in ("zsh", "bash"):
+            for scenario in ("ambiguous", "missing"):
+                with self.subTest(shell=shell, scenario=scenario):
+                    checkout = self.feature_checkout(f"{scenario}-{shell}")
+                    self.git("-C", checkout, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+                    if scenario == "missing":
+                        self.git("-C", checkout, "branch", "-d", "main")
+                        for trunk in ("main", "master"):
+                            self.git("-C", checkout, "update-ref", "-d", "refs/remotes/origin/" + trunk)
+                    self.git("-C", checkout, "remote", "set-url", "origin", self.home / "offline-remote")
+                    before = self.git("-C", checkout, "show-ref", "--heads").stdout
+                    result = self.shell("gcm", shell=shell, cwd=checkout, success=False)
+                    self.assertIn("both main and master" if scenario == "ambiguous" else "no main or master", result.stderr)
+                    self.assertEqual(self.branch(checkout), "feature/topic")
+                    self.assertEqual(self.git("-C", checkout, "show-ref", "--heads").stdout, before)
+
+    def test_gcm_checkout_failure_does_not_try_the_other_branch(self):
+        for shell in ("zsh", "bash"):
+            with self.subTest(shell=shell):
+                checkout = self.feature_checkout("conflict-" + shell)
+                self.git("-C", checkout, "branch", "master")
+                self.git("-C", checkout, "switch", "main")
+                file = checkout / "app1/file.txt"
+                file.write_text("main branch change\n")
+                self.git("-C", checkout, "add", ".")
+                self.git("-C", checkout, "commit", "-m", "Advance local main")
+                self.git("-C", checkout, "switch", "feature/topic")
+                file.write_text("preserve unsaved feature edits\n")
+                self.shell("gcm", shell=shell, cwd=checkout, success=False)
+                self.assertEqual(self.branch(checkout), "feature/topic")
+                self.assertEqual(file.read_text(), "preserve unsaved feature edits\n")
+
+    def test_gcm_replaces_legacy_alias_when_sourcing(self):
+        for shell in ("zsh", "bash"):
+            with self.subTest(shell=shell):
+                checkout = self.feature_checkout("reload-" + shell)
+                self.shell('if alias gcm >/dev/null 2>&1; then exit 99; fi; gcm',
+                           shell=shell, legacy_gcm=True, cwd=checkout)
+                self.assertEqual(self.branch(checkout), "main")
 
     def test_gmm_merges_fresh_master_in_a_master_only_repository(self):
         self.git("-C", self.seed, "branch", "-m", "main", "master")

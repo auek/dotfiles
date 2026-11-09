@@ -374,9 +374,42 @@ alias gcam="git commit -am"
 alias gcmsg="git commit -m"
 alias gco="git checkout"
 alias gcb="git checkout -b"
-alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
 alias gwl="git worktree list"
+
+# Remove the old alias too when re-sourcing an existing shell.
+unalias gcm 2>/dev/null || true
+gcm() {
+  local trunk candidate
+  command git rev-parse --git-dir >/dev/null || return
+  trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+  if [[ "$trunk" == origin/main || "$trunk" == origin/master ]] &&
+      command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+    trunk=${trunk#origin/}
+  else
+    trunk=
+    for candidate in main master; do
+      if command git show-ref --verify --quiet "refs/heads/$candidate" ||
+          command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+        if [[ -n "$trunk" ]]; then
+          print -u2 -r -- 'gcm: both main and master exist; set origin/HEAD or check out the intended branch explicitly.'
+          return 1
+        fi
+        trunk=$candidate
+      fi
+    done
+  fi
+  if [[ -z "$trunk" ]]; then
+    print -u2 -r -- 'gcm: no main or master branch found locally or on origin.'
+    return 1
+  fi
+  # Resolve first, then attempt one checkout; a conflict must not select another branch.
+  if command git show-ref --verify --quiet "refs/heads/$trunk"; then
+    command git checkout "$trunk" "$@"
+  else
+    command git checkout --track -b "$trunk" "origin/$trunk" "$@"
+  fi
+}
 
 # Merge origin's freshly fetched default branch, whether named main or master.
 gmm() {

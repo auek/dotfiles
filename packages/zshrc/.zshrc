@@ -374,9 +374,42 @@ alias gcam="git commit -am"
 alias gcmsg="git commit -m"
 alias gco="git checkout"
 alias gcb="git checkout -b"
-alias gcm="git checkout main || git checkout master"
 alias gc-="git checkout -"
 alias gwl="git worktree list"
+
+# Remove the old alias too when re-sourcing an existing shell.
+unalias gcm 2>/dev/null || true
+gcm() {
+  local trunk candidate
+  command git rev-parse --git-dir >/dev/null || return
+  trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+  if [[ "$trunk" == origin/main || "$trunk" == origin/master ]] &&
+      command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+    trunk=${trunk#origin/}
+  else
+    trunk=
+    for candidate in main master; do
+      if command git show-ref --verify --quiet "refs/heads/$candidate" ||
+          command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+        if [[ -n "$trunk" ]]; then
+          print -u2 -r -- 'gcm: both main and master exist; set origin/HEAD or check out the intended branch explicitly.'
+          return 1
+        fi
+        trunk=$candidate
+      fi
+    done
+  fi
+  if [[ -z "$trunk" ]]; then
+    print -u2 -r -- 'gcm: no main or master branch found locally or on origin.'
+    return 1
+  fi
+  # Resolve first, then attempt one checkout; a conflict must not select another branch.
+  if command git show-ref --verify --quiet "refs/heads/$trunk"; then
+    command git checkout "$trunk" "$@"
+  else
+    command git checkout --track -b "$trunk" "origin/$trunk" "$@"
+  fi
+}
 
 # Merge origin's freshly fetched default branch, whether named main or master.
 gmm() {
@@ -482,9 +515,12 @@ Create a worktree and enter it. Branch defaults to directory-name.
 Branch selection:
   1. Reuse the local branch, if it exists.
   2. Otherwise, track the matching origin/<branch>, if it exists.
-  3. Otherwise, create from origin/main with no upstream.
+  3. Otherwise, create from origin/main or origin/master with no upstream.
 
+  Prefers cached origin/HEAD when it names an available main or master.
+  Otherwise uses the only fetched trunk; refuses ambiguous main/master refs.
   Uses fetched refs. Run git fetch origin first to refresh them.
+  Refresh the default-branch hint: git remote set-head origin --auto
 
 Options:
   --no-cd       Create without changing your current directory.
@@ -520,7 +556,26 @@ Location:
   elif command git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
     command git -C "$gwt_main" worktree add --track -b "$branch" -- "$destination" "origin/$branch" || return
   else
-    command git -C "$gwt_main" worktree add --no-track -b "$branch" -- "$destination" origin/main || return
+    local trunk candidate
+    trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+    if [[ "$trunk" != origin/main && "$trunk" != origin/master ]] ||
+        ! command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+      trunk=
+      for candidate in main master; do
+        if command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+          if [[ -n "$trunk" ]]; then
+            print -u2 -r -- 'gwa: both main and master exist; refresh the default with git remote set-head origin --auto.'
+            return 1
+          fi
+          trunk="origin/$candidate"
+        fi
+      done
+    fi
+    if [[ -z "$trunk" ]]; then
+      print -u2 -r -- 'gwa: no fetched origin/main or origin/master; run git fetch origin first.'
+      return 1
+    fi
+    command git -C "$gwt_main" worktree add --no-track -b "$branch" -- "$destination" "$trunk" || return
   fi
   if (( ! no_cd )); then
     builtin cd -- "$destination" || return

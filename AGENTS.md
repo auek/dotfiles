@@ -141,13 +141,21 @@ an earlier `compinit` or disable its audits. Login/interactive startup adds mise
 shim PATH entries directly (respecting its data/shim and XDG overrides), then
 interactive Zsh performs one full mise activation. Keep its initial environment
 hook: deferring it only to improve an exit benchmark changes first-command behavior.
-Zsh's `gst` includes the branch header. `gmm` fetches origin, refreshes its HEAD
+Zsh's `gst` includes the branch header. Zsh and server Bash `gcm` prefer a valid
+cached main/master `origin/HEAD`, otherwise the sole local/origin main/master
+branch. They check out the local branch or create its origin-tracking branch,
+without contacting the remote. Ambiguity fails before checkout; checkout errors
+never trigger a fallback to another branch. Re-sourcing replaces the old alias.
+`gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are
 rejected. `gwl` lists worktrees; `gwc [name|branch|path]`
 enters a registered worktree root (fzf picker without arguments).
 `gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
-origin branch, or creates from already-fetched `origin/main` without an upstream.
+origin branch, or creates from already-fetched `origin/main` or `origin/master`
+without an upstream. It prefers a valid cached `origin/HEAD` main/master hint;
+otherwise a single available trunk is used. Ambiguous/missing trunks fail before
+creating a branch or worktree. `gwa` does not fetch or query the remote.
 It enters the new worktree by default. Destinations default to siblings of the
 original checkout; an ordinary per-repository `dotfiles.worktreeDir` Git setting
 can override the parent (relative values resolve from the original checkout).

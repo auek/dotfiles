@@ -346,6 +346,12 @@ alias ...="cd ../.."
 alias ....="cd ../../../.."
 
 # Tool-specific
+if command -v bat >/dev/null 2>&1; then
+  # Use the terminal palette so bat and fzf previews follow theme changes.
+  export BAT_THEME=ansi
+  alias bat="bat --style=plain"
+fi
+
 if command -v eza >/dev/null 2>&1; then
   alias l="eza"
   alias ll="eza -lah --git"

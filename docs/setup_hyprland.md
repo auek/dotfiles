@@ -1,6 +1,9 @@
 # Hyprland Setup (Arch Linux)
 
-The native Arch Hyprland workstation is a supported, opt-in setup target.
+Hyprland is supported only on native Arch Linux, as an opt-in setup target.
+Fedora workstation with Hyprland is not supported; general Fedora workstation
+and server setup remain supported.
+
 Install Arch manually or with `archinstall`, then configure graphics drivers,
 networking, audio/Bluetooth support, firmware, and any required boot settings.
 These machine-specific prerequisites remain user-managed.
@@ -237,11 +240,8 @@ services require. The target also starts `cliphist.service` (which
 records text and image clipboard data only while Hyprland is running; its
 database is wiped on startup and shutdown), the packaged `hypridle.service`
 (idle display power and suspend, without screen locking), and `swaybg.service`
-(the wallpaper daemon). The Lua configuration imports the Wayland environment
-and Hyprland instance signature before starting the target, so Hypridle's
-`hyprctl` commands address the current compositor. No separate service enable
-step or custom Hypridle unit is needed. After linking the package, reload user
-units once:
+(the wallpaper daemon). No separate service enable step or custom Hypridle unit
+is needed. After linking the package, reload user units once:
 
 ```bash
 systemctl --user daemon-reload

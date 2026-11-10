@@ -37,7 +37,7 @@ hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. os.getenv("PATH"))
 
 hl.on("hyprland.start", function()
   hl.exec_cmd(
-    "systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR HYPRLAND_INSTANCE_SIGNATURE && systemctl --user start hyprland-session.target")
+    "systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR && systemctl --user start hyprland-session.target")
   hl.exec_cmd("mako")
   hl.exec_cmd("lxqt-policykit-agent")
   hl.exec_cmd("waybar")

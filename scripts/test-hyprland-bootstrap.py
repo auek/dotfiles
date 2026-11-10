@@ -78,7 +78,7 @@ class BootstrapTests(unittest.TestCase):
         result = self.run_shell(startup)
         self.assertEqual(result.returncode, 0, result.stderr)
         imported, started = self.log.read_text().splitlines()
-        for variable in ("WAYLAND_DISPLAY", "XDG_RUNTIME_DIR", "HYPRLAND_INSTANCE_SIGNATURE"):
+        for variable in ("WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"):
             self.assertIn(variable, shlex.split(imported))
         self.assertEqual(started, "--user start hyprland-session.target")
 

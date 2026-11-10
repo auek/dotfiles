@@ -235,9 +235,13 @@ configuration starts this user target with Hyprland and stops it during
 shutdown. This activates `graphical-session.target`, which the desktop portal
 services require. The target also starts `cliphist.service` (which
 records text and image clipboard data only while Hyprland is running; its
-database is wiped on startup and shutdown) and `swaybg.service` (the wallpaper
-daemon). After linking the package, reload
-user units once:
+database is wiped on startup and shutdown), the packaged `hypridle.service`
+(idle display power and suspend, without screen locking), and `swaybg.service`
+(the wallpaper daemon). The Lua configuration imports the Wayland environment
+and Hyprland instance signature before starting the target, so Hypridle's
+`hyprctl` commands address the current compositor. No separate service enable
+step or custom Hypridle unit is needed. After linking the package, reload user
+units once:
 
 ```bash
 systemctl --user daemon-reload
@@ -246,10 +250,15 @@ systemctl --user daemon-reload
 Setup attempts this reload without starting services. In a container or a shell
 without a user service manager, it reports the deferred command instead.
 
+When migrating an existing session from directly launched Hypridle, log out and
+back in before starting its service; a Hyprland config reload does not stop the
+old daemon. This avoids running two idle daemons simultaneously.
+
 After the next Hyprland login, verify the session and portal services:
 
 ```bash
 systemctl --user is-active graphical-session.target
+systemctl --user is-active hypridle.service
 gdbus call --session \
   --dest org.freedesktop.portal.Desktop \
   --object-path /org/freedesktop/portal/desktop \
@@ -257,6 +266,10 @@ gdbus call --session \
 systemctl --user is-active xdg-desktop-portal.service
 systemctl --user is-active xdg-desktop-portal-hyprland.service
 ```
+
+After editing `~/.config/hypr/hypridle.conf`, apply the idle policy with
+`systemctl --user restart hypridle.service`; `hyprctl reload` does not reload it.
+Inspect failures with `journalctl --user -u hypridle.service -b`.
 
 ## Local assets and key bindings
 

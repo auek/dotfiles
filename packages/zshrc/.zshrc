@@ -311,6 +311,10 @@ alias ...="cd ../.."
 alias ....="cd ../../../.."
 
 # Tool-specific
+if command -v bat >/dev/null 2>&1; then
+  alias bat="bat --style=plain"
+fi
+
 if command -v eza >/dev/null 2>&1; then
   alias l="eza"
   alias ll="eza -lah --git"

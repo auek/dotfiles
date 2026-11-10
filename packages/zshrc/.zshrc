@@ -312,6 +312,8 @@ alias ....="cd ../../../.."
 
 # Tool-specific
 if command -v bat >/dev/null 2>&1; then
+  # Use the terminal palette so bat and fzf previews follow theme changes.
+  export BAT_THEME=ansi
   alias bat="bat --style=plain"
 fi
 

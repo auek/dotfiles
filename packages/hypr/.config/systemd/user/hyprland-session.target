@@ -3,6 +3,7 @@ Description=Hyprland session
 BindsTo=graphical-session.target
 Wants=graphical-session-pre.target
 Wants=cliphist.service
+Wants=hypridle.service
 Wants=swaybg.service
 After=graphical-session-pre.target
 PropagatesStopTo=graphical-session.target

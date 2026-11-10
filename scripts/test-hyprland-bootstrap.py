@@ -3,6 +3,8 @@
 
 import os
 from pathlib import Path
+import re
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -58,6 +60,27 @@ class BootstrapTests(unittest.TestCase):
         result = self.configure()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("before your first Hyprland session", result.stdout)
+
+    def test_idle_service_session_wiring(self):
+        units = ROOT / "packages/hypr/.config/systemd/user"
+        target = (units / "hyprland-session.target").read_text()
+        wants = [unit for line in target.splitlines() if line.startswith("Wants=")
+                 for unit in line.removeprefix("Wants=").split()]
+        self.assertIn("hypridle.service", wants)
+        self.assertFalse((units / "hypridle.service").exists(), "Use the packaged unit")
+
+        source = (ROOT / "packages/hypr/.config/hypr/dotfiles.lua").read_text()
+        commands = re.findall(r'hl\.exec_cmd\(\s*"([^"]+)"\s*\)', source)
+        self.assertFalse(any(shlex.split(command)[0] == "hypridle" for command in commands),
+                         "Do not start a second idle daemon outside systemd")
+        startup = next(command for command in commands
+                       if "start hyprland-session.target" in command)
+        result = self.run_shell(startup)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        imported, started = self.log.read_text().splitlines()
+        for variable in ("WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"):
+            self.assertIn(variable, shlex.split(imported))
+        self.assertEqual(started, "--user start hyprland-session.target")
 
     def setup_packages(self, distro, args, wsl=False):
         # Execute only argument/OS validation and the package phase. Replace

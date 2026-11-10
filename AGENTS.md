@@ -276,6 +276,9 @@ Right Alt + `[`, `;`, and `'` produce å, ö, and ä.
 
 - Native Arch Hyprland is supported through opt-in `--hyprland`, combined with
   slim/full. Reject server, non-Arch, and WSL combinations before installation.
+- Fedora workstation with Hyprland is unsupported. Do not add compatibility
+  workarounds for that combination; general Fedora workstation/server support
+  remains unchanged.
 - Hardware preparation belongs to the user: never provision GPU drivers,
   firmware, kernel modules, boot settings, or audio/Bluetooth system stacks.
 - Keep shared configs hardware-neutral. Machine-specific GPU and monitor

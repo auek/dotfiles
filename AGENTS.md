@@ -54,7 +54,7 @@ dotfiles/
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── readline/.inputrc     # Shared Bash keybindings for workstation and server shells
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh startup, private overrides, portable tmx sessions, and brightness helpers
+    ├── zshrc/               # .zshrc startup + .config/zsh feature modules (Git, tmx, helpers, FZF)
     ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/                # Workstation tmux config; cwd inheritance, RGB, and recovery loading
@@ -137,6 +137,10 @@ Project version files still override either global default.
 `.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
 environment overrides. Keep that file outside the repository; never Stow or
 commit its contents.
+Shared interactive features live in `packages/zshrc/.config/zsh/`: helpers,
+tmx, Git, worktrees, commit suggestions, and FZF. `.zshrc` sources them explicitly
+after Oh My Zsh, relative to its resolved entrypoint so existing Stow links work
+before restowing. Keep startup ordering visible and private overrides last.
 Oh My Zsh initializes completion once after setting plugin paths; do not run
 an earlier `compinit` or disable its audits. Login/interactive startup adds mise
 shim PATH entries directly (respecting its data/shim and XDG overrides), then
@@ -165,7 +169,14 @@ original checkout; an ordinary per-repository `dotfiles.worktreeDir` Git setting
 can override the parent (relative values resolve from the original checkout).
 `gwr [--no-cd] <name|branch|path>` keeps branches and never forces removal. It
 moves out of the target to the original checkout, restoring cwd on failure;
-`--no-cd` refuses removal from inside the target. Existing worktrees are not moved.
+`--no-cd` refuses removal from inside the target.
+`gwm [--no-cd] <name|branch|path> <new-name|path>` moves/renames a linked worktree,
+keeping its branch, edits, untracked files, and installed dependencies. A bare new
+name stays beside the source; explicit paths resolve from the current cwd. It
+never overwrites destinations or forces Git's locked/submodule restrictions.
+From inside the source, it follows the move preserving the relative subdirectory
+and restores cwd on failure; `--no-cd` refuses from inside. Other shells/editors
+are not relocated, and path-dependent caches may need rebuilding.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an

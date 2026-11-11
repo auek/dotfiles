@@ -53,7 +53,9 @@ def main():
                       *sorted((ROOT / "packages/themes/.local/bin").iterdir())]
         commands.extend([["bash", "-n", str(path)] for path in bash_files])
         commands.extend([["zsh", "-n", str(ROOT / path)] for path in
-                         ("packages/zshrc/.zshrc", "packages/zprofile/.zprofile")])
+                          ("packages/zshrc/.zshrc", "packages/zprofile/.zprofile")])
+        commands.extend([["zsh", "-n", str(path)] for path in
+                         sorted((ROOT / "packages/zshrc/.config/zsh").glob("*.zsh"))])
         script("generate-themes.py", "check")
     if "shell" in suites:
         for name in ("test-runtime.py", "test-tmx.py", "test-server.py", "test-br.py",

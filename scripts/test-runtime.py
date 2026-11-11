@@ -169,6 +169,7 @@ class RuntimeHome(unittest.TestCase):
             self.env.pop(key, None)
         for package, filename in (("zshrc", ".zshrc"), ("zprofile", ".zprofile"), ("tmux", ".tmux.conf")):
             shutil.copy2(ROOT / "packages" / package / filename, self.home / filename)
+        shutil.copytree(ROOT / "packages/zshrc/.config/zsh", self.home / ".config/zsh")
         recovery = self.home / ".config/tmux/dotfiles-recovery.conf"
         recovery.parent.mkdir(parents=True)
         shutil.copy2(ROOT / "packages/tmux/.config/tmux/dotfiles-recovery.conf", recovery)
@@ -219,6 +220,7 @@ class RuntimeHome(unittest.TestCase):
 
 class RuntimeTests(RuntimeHome):
     def test_shell_startup_completion_and_local_override(self):
+        (self.bin / "fzf").symlink_to(shutil.which("fzf"))
         for flags in ("-lc", "-ic", "-lic"):
             with self.subTest(flags=flags):
                 code = 'node --version && nvim --version >/dev/null || exit; '
@@ -226,10 +228,84 @@ class RuntimeTests(RuntimeHome):
                     code += ('[[ "$DOTFILES_LOCAL" == loaded ]] || exit 1; '
                              '(( $+functions[compdef] && $+functions[_zsh_autosuggest_start] )) || exit 2; '
                              '[[ $(bindkey "\\ek") == *clear-screen ]] || exit 3; '
+                             'for name in npm open br tmx gcb gcm gmm gwc gwa gwm gwr gsuggest gbf; do '
+                             '(( $+functions[$name] )) || { print -u2 "Missing shell function: $name"; exit 4; }; done; '
+                             '[[ ${_comps[gwm]} == _gwm_complete ]] || exit 7; '
+                             '[[ $(bindkey "[D") != *backward-word && $(bindkey "[C") != *forward-word ]] || exit 5; '
+                             '[[ $(bindkey "\\e\\e[D") == *backward-word && $(bindkey "\\e\\e[C") == *forward-word ]] || exit 6; '
                              'tmx --help || exit; ')
                 code += 'print startup-ok'
                 self.assertIn("startup-ok", self.run_checked("zsh", flags, code))
         self.assertFalse((self.home / "unexpected").exists())
+
+    def test_linked_entrypoint_loads_modules_before_restow_and_private_overrides_last(self):
+        package = self.home / "checkout with spaces/zshrc"
+        (package / ".config").mkdir(parents=True)
+        (self.home / ".zshrc").rename(package / ".zshrc")
+        (self.home / ".config/zsh").rename(package / ".config/zsh")
+        (self.home / ".zshrc").symlink_to(package / ".zshrc")
+        with (self.home / ".zshrc.private").open("a") as stream:
+            stream.write('tmx() { print local-tmx; }\n')
+        # Neither a changed XDG root nor the cwd may redirect shared modules.
+        self.env["XDG_CONFIG_HOME"] = str(self.home / "custom-config")
+        self.assertEqual(self.run_checked("zsh", "-ic",
+                         'source ~/.zshrc; (( $+functions[gsuggest] && $+functions[gwc] )) || exit 1; '
+                         '(( ! $+parameters[_dotfiles_zsh_dir] )) || exit 2; tmx'), "local-tmx")
+
+    def test_agent_startup_is_owned_by_oh_my_zsh(self):
+        self.mock("ssh-agent", 'echo start >> "$HOME/agent-calls"\n'
+                  'printf "SSH_AUTH_SOCK=; export SSH_AUTH_SOCK;\\n"')
+        self.run_checked("zsh", "-ic", '[[ -z "$SSH_AUTH_SOCK" ]]')
+        # An empty socket used to trigger a second manual agent startup.
+        self.assertEqual((self.home / "agent-calls").read_text().splitlines(), ["start"])
+
+    def test_gsuggest_copy_failure_and_staged_or_unstaged_accept(self):
+        self.env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                        GIT_AUTHOR_NAME="Fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid",
+                        GIT_COMMITTER_NAME="Fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
+        for tool in ("cat", "git"):
+            (self.bin / tool).symlink_to(shutil.which(tool))
+        self.mock("llm", 'printf "%s\\n" "$@" > "$HOME/llm-args"\n'
+                  'printf "fix: update fixture å\\n"')
+        # Terminal display is unchanged; isolate /dev/tty for this noninteractive test.
+        self.mock("tee", "cat")
+
+        for staged in (True, False):
+            with self.subTest(staged=staged):
+                project = self.home / ("staged" if staged else "unstaged")
+                self.run_checked("git", "init", "--initial-branch=main", str(project))
+                source = project / "example.txt"
+                source.write_text("before\n")
+                self.run_checked("git", "-C", str(project), "add", ".")
+                self.run_checked("git", "-C", str(project), "commit", "-m", "Baseline")
+                source.write_text("after\n")
+                if staged:
+                    self.run_checked("git", "-C", str(project), "add", ".")
+
+                def suggest(*flags):
+                    return subprocess.run([shutil.which("zsh"), "-f", "-c", 'source "$1"; shift; gsuggest "$@"',
+                                           "gsuggest-check", str(self.home / ".config/zsh/gsuggest.zsh"), *flags],
+                                          cwd=project, env={**self.env, "PATH": str(self.bin)},
+                                          capture_output=True, text=True, timeout=10)
+
+                # No host clipboard tools are reachable in the restricted PATH.
+                result = suggest()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("message was not copied", result.stderr)
+                self.assertEqual(self.run_checked("git", "-C", str(project), "log", "-1", "--format=%s"), "Baseline")
+                self.mock("wl-copy", 'cat > "$HOME/clipboard"')
+                result = suggest("-l")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stderr, "")
+                self.assertEqual((self.home / "clipboard").read_text(), "fix: update fixture å\n")
+                self.assertIn("body: 3-5 sentences", (self.home / "llm-args").read_text())
+                (self.bin / "wl-copy").unlink()
+
+                result = suggest("-a")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(self.run_checked("git", "-C", str(project), "log", "-1", "--format=%s"),
+                                 "fix: update fixture å")
+                self.assertEqual(self.run_checked("git", "-C", str(project), "status", "--porcelain"), "")
 
     def test_actual_tmux_config_and_directory_bindings(self):
         # The private hook signals after the real interactive shell has started.

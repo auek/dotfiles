@@ -69,6 +69,8 @@ if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
     # Local plugins may append status-line jobs (for example, periodic saves).
     tmux source-file -q "$HOME/.tmux.conf.local" \
       || printf 'warning: could not reload local tmux config\n' >&2
+    tmux source-file -q "$HOME/.config/tmux/dotfiles-recovery.conf" \
+      || printf 'warning: could not reload tmux recovery plugins\n' >&2
   else
     printf 'warning: could not reload tmux\n' >&2
   fi

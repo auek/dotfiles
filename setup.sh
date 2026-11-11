@@ -278,9 +278,9 @@ else
   success "Oh My Zsh installed"
 fi
 
-# ─── Step 10: Install zsh-autosuggestions ─────────────────────────────────────
+# ─── Step 10: Install shell and tmux plugins ──────────────────────────────────
 
-step "10/12 — Installing zsh-autosuggestions"
+step "10/12 — Installing shell and tmux plugins"
 
 ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 
@@ -293,6 +293,12 @@ else
     https://github.com/zsh-users/zsh-autosuggestions \
     "$ZSH_AUTOSUGGEST_DIR"
   success "zsh-autosuggestions $ZSH_AUTOSUGGESTIONS_VERSION installed"
+fi
+
+if [ "$PROFILE" = "server" ]; then
+  info "Profile: server — skipping tmux recovery plugins"
+else
+  bash "$REPO_DIR/scripts/install-tmux-plugins.sh"
 fi
 
 # ─── Step 11: Install dev tools (full only) ───────────────────────────────────

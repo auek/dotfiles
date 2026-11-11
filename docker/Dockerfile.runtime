@@ -17,7 +17,7 @@ FROM ${DISTRO} AS runtime
 ENV PATH="/opt/test-bin:/opt/fixtures/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RUN useradd --create-home tester && mkdir /opt/fixtures && chown tester /opt/fixtures
 WORKDIR /repo
-COPY scripts/prepare-test-fixtures.py scripts/test-fixtures.json scripts/
+COPY scripts/prepare-test-fixtures.py scripts/test-fixtures.json scripts/install-tmux-plugins.sh scripts/
 COPY packages/nvim/.config/nvim/ packages/nvim/.config/nvim/
 COPY packages/mise/.config/mise/config.toml packages/mise/.config/mise/config.toml
 USER tester

@@ -77,6 +77,9 @@ class MakeStowTests(unittest.TestCase):
         old.write_text("-- renamed after pull\n")
         removed.write_text("-- deleted after pull\n")
         self.make("stow")
+        recovery = self.home / ".config/tmux/dotfiles-recovery.conf"
+        self.assertTrue(recovery.is_symlink())
+        self.assertEqual(recovery.resolve(), self.repo / "packages/tmux/.config/tmux/dotfiles-recovery.conf")
         old.rename(source / "new.lua")
         removed.unlink()
         (source / "added.lua").write_text("-- added after pull\n")
@@ -147,9 +150,11 @@ class MakeStowTests(unittest.TestCase):
             self.assertFalse(os.path.lexists(self.home / name), name)
 
 
-class RuntimeTests(unittest.TestCase):
+class RuntimeHome(unittest.TestCase):
+    home_prefix = "dotfiles runtime "
+
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="dotfiles runtime ")
+        self.temp = tempfile.TemporaryDirectory(prefix=self.home_prefix)
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
         self.bin = self.home / "bin"
@@ -164,6 +169,9 @@ class RuntimeTests(unittest.TestCase):
             self.env.pop(key, None)
         for package, filename in (("zshrc", ".zshrc"), ("zprofile", ".zprofile"), ("tmux", ".tmux.conf")):
             shutil.copy2(ROOT / "packages" / package / filename, self.home / filename)
+        recovery = self.home / ".config/tmux/dotfiles-recovery.conf"
+        recovery.parent.mkdir(parents=True)
+        shutil.copy2(ROOT / "packages/tmux/.config/tmux/dotfiles-recovery.conf", recovery)
         (self.home / ".oh-my-zsh").symlink_to(FIXTURES / "ohmyzsh", target_is_directory=True)
         (self.home / ".ssh").mkdir()
         (self.home / ".zshenv").write_text("zstyle ':omz:update' mode disabled\n"
@@ -199,6 +207,17 @@ class RuntimeTests(unittest.TestCase):
     def tmux(self, *args):
         return self.run_checked(TMUX, "-S", str(self.socket), "-f", str(self.home / ".tmux.conf"), *args)
 
+    def mock_theme_services(self):
+        # Route theme-set to this private server, never host services.
+        self.mock("tmux", 'if [ "$1" = info ]; then exit 0; fi\n'
+                  f'exec {shlex.quote(TMUX)} -S {shlex.quote(str(self.socket))} "$@"')
+        for name in ("pgrep", "hyprctl", "systemctl"):
+            self.mock(name, "exit 1")
+        for name in ("pkill", "makoctl", "foot-reload"):
+            self.mock(name, "exit 0")
+
+
+class RuntimeTests(RuntimeHome):
     def test_shell_startup_completion_and_local_override(self):
         for flags in ("-lc", "-ic", "-lic"):
             with self.subTest(flags=flags):
@@ -247,13 +266,7 @@ class RuntimeTests(unittest.TestCase):
         self.tmux("new-session", "-d", "-s", "local", "sleep 120")
         self.tmux("source-file", str(self.home / ".tmux.conf"))
         self.assertNotIn("LOCAL", self.tmux("show-options", "-gv", "status-right"))
-        # Route theme-set to this private server, including a HOME with spaces.
-        self.mock("tmux", 'if [ "$1" = info ]; then exit 0; fi\n'
-                  f'exec {shlex.quote(TMUX)} -S {shlex.quote(str(self.socket))} "$@"')
-        for name in ("pgrep", "hyprctl", "systemctl"):
-            self.mock(name, "exit 1")
-        for name in ("pkill", "makoctl", "foot-reload"):
-            self.mock(name, "exit 0")
+        self.mock_theme_services()
         command = ROOT / "packages/themes/.local/bin/theme-set"
         self.run_checked("bash", str(command), "gruvbox")
         local = self.home / ".tmux.conf.local"
@@ -295,6 +308,148 @@ class RuntimeTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(self.current.resolve().name, "gruvbox")
         self.assertEqual((self.home / "reloads").read_bytes(), before)
+
+
+class RecoveryTests(RuntimeHome):
+    home_prefix = "dotfiles-recovery-"
+
+    def setUp(self):
+        super().setUp()
+        self.plugins = self.home / ".local/share/tmux/plugins"
+        self.state = self.home / ".local/state/tmux/resurrect"
+        self.installer = ROOT / "scripts/install-tmux-plugins.sh"
+        # Real Git against local, pinned remotes; installation tests stay offline.
+        self.env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=str(self.home / "gitconfig"))
+        for name in ("tmux-resurrect", "tmux-continuum"):
+            source = FIXTURES / "home/.local/share/tmux/plugins" / name
+            self.assertTrue((source / ".git").is_dir(), f"Missing fixture: {source}")
+            self.run_checked("git", "config", "--global", f"url.{source.as_uri()}.insteadOf",
+                             f"https://github.com/tmux-plugins/{name}.git")
+        # Continuum's process discovery must not see unrelated host tmux servers.
+        self.mock("ps", 'if [ "$1" = -u ]; then exit 0; fi\nexec /usr/bin/ps "$@"')
+
+    def install_plugins(self):
+        result = subprocess.run(["bash", str(self.installer)], env=self.env,
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def run_binding(self, key):
+        binding = shlex.split(self.tmux("list-keys", "-T", "prefix", key))
+        self.tmux(*binding[binding.index(key) + 1:])
+
+    def test_install_preserves_existing_checkouts_and_snapshots(self):
+        self.install_plugins()
+        self.assertEqual(self.state.stat().st_mode & 0o777, 0o700)
+        plugin = self.plugins / "tmux-resurrect"
+        self.run_checked("git", "-C", str(plugin), "switch", "-qc", "machine-local")
+        self.run_checked("git", "-C", str(plugin), "-c", "user.name=Fixture", "-c",
+                         "user.email=fixture@example.invalid", "commit", "-q", "--allow-empty", "-m", "Local fixture")
+        head = self.run_checked("git", "-C", str(plugin), "rev-parse", "HEAD")
+        entrypoint = plugin / "resurrect.tmux"
+        original = entrypoint.read_text() + "\n# local modification\n"
+        entrypoint.write_text(original)
+        snapshot = self.state / "existing.txt"
+        snapshot.write_text("existing session snapshot\n")
+        (self.state / "last").symlink_to(snapshot.name)
+        for _ in range(2):
+            self.install_plugins()
+            self.assertEqual(self.run_checked("git", "-C", str(plugin), "rev-parse", "HEAD"), head)
+            self.assertEqual(entrypoint.read_text(), original)
+            self.assertEqual((self.state / "last").readlink(), Path(snapshot.name))
+            self.assertEqual(snapshot.read_text(), "existing session snapshot\n")
+
+    def test_failed_download_leaves_no_partial_installation(self):
+        self.mock("git", 'if [ "$3" = fetch ]; then exit 42; fi\nexec /usr/bin/git "$@"')
+        result = subprocess.run(["bash", str(self.installer)], env=self.env,
+                                capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(list(self.plugins.iterdir()), [])
+        # A later invocation can install normally; no partial directory blocks it.
+        (self.bin / "git").unlink()
+        self.install_plugins()
+
+    def test_legacy_local_block_cleanup_and_theme_reload(self):
+        self.install_plugins()
+        local = self.home / ".tmux.conf.local"
+        overrides = 'set -g @continuum-save-interval 9\nset -ag status-right " LOCAL"\n'
+        legacy = ('set -g @resurrect-dir "$HOME/.local/state/tmux/resurrect"\n'
+                  'set -g @resurrect-save F5\nset -g @resurrect-restore F6\n'
+                  'set -g @resurrect-capture-pane-contents off\n'
+                  'set -g @continuum-save-interval 5\nset -g @continuum-restore off\n'
+                  'set -g @continuum-boot off\n'
+                  'run-shell \'"$HOME/.local/share/tmux/plugins/tmux-resurrect/resurrect.tmux"\'\n'
+                  'run-shell \'"$HOME/.local/share/tmux/plugins/tmux-continuum/continuum.tmux"\'\n')
+        snapshot = self.state / "existing.txt"
+        snapshot.write_text("untouched prior snapshot\n")
+        (self.state / "last").symlink_to(snapshot.name)
+        # Pull before restow: the old block works without the new fragment link.
+        fragment = self.home / ".config/tmux/dotfiles-recovery.conf"
+        fragment.unlink()
+        local.write_text(legacy + overrides)
+        self.tmux("new-session", "-d", "-s", "legacy", "sleep 120")
+        self.tmux("source-file", str(self.home / ".tmux.conf"))
+        shutil.copy2(ROOT / "packages/tmux/.config/tmux/dotfiles-recovery.conf", fragment)
+        self.mock_theme_services()
+        command = ROOT / "packages/themes/.local/bin/theme-set"
+        for contents in (legacy + overrides, overrides):
+            local.write_text(contents)
+            for theme in ("gruvbox", "everforest", "gruvbox"):
+                self.tmux("source-file", str(self.home / ".tmux.conf"))
+                self.run_checked("bash", str(command), theme)
+                status = self.tmux("show-options", "-gv", "status-right")
+                self.assertEqual(status.count("/scripts/continuum_save.sh)"), 1, status)
+                self.assertEqual(status.count("LOCAL"), 1, status)
+                self.assertEqual(self.tmux("show-options", "-gv", "@continuum-save-interval"), "9")
+                self.assertIn("/tmux-resurrect/scripts/save.sh", self.tmux("list-keys", "-T", "prefix", "F5"))
+                self.assertIn("/tmux-resurrect/scripts/restore.sh", self.tmux("list-keys", "-T", "prefix", "F6"))
+                self.assertIn("send-prefix", self.tmux("list-keys", "-T", "prefix", "C-s"))
+                self.assertEqual(snapshot.read_text(), "untouched prior snapshot\n")
+                self.assertEqual((self.state / "last").readlink(), Path(snapshot.name))
+                self.assertEqual(local.read_text(), contents)
+                self.assertEqual(self.tmux("list-sessions", "-F", "#{session_name}"), "legacy")
+
+    def test_real_save_autosave_and_manual_restore(self):
+        self.install_plugins()
+        project = self.home / "project with spaces"
+        project.mkdir()
+        self.tmux("new-session", "-d", "-s", "recover", "-c", str(project), "sleep 120")
+        self.tmux("split-window", "-h", "-t", "recover:1", "-c", str(project), "sleep 120")
+        self.tmux("new-window", "-d", "-t", "recover:2", "-c", str(project), "sleep 120")
+        self.tmux("source-file", str(self.home / ".tmux.conf"))
+        self.assertEqual(self.tmux("show-options", "-gv", "@continuum-save-interval"), "5")
+        self.assertEqual(self.tmux("show-options", "-gv", "@continuum-restore"), "off")
+        self.assertEqual(self.tmux("show-options", "-gv", "@continuum-boot"), "off")
+        self.assertEqual(self.tmux("show-options", "-gv", "@resurrect-capture-pane-contents"), "off")
+        self.tmux("set-option", "-g", "@resurrect-hook-post-save-all", "tmux wait-for -S saved")
+        self.run_binding("F5")
+        self.tmux("wait-for", "saved")
+        last = self.state / "last"
+        self.assertTrue(last.is_symlink())
+        self.assertIn("pane\trecover\t", last.read_text())
+        self.assertFalse((self.state / "pane_contents.tar.gz").exists())
+        # Exercise the actual status-line save job without a five-minute delay.
+        # Resurrect names snapshots to the second; simulate a later save rather
+        # than colliding with the manual snapshot in this accelerated test.
+        self.mock("date", 'if [ "$1" = +%Y%m%dT%H%M%S ]; then\n'
+                  '  exec /usr/bin/date -d "+5 minutes" "$@"\n'
+                  'fi\nexec /usr/bin/date "$@"')
+        self.tmux("set-option", "-g", "@continuum-save-last-timestamp", "0")
+        status = self.tmux("show-options", "-gv", "status-right")
+        job = status[status.index("#(") + 2:status.index(")")]
+        self.assertIn("continuum_save.sh", job)
+        self.tmux("run-shell", job)
+        self.tmux("wait-for", "saved")
+        self.assertTrue(last.is_file(), f"Dangling snapshot: {last.readlink()}")
+        self.assertGreater(int(self.tmux("show-options", "-gv", "@continuum-save-last-timestamp")), 0)
+        self.tmux("new-session", "-d", "-s", "holding", "sleep 120")
+        self.tmux("kill-session", "-t", "recover")
+        self.tmux("set-option", "-g", "@resurrect-hook-post-restore-all", "tmux wait-for -S restored")
+        self.run_binding("F6")
+        self.tmux("wait-for", "restored")
+        self.assertEqual(self.tmux("display-message", "-p", "-t", "recover", "#{session_windows}"), "2")
+        self.assertEqual(self.tmux("display-message", "-p", "-t", "recover:1", "#{window_panes}"), "2")
+        paths = self.tmux("list-panes", "-s", "-t", "recover", "-F", "#{pane_current_path}").splitlines()
+        self.assertEqual(paths, [str(project)] * 3)
 
 
 if __name__ == "__main__":

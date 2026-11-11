@@ -91,6 +91,10 @@ else
   run 'test -d "$HOME/.local/bin" && test ! -L "$HOME/.local/bin"'
   run 'test -d "$HOME/.local/share" && test ! -L "$HOME/.local/share"'
   run 'test -L "$HOME/.local/bin/theme-set"'
+  run 'test -L "$HOME/.config/tmux/dotfiles-recovery.conf"'
+  run 'test -x "$HOME/.local/share/tmux/plugins/tmux-resurrect/resurrect.tmux"'
+  run 'test -x "$HOME/.local/share/tmux/plugins/tmux-continuum/continuum.tmux"'
+  run 'test "$(stat -c %a "$HOME/.local/state/tmux/resurrect")" = 700'
   run 'test -f "$HOME/.local/share/dotfiles/themes/everforest/foot.ini"'
   require_commands gh gcc pipx python3 ssh-agent ssh-add stow tmux unzip zsh
   run 'test "$(readlink -f "$(getent passwd devuser | cut -d: -f7)")" = "$(readlink -f "$(command -v zsh)")"'

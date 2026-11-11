@@ -137,55 +137,51 @@ interpreter /init
 - If the podman socket stops responding after a system restart, run:
   `systemctl --user reset-failed podman.socket podman.service && systemctl --user start podman.socket`
 
-## Optional tmux recovery on a limited RHEL/WSL machine
+## tmux recovery
 
-The workstation tmux config sources an ordinary, untracked
-`~/.tmux.conf.local` after its theme. `theme-set` reapplies it after theme
-changes, so plugins that append status-line jobs keep working. Keep this file
-idempotent: it can run repeatedly. Machines without the file keep the shared
-defaults; there is no OS detection or automatic plugin installation.
-
-For periodic session snapshots, install upstream
+Workstation slim/full setup installs upstream
 [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect) and
 [tmux-continuum](https://github.com/tmux-plugins/tmux-continuum) under your home.
-This needs Git and Bash, with no TPM, EPEL, or sudo. Use the existing HTTPS proxy
-environment if required; keep certificate verification enabled. These commands
-select the reviewed plugin commits. If either directory already exists, inspect
-it before changing its checkout.
+This is shared workstation behavior on native Linux and WSL, not a WSL-only
+workaround. The minimal server profile is unchanged.
+
+The shared config enables five-minute autosaves and manual restore, with no pane
+content capture or automatic tmux startup. Plugins load after the theme and
+`~/.tmux.conf.local`; theme changes reinstate the autosave hook. Keep local
+settings idempotent because they can run repeatedly. Missing plugins do not
+prevent ordinary tmux use, and config loading never downloads software.
+
+### Existing installations and limited machines
+
+From the repository root, install missing plugins without running the full
+bootstrap, then link the shared recovery fragment:
 
 ```bash
-mkdir -p "$HOME/.local/share/tmux/plugins"
-git clone https://github.com/tmux-plugins/tmux-resurrect.git \
-  "$HOME/.local/share/tmux/plugins/tmux-resurrect"
-git -C "$HOME/.local/share/tmux/plugins/tmux-resurrect" checkout --detach \
-  cff343cf9e81983d3da0c8562b01616f12e8d548
-git clone https://github.com/tmux-plugins/tmux-continuum.git \
-  "$HOME/.local/share/tmux/plugins/tmux-continuum"
-git -C "$HOME/.local/share/tmux/plugins/tmux-continuum" checkout --detach \
-  0698e8f4b17d6454c71bf5212895ec055c578da0
-install -d -m 0700 "$HOME/.local/state/tmux/resurrect"
+bash scripts/install-tmux-plugins.sh
+make restow
 ```
 
-Create or edit `~/.tmux.conf.local` outside the repository. Preserve any existing
-settings, put these plugin loads last, and do not Stow this file:
+The installer needs Git and Bash, with no TPM, EPEL, or sudo. Use the existing
+HTTPS proxy environment if required; keep certificate verification enabled.
+Reviewed revisions live in `scripts/install-tmux-plugins.sh`. New installations
+use those pins. Existing plugin paths are preserved without fetching, checking
+out, or overwriting local changes; updating them remains an explicit action
+after inspecting the checkout and the proposed revision.
 
-```tmux
-set -g @resurrect-dir "$HOME/.local/state/tmux/resurrect"
-set -g @resurrect-save 'F5'
-set -g @resurrect-restore 'F6'
-set -g @resurrect-capture-pane-contents 'off'
-set -g @continuum-save-interval '5'
-set -g @continuum-restore 'off'
-set -g @continuum-boot 'off'
-run-shell '"$HOME/.local/share/tmux/plugins/tmux-resurrect/resurrect.tmux"'
-run-shell '"$HOME/.local/share/tmux/plugins/tmux-continuum/continuum.tmux"'
-```
+If you followed the former manual instructions, keep both plugin directories
+and `~/.local/state/tmux/resurrect` unchanged. After restowing, remove the old
+standard recovery block from `~/.tmux.conf.local`: its seven `@resurrect-*` /
+`@continuum-*` settings and two plugin `run-shell` lines are now shared. Preserve
+unrelated settings and any intentional overrides. The old block also works
+during the transition, including a pull before restow; cleanup is not automatic.
 
-After pulling the shared hook, reload from inside the running tmux server:
+Reload from inside the running tmux server; do not restart it or close sessions:
 
 ```bash
 tmux source-file "$HOME/.tmux.conf"
 ```
+
+### Saving, restoring, and local overrides
 
 Press **Ctrl+s, then F5** for an initial save. Confirm
 `~/.local/state/tmux/resurrect/last` points to a snapshot. Continuum checks from
@@ -200,8 +196,7 @@ from Resurrect's default allowlist. They do not preserve process memory,
 in-progress builds or unsaved editor buffers. Pane contents are not captured.
 State remains in the private directory above, outside the repository.
 
-To enable the same setup later on another machine, repeat these local steps.
-Removing the local file stops loading plugins on the next tmux server start;
-an existing server keeps its loaded bindings/options until restarted. To stop
-autosaving immediately without closing sessions, run
-`tmux set -g @continuum-save-interval 0`.
+Override shared defaults in the ordinary, untracked `~/.tmux.conf.local`; do not
+Stow it. For example, `set -g @continuum-save-interval '0'` disables autosaving.
+To stop autosaving immediately without closing sessions, also run
+`tmux set -g @continuum-save-interval 0` in the running server.

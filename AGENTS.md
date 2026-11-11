@@ -37,6 +37,7 @@ dotfiles/
 ├── scripts/                  # Repo-only utilities: theme generator, palettes, templates, misc scripts
 │   ├── check.py              # Shared local/CI static, shell, editor, toolchain and runtime entrypoint
 │   ├── prepare-test-fixtures.py # Explicit networked fixture preparation into a disposable directory
+│   ├── install-tmux-plugins.sh # Pinned workstation recovery plugins; preserves existing checkouts
 │   ├── test-fixtures.json    # Tool and shell-framework fixture versions (plugins use lazy-lock.json)
 │   ├── test-runtime.py       # Actual Zsh/Oh My Zsh, tmux config and theme-switch workflows
 │   ├── generate-themes.py    # Render palettes x templates into theme packs (generate/check)
@@ -56,7 +57,7 @@ dotfiles/
     ├── zshrc/.zshrc          # Zsh startup, private overrides, portable tmx sessions, and brightness helpers
     ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
-    ├── tmux/.tmux.conf       # Workstation tmux config; cwd inheritance and RGB
+    ├── tmux/                # Workstation tmux config; cwd inheritance, RGB, and recovery loading
     ├── nvim/.config/nvim/    # Shared editor with optional project-local Prettier/ESLint
     ├── mise/.config/mise/    # Shared Node pin and stable editor/CLI baseline (including eza)
     ├── tealdeer/.config/tealdeer/ # tldr downloads use the system trust store
@@ -175,11 +176,21 @@ The server Bash `tmx` follows the same behavior with an ordinary, untracked
 sources an ordinary `~/.bashrc.private` at the end for machine-local overrides.
 Never Stow or commit either file. Server Git aliases cover status, navigation,
 and pulling, not commit/push shortcuts.
+Workstation tmux enables five-minute Resurrect/Continuum snapshots, with manual
+prefix+F5 save and prefix+F6 restore, no pane-content capture, automatic restore,
+or tmux autostart. Slim/full setup runs `scripts/install-tmux-plugins.sh`, which
+pins new installations and never updates/resets existing plugin paths. Limited
+machines can run that installer independently. Plugins and snapshots retain
+`~/.local/share/tmux/plugins` and `~/.local/state/tmux/resurrect`; never move or
+delete existing recovery state. The minimal server profile is unchanged.
 Workstation tmux sources an ordinary, untracked `~/.tmux.conf.local` after its
-theme; `theme-set` reapplies it after a successful tmux theme reload. Keep local
-settings idempotent and never Stow the file. Optional per-machine Resurrect and
-Continuum setup is documented in `docs/setup_wsl.md`; shared config does not
-install/load these plugins or enable automatic saves/restores by itself.
+theme/defaults and then quietly sources `~/.config/tmux/dotfiles-recovery.conf`
+to load installed plugins. `theme-set` reapplies both after a successful theme
+reload. Keep local settings idempotent and never Stow the local file. Missing
+plugins/fragment are nonfatal; startup/reloads never install software. Existing
+manual plugin blocks remain usable during pull/restow; remove redundant local
+settings/loads after restow, preserving intentional overrides. Setup and cleanup
+are documented in `docs/setup_wsl.md` for both native Linux and WSL.
 Neovim is managed through mise, not Bob. It uses one `nvim` Stow package;
 machine-local options live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
@@ -362,7 +373,8 @@ Preparation requires Linux x86_64, Python 3.11+, Git, curl, tar/xz, make, and a 
 compiler. Runtime checks also require Zsh, tmux, Stow, ripgrep, fzf, and ShellCheck.
 Versions come from `scripts/test-fixtures.json` (including an exact Node fixture
 independent of the shared LTS default) and
-`lazy-lock.json` for plugins/grammars. Use a new empty fixture directory when
+`lazy-lock.json` for editor plugins/grammars; tmux recovery pins come from
+`scripts/install-tmux-plugins.sh`. Use a new empty fixture directory when
 these inputs change. Do not replace local tests with CI-only commands or
 silently omit expensive coverage.
 
@@ -378,7 +390,10 @@ desktop sessions are not established by those results.
 The runtime baseline covers the actual workstation tmux config (the focused tmx
 suite intentionally uses a minimal config), real Oh My Zsh completion/plugin
 initialization (the mise/helper suites use stubs), and theme selection including
-rejection/reload failures. Editor startup scenarios can be rerun with
+rejection/reload failures. Real pinned recovery plugins cover legacy local block
+cleanup, repeated/theme reloads, F5/F6 save/restore, autosave, and installation
+preserving existing checkouts/snapshots against offline local Git remotes.
+Editor startup scenarios can be rerun with
 `scripts/test-nvim.py ... --scenario NAME`; its summary explicitly states optional
 coverage. The prepared editor suite supplies plugins, LSPs and selected parsers.
 

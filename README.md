@@ -40,7 +40,7 @@ With `--hyprland`, the desktop starts on the next local tty1 login; see the
 |---|---|
 | `zshrc`, `zprofile` | Zsh, completion, shell helpers, and login environment |
 | `readline` | Shared Bash keybindings for workstation and server shells |
-| `tmux` | Terminal multiplexer with editor navigation |
+| `tmux` | Terminal multiplexer with editor navigation and session recovery |
 | `nvim` | Neovim with completion, LSP, Git indicators, highlighting, and search |
 | `mise` | Node, Neovim, Bat, eza, Tealdeer, Lazygit, fastfetch, ripgrep, fd, and fzf |
 | `tealdeer` | System trust store for tldr downloads |
@@ -83,7 +83,7 @@ Keep machine-specific settings in ordinary, untracked files:
 | `~/.config/mise/config.local.toml` | Tool versions and extra tools |
 | `~/.config/nvim/local.lua` | Language servers, parsers, and editor features |
 | `~/.config/tmx/init.zsh` | Layout and startup commands for new tmux sessions |
-| `~/.tmux.conf.local` | Local tmux settings and [optional recovery plugins](docs/setup_wsl.md#optional-tmux-recovery-on-a-limited-rhelwsl-machine) |
+| `~/.tmux.conf.local` | Local tmux settings and [recovery overrides](docs/setup_wsl.md#tmux-recovery) |
 | `~/.config/hypr/hyprland.lua` | Desktop entrypoint and monitor/hardware overrides |
 
 Config paths respect `XDG_CONFIG_HOME`. Do not Stow or commit these local files.
@@ -136,6 +136,9 @@ tmx -h                      # help
 
 The tmux prefix is **Ctrl+s**. New windows and splits inherit the active pane's
 directory. Session layout customization belongs in the local hook above.
+Workstation setup enables five-minute recovery snapshots: prefix + **F5** saves,
+prefix + **F6** restores manually. See [recovery setup and existing-installation
+cleanup](docs/setup_wsl.md#tmux-recovery).
 
 ### Themes
 

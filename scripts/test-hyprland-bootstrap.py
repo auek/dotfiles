@@ -125,6 +125,28 @@ class BootstrapTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(self.log.exists(), "No privileged command should run")
 
+    def test_workstation_recovery_installation_boundary(self):
+        # Exercise setup's real profile dispatch, not the host bootstrap.
+        repo = self.home / "repo"
+        installer = repo / "scripts/install-tmux-plugins.sh"
+        installer.parent.mkdir(parents=True)
+        installer.write_text('printf "recovery-install\\n" >> "$CHECK_LOG"\n')
+        (self.home / ".oh-my-zsh/custom/plugins/zsh-autosuggestions").mkdir(parents=True)
+        source = (ROOT / "setup.sh").read_text()
+        phase = source.split("# ─── Step 10:", 1)[1].split("# ─── Step 11:", 1)[0]
+        phase = phase[phase.index('step "10/12'):]
+        prelude = ('set -eu; REPO_DIR="$1"; PROFILE="$2"; ZSH_AUTOSUGGESTIONS_VERSION=v0.7.1; '
+                   'step() { :; }; info() { :; }; success() { :; };\n')
+        for profile in ("slim", "full", "server"):
+            with self.subTest(profile=profile):
+                self.log.unlink(missing_ok=True)
+                result = self.run_shell(prelude + phase, args=(str(repo), profile))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                if profile == "server":
+                    self.assertFalse(self.log.exists())
+                else:
+                    self.assertEqual(self.log.read_text(), "recovery-install\n")
+
     def test_stow_selection_and_bootstrap_boundary(self):
         # Exercise the actual setup phase, but replace make with a logger:
         # no Stow command or host symlink operation is executed.

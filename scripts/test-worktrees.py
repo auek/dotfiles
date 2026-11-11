@@ -46,8 +46,6 @@ class WorktreeTests(unittest.TestCase):
                         GIT_TERMINAL_PROMPT="0", SSH_AUTH_SOCK="fixture", TERM="xterm-256color")
         for key in ("ENV", "BASH_ENV", "CDPATH"):
             self.env.pop(key, None)
-        (self.home / ".oh-my-zsh").mkdir()
-        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
         # Only the interactive UI is mocked. Real Git performs every operation.
         self.fzf_log = self.home / "fzf.json"
         self.env["WORKTREE_FZF_LOG"] = str(self.fzf_log)
@@ -86,9 +84,10 @@ sys.stdout.buffer.write(target + b"\\0")
         return result
 
     def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, legacy_gcb=False, **env):
-        source = ROOT / ("packages/zshrc/.zshrc" if shell == "zsh" else "packages/bashrc-server/.bashrc")
+        source = ROOT / ("packages/zshrc/.config/zsh" if shell == "zsh" else "packages/bashrc-server/.bashrc")
         runner = [ZSH, "-f", "-c"] if shell == "zsh" else [BASH, "--noprofile", "--norc", "-c"]
-        loader = 'source "$1"; shift; test_code=$1; shift; eval "$test_code"'
+        load = 'source "$1/git.zsh"; source "$1/worktrees.zsh"' if shell == "zsh" else 'source "$1"'
+        loader = load + '; shift; test_code=$1; shift; eval "$test_code"'
         if legacy_gcb:
             loader = 'alias gcb="git checkout -b"; ' + loader
         if legacy_gcm:
@@ -306,6 +305,15 @@ sys.stdout.buffer.write(target + b"\\0")
         (self.bin / "fzf").write_text(f'#!/bin/sh\nexec {shlex.quote(FZF)} "$@"\n')
         result = self.shell('FZF_DEFAULT_OPTS="--filter=theme" gwc && printf "CWD:%s\\n" "$PWD"')
         self.assert_cwd(result, tree)
+
+    def test_branch_picker_switches_and_cancel_keeps_current_branch(self):
+        self.git("-C", self.main, "branch", "feature/story")
+        # Real fzf filtering exercises the branch picker's tab-delimited input.
+        (self.bin / "fzf").write_text(f'#!/bin/sh\nexec {shlex.quote(FZF)} "$@"\n')
+        result = self.shell('FZF_DEFAULT_OPTS="--filter=feature/story" gbf && git branch --show-current')
+        self.assertEqual(result.stdout.strip(), "feature/story")
+        result = self.shell('FZF_DEFAULT_OPTS="--filter=missing-branch" gbf', success=False)
+        self.assertEqual(self.git("-C", self.main, "branch", "--show-current").stdout.strip(), "feature/story")
 
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")

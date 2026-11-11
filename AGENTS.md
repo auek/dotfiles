@@ -54,7 +54,7 @@ dotfiles/
     ├── bashrc-server/.bashrc # Minimal Bash config for servers
     ├── readline/.inputrc     # Shared Bash keybindings for workstation and server shells
     ├── vim-server/.vimrc     # Minimal Vim config for servers
-    ├── zshrc/.zshrc          # Zsh startup, private overrides, portable tmx sessions, and brightness helpers
+    ├── zshrc/               # .zshrc startup + .config/zsh feature modules (Git, tmx, helpers, FZF)
     ├── zprofile/.zprofile    # Login shim PATH and opt-in Arch tty1 Hyprland autostart
     ├── tmux-server/.tmux.conf # Server tmux config; new panes/windows inherit cwd
     ├── tmux/                # Workstation tmux config; cwd inheritance, RGB, and recovery loading
@@ -137,6 +137,10 @@ Project version files still override either global default.
 `.zshrc` also sources an ordinary `~/.zshrc.private` at the end for local
 environment overrides. Keep that file outside the repository; never Stow or
 commit its contents.
+Shared interactive features live in `packages/zshrc/.config/zsh/`: helpers,
+tmx, Git, worktrees, commit suggestions, and FZF. `.zshrc` sources them explicitly
+after Oh My Zsh, relative to its resolved entrypoint so existing Stow links work
+before restowing. Keep startup ordering visible and private overrides last.
 Oh My Zsh initializes completion once after setting plugin paths; do not run
 an earlier `compinit` or disable its audits. Login/interactive startup adds mise
 shim PATH entries directly (respecting its data/shim and XDG overrides), then

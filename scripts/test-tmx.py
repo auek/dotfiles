@@ -23,7 +23,7 @@ if not ZSH or not BASH or not TMUX:
 
 class TmxTests(unittest.TestCase):
     shell = [ZSH, "-f"]
-    function = ROOT / "packages/zshrc/.zshrc"
+    function = ROOT / "packages/zshrc/.config/zsh/tmx.zsh"
     hook_name = "init.zsh"
 
     def setUp(self):
@@ -81,8 +81,6 @@ os.execv(real, [real, "-S", os.environ["TMX_TEST_SOCKET"],
                "-f", os.environ["TMX_TEST_CONFIG"], *args])
 ''')
         (self.bin / "tmux").chmod(0o755)
-        (self.home / ".oh-my-zsh").mkdir()
-        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
 
     def stop_server(self):
         stop_tmux(TMUX, self.socket, self.env)

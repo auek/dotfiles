@@ -49,9 +49,6 @@ print("tool stderr", file=sys.stderr)
 sys.exit(int(os.environ.get("NPM_TEST_STATUS", "0")))
 ''')
             stub.chmod(0o755)
-        # Source the whole tracked configuration; real OMZ is tested separately.
-        (self.home / ".oh-my-zsh").mkdir()
-        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
 
     def manifest(self, directory, contents):
         manifest = directory / "package.json"
@@ -60,7 +57,7 @@ sys.exit(int(os.environ.get("NPM_TEST_STATUS", "0")))
 
     def shell(self, *args, code='npm "$@"', cwd=None, **env):
         return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,
-                               "npm-check", str(ROOT / "packages/zshrc/.zshrc"), *args],
+                               "npm-check", str(ROOT / "packages/zshrc/.config/zsh/helpers.zsh"), *args],
                               cwd=cwd or self.project, env={**self.env, **env},
                               capture_output=True, text=True, timeout=10)
 

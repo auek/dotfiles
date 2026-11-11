@@ -46,11 +46,8 @@ else:
     print("brightness set")
 ''')
         mock.chmod(0o755)
-        # Load the whole tracked shell file, rather than extracting by comments.
-        # Real Oh My Zsh is covered by test-runtime.py; keep helper cases small.
-        (self.home / ".oh-my-zsh").mkdir()
-        (self.home / ".oh-my-zsh/oh-my-zsh.sh").touch()
-        self.functions = ROOT / "packages/zshrc/.zshrc"
+        # Source the feature module; full startup is covered by test-runtime.py.
+        self.functions = ROOT / "packages/zshrc/.config/zsh/helpers.zsh"
 
     def run_br(self, *args, code='"$@"', **env):
         return subprocess.run([ZSH, "-f", "-c", 'source "$1"; shift; ' + code,

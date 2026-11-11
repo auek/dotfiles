@@ -146,6 +146,9 @@ cached main/master `origin/HEAD`, otherwise the sole local/origin main/master
 branch. They check out the local branch or create its origin-tracking branch,
 without contacting the remote. Ambiguity fails before checkout; checkout errors
 never trigger a fallback to another branch. Re-sourcing replaces the old alias.
+Zsh's `gcb <branch-name>` creates and switches to a new branch from the cached
+`origin/main` or `origin/master`, preferring a valid cached `origin/HEAD` hint.
+It uses `--no-track`, never fetches, and refuses ambiguous or missing trunks.
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are

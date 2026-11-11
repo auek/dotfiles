@@ -379,9 +379,39 @@ alias gcane="git commit --amend --no-edit"
 alias gcam="git commit -am"
 alias gcmsg="git commit -m"
 alias gco="git checkout"
-alias gcb="git checkout -b"
 alias gc-="git checkout -"
 alias gwl="git worktree list"
+
+# Start a new branch from origin's cached trunk, without tracking the trunk.
+unalias gcb 2>/dev/null || true
+gcb() {
+  if (( $# != 1 )) || [[ -z "$1" || "$1" == -* ]]; then
+    print -u2 -r -- 'Usage: gcb <branch-name>'
+    return 1
+  fi
+  local branch=$1 trunk candidate
+  command git check-ref-format --branch "$branch" >/dev/null || return
+  [[ "$branch" != '@{'* ]] || return 1
+  trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+  if [[ "$trunk" != origin/main && "$trunk" != origin/master ]] ||
+      ! command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+    trunk=
+    for candidate in main master; do
+      if command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+        if [[ -n "$trunk" ]]; then
+          print -u2 -r -- 'gcb: both main and master exist; refresh the default with git remote set-head origin --auto.'
+          return 1
+        fi
+        trunk="origin/$candidate"
+      fi
+    done
+  fi
+  if [[ -z "$trunk" ]]; then
+    print -u2 -r -- 'gcb: no fetched origin/main or origin/master; run git fetch origin first.'
+    return 1
+  fi
+  command git switch --no-track -c "$branch" "$trunk"
+}
 
 # Remove the old alias too when re-sourcing an existing shell.
 unalias gcm 2>/dev/null || true

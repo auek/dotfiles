@@ -400,7 +400,12 @@ class RecoveryTests(RuntimeHome):
                 self.assertEqual(status.count("/scripts/continuum_save.sh)"), 1, status)
                 self.assertEqual(status.count("LOCAL"), 1, status)
                 self.assertEqual(self.tmux("show-options", "-gv", "@continuum-save-interval"), "9")
-                self.assertIn("/tmux-resurrect/scripts/save.sh", self.tmux("list-keys", "-T", "prefix", "F5"))
+                bindings = self.tmux("list-keys", "-T", "prefix")
+                if contents.startswith(legacy):
+                    self.assertIn("/tmux-resurrect/scripts/save.sh", bindings)
+                else:
+                    self.assertNotIn("/tmux-resurrect/scripts/save.sh", bindings)
+                    self.assertNotRegex(bindings, r"\sF5\s")
                 self.assertIn("/tmux-resurrect/scripts/restore.sh", self.tmux("list-keys", "-T", "prefix", "F6"))
                 self.assertIn("send-prefix", self.tmux("list-keys", "-T", "prefix", "C-s"))
                 self.assertEqual(snapshot.read_text(), "untouched prior snapshot\n")
@@ -408,38 +413,36 @@ class RecoveryTests(RuntimeHome):
                 self.assertEqual(local.read_text(), contents)
                 self.assertEqual(self.tmux("list-sessions", "-F", "#{session_name}"), "legacy")
 
-    def test_real_save_autosave_and_manual_restore(self):
+    def test_autosave_without_save_shortcut_and_manual_restore(self):
         self.install_plugins()
         project = self.home / "project with spaces"
         project.mkdir()
         self.tmux("new-session", "-d", "-s", "recover", "-c", str(project), "sleep 120")
         self.tmux("split-window", "-h", "-t", "recover:1", "-c", str(project), "sleep 120")
         self.tmux("new-window", "-d", "-t", "recover:2", "-c", str(project), "sleep 120")
+        self.tmux("bind-key", "F5", "run-shell", '"$HOME/.local/share/tmux/plugins/tmux-resurrect/scripts/save.sh"')
         self.tmux("source-file", str(self.home / ".tmux.conf"))
+        bindings = self.tmux("list-keys", "-T", "prefix")
+        self.assertNotRegex(bindings, r"\sF5\s")
+        self.assertNotIn("/tmux-resurrect/scripts/save.sh", bindings)
+        self.assertIn("send-prefix", self.tmux("list-keys", "-T", "prefix", "C-s"))
         self.assertEqual(self.tmux("show-options", "-gv", "@continuum-save-interval"), "5")
         self.assertEqual(self.tmux("show-options", "-gv", "@continuum-restore"), "off")
         self.assertEqual(self.tmux("show-options", "-gv", "@continuum-boot"), "off")
         self.assertEqual(self.tmux("show-options", "-gv", "@resurrect-capture-pane-contents"), "off")
         self.tmux("set-option", "-g", "@resurrect-hook-post-save-all", "tmux wait-for -S saved")
-        self.run_binding("F5")
-        self.tmux("wait-for", "saved")
-        last = self.state / "last"
-        self.assertTrue(last.is_symlink())
-        self.assertIn("pane\trecover\t", last.read_text())
-        self.assertFalse((self.state / "pane_contents.tar.gz").exists())
         # Exercise the actual status-line save job without a five-minute delay.
-        # Resurrect names snapshots to the second; simulate a later save rather
-        # than colliding with the manual snapshot in this accelerated test.
-        self.mock("date", 'if [ "$1" = +%Y%m%dT%H%M%S ]; then\n'
-                  '  exec /usr/bin/date -d "+5 minutes" "$@"\n'
-                  'fi\nexec /usr/bin/date "$@"')
         self.tmux("set-option", "-g", "@continuum-save-last-timestamp", "0")
         status = self.tmux("show-options", "-gv", "status-right")
         job = status[status.index("#(") + 2:status.index(")")]
         self.assertIn("continuum_save.sh", job)
         self.tmux("run-shell", job)
         self.tmux("wait-for", "saved")
+        last = self.state / "last"
+        self.assertTrue(last.is_symlink())
         self.assertTrue(last.is_file(), f"Dangling snapshot: {last.readlink()}")
+        self.assertIn("pane\trecover\t", last.read_text())
+        self.assertFalse((self.state / "pane_contents.tar.gz").exists())
         self.assertGreater(int(self.tmux("show-options", "-gv", "@continuum-save-last-timestamp")), 0)
         self.tmux("new-session", "-d", "-s", "holding", "sleep 120")
         self.tmux("kill-session", "-t", "recover")

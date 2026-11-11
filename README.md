@@ -136,8 +136,8 @@ tmx -h                      # help
 
 The tmux prefix is **Ctrl+s**. New windows and splits inherit the active pane's
 directory. Session layout customization belongs in the local hook above.
-Workstation setup enables five-minute recovery snapshots: prefix + **F5** saves,
-prefix + **F6** restores manually. See [recovery setup and existing-installation
+Workstation setup saves recovery snapshots every five minutes; prefix + **F6**
+restores manually. See [recovery setup and existing-installation
 cleanup](docs/setup_wsl.md#tmux-recovery).
 
 ### Themes

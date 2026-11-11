@@ -177,7 +177,7 @@ sources an ordinary `~/.bashrc.private` at the end for machine-local overrides.
 Never Stow or commit either file. Server Git aliases cover status, navigation,
 and pulling, not commit/push shortcuts.
 Workstation tmux enables five-minute Resurrect/Continuum snapshots, with manual
-prefix+F5 save and prefix+F6 restore, no pane-content capture, automatic restore,
+prefix+F6 restore, no manual-save shortcut, pane-content capture, automatic restore,
 or tmux autostart. Slim/full setup runs `scripts/install-tmux-plugins.sh`, which
 pins new installations and never updates/resets existing plugin paths. Limited
 machines can run that installer independently. Plugins and snapshots retain
@@ -391,8 +391,9 @@ The runtime baseline covers the actual workstation tmux config (the focused tmx
 suite intentionally uses a minimal config), real Oh My Zsh completion/plugin
 initialization (the mise/helper suites use stubs), and theme selection including
 rejection/reload failures. Real pinned recovery plugins cover legacy local block
-cleanup, repeated/theme reloads, F5/F6 save/restore, autosave, and installation
-preserving existing checkouts/snapshots against offline local Git remotes.
+cleanup, repeated/theme reloads, removal of the old F5 save binding, F6 restore,
+autosave, and installation preserving existing checkouts/snapshots against
+offline local Git remotes.
 Editor startup scenarios can be rerun with
 `scripts/test-nvim.py ... --scenario NAME`; its summary explicitly states optional
 coverage. The prepared editor suite supplies plugins, LSPs and selected parsers.

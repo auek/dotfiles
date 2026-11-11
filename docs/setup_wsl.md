@@ -183,11 +183,12 @@ tmux source-file "$HOME/.tmux.conf"
 
 ### Saving, restoring, and local overrides
 
-Press **Ctrl+s, then F5** for an initial save. Confirm
-`~/.local/state/tmux/resurrect/last` points to a snapshot. Continuum checks from
-the status line and saves when five minutes have elapsed; keep the status line
-enabled and a client attached for periodic saving. After a crash or reboot,
-start tmux and press **Ctrl+s, then F6** to restore before the first autosave.
+Saving is automatic; there is no shared manual-save shortcut. After five minutes,
+confirm `~/.local/state/tmux/resurrect/last` points to a snapshot. Continuum checks
+from the status line; keep it enabled and a client attached for periodic saving.
+Remove any old local `@resurrect-save F5` setting to retire that shortcut too.
+After a crash or reboot, start tmux and press **Ctrl+s, then F6** to restore
+before the first autosave.
 Restoration is manual; neither tmux nor sessions start automatically on login.
 Ctrl+s, then Ctrl+s retains its existing send-prefix behavior.
 

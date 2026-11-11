@@ -29,7 +29,8 @@ def main():
             parser.error("prepare fixtures first; pass their directory with --fixtures")
         fixtures = args.fixtures.resolve()
         inputs = [ROOT / "scripts/test-fixtures.json", ROOT / "scripts/prepare-test-fixtures.py",
-                  ROOT / "packages/nvim/.config/nvim/lazy-lock.json", ROOT / "packages/mise/.config/mise/config.toml"]
+                  ROOT / "packages/nvim/.config/nvim/lazy-lock.json", ROOT / "packages/mise/.config/mise/config.toml",
+                  ROOT / "scripts/install-tmux-plugins.sh"]
         identity = hashlib.sha256(b"".join(path.read_bytes() for path in inputs)).hexdigest()
         if json.loads((fixtures / "ready.json").read_text())["identity"] != identity:
             parser.error("fixtures are stale; prepare a fresh directory with the current pins")

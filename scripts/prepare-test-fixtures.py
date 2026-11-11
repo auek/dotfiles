@@ -27,7 +27,8 @@ def main():
         parser.error("the fixture binaries currently target Linux x86_64")
     dest = args.directory.resolve()
     inputs = [ROOT / "scripts/test-fixtures.json", ROOT / "scripts/prepare-test-fixtures.py",
-              ROOT / "packages/nvim/.config/nvim/lazy-lock.json", ROOT / "packages/mise/.config/mise/config.toml"]
+              ROOT / "packages/nvim/.config/nvim/lazy-lock.json", ROOT / "packages/mise/.config/mise/config.toml",
+              ROOT / "scripts/install-tmux-plugins.sh"]
     identity = hashlib.sha256(b"".join(path.read_bytes() for path in inputs)).hexdigest()
     ready = dest / "ready.json"
     if ready.exists() and json.loads(ready.read_text())["identity"] == identity:
@@ -105,6 +106,7 @@ def main():
     checkout("ohmyzsh/ohmyzsh", config["ohmyzsh"], dest / "ohmyzsh")
     checkout("zsh-users/zsh-autosuggestions", config["autosuggestions"],
              dest / "ohmyzsh/custom/plugins/zsh-autosuggestions")
+    run("bash", ROOT / "scripts/install-tmux-plugins.sh")
     pins = json.loads(inputs[2].read_text())
     repos = {}
     for path in (ROOT / "packages/nvim/.config/nvim/lua").rglob("*.lua"):

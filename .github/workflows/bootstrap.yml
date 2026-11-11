@@ -5,6 +5,7 @@ on:
       - 'setup.sh'
       - 'Makefile'
       - 'scripts/configure-*.sh'
+      - 'scripts/install-tmux-plugins.sh'
       - 'docker/test.sh'
       - 'docker/compose.yml'
       - 'docker/Dockerfile.arch'

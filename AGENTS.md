@@ -169,7 +169,14 @@ original checkout; an ordinary per-repository `dotfiles.worktreeDir` Git setting
 can override the parent (relative values resolve from the original checkout).
 `gwr [--no-cd] <name|branch|path>` keeps branches and never forces removal. It
 moves out of the target to the original checkout, restoring cwd on failure;
-`--no-cd` refuses removal from inside the target. Existing worktrees are not moved.
+`--no-cd` refuses removal from inside the target.
+`gwm [--no-cd] <name|branch|path> <new-name|path>` moves/renames a linked worktree,
+keeping its branch, edits, untracked files, and installed dependencies. A bare new
+name stays beside the source; explicit paths resolve from the current cwd. It
+never overwrites destinations or forces Git's locked/submodule restrictions.
+From inside the source, it follows the move preserving the relative subdirectory
+and restores cwd on failure; `--no-cd` refuses from inside. Other shells/editors
+are not relocated, and path-dependent caches may need rebuilding.
 The shared Zsh `tmx` command lists sessions when called without arguments;
 `tmx <name> [directory]` attaches/switches or creates in the supplied directory
 (current directory by default). New sessions have one window/pane unless an

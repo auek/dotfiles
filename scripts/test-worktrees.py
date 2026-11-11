@@ -329,6 +329,132 @@ sys.stdout.buffer.write(target + b"\\0")
         self.assertFalse(tree.exists())
         self.git("-C", self.main, "show-ref", "--verify", "refs/heads/feature/story")
 
+    def test_move_keeps_branch_edits_and_installed_dependencies(self):
+        tree = self.add("old-name", "feature/story")
+        source = tree / "app1/file.txt"
+        source.write_text("staged change\n")
+        self.git("-C", tree, "add", "app1/file.txt")
+        source.write_text("unstaged change\n")
+        (tree / "notes.txt").write_text("untracked notes\n")
+        with (self.main / ".git/info/exclude").open("a") as stream:
+            stream.write("/node_modules/\n")
+        dependency = tree / "node_modules/example/index.js"
+        dependency.parent.mkdir(parents=True)
+        dependency.write_text("installed dependency\n")
+        link = tree / "node_modules/tool"
+        link.symlink_to("example/index.js")
+        inode = dependency.stat().st_ino
+        before = self.git("-C", tree, "status", "--porcelain").stdout
+        refs = self.git("-C", tree, "show-ref", "--heads").stdout
+        staged = self.git("-C", tree, "diff", "--cached").stdout
+        unstaged = self.git("-C", tree, "diff").stdout
+        cwd = self.main / "app1"
+        result = self.shell('gwm feature/story new-name && printf "CWD:%s\\n" "$PWD"', cwd=cwd)
+        renamed = self.container / "new-name"
+        self.assert_cwd(result, cwd)
+        self.assertFalse(tree.exists())
+        self.assertEqual(self.branch(renamed), "feature/story")
+        self.assertEqual(self.git("-C", renamed, "show-ref", "--heads").stdout, refs)
+        self.assertEqual(self.git("-C", renamed, "status", "--porcelain").stdout, before)
+        self.assertEqual(self.git("-C", renamed, "diff", "--cached").stdout, staged)
+        self.assertEqual(self.git("-C", renamed, "diff").stdout, unstaged)
+        self.assertEqual((renamed / "notes.txt").read_text(), "untracked notes\n")
+        self.assertEqual((renamed / "node_modules/example/index.js").stat().st_ino, inode)
+        self.assertEqual((renamed / "node_modules/tool").read_text(), "installed dependency\n")
+        listing = self.git("-C", renamed, "worktree", "list", "--porcelain").stdout
+        self.assertIn(f"worktree {renamed}\n", listing)
+        self.assertNotIn(f"worktree {tree}\n", listing)
+        self.assert_cwd(self.shell('gwc feature/story && printf "CWD:%s\\n" "$PWD"'), renamed)
+
+    def test_move_follows_current_root_or_subdirectory_with_unusual_names(self):
+        for index, subdirectory in enumerate(("", "app1")):
+            with self.subTest(subdirectory=subdirectory):
+                tree = self.add(f"old [å];\n{index}", f"feature/topic-{index}")
+                name = f"new [å];\n{index}"
+                result = self.shell('gwm "$1" "$2" && printf "CWD:%s\\n" "$PWD"; git status --short',
+                                    tree.name, name, cwd=tree / subdirectory)
+                renamed = self.container / name
+                self.assert_cwd(result, renamed / subdirectory)
+                self.assertEqual(self.branch(renamed), f"feature/topic-{index}")
+                self.assertFalse(tree.exists())
+
+    def test_move_bare_name_uses_source_parent_and_paths_use_original_cwd(self):
+        self.git("-C", self.main, "config", "dotfiles.worktreeDir", "../worktrees")
+        self.shell("gwa old-name")
+        tree = self.container / "worktrees/old-name"
+        # A later creation preference must not relocate existing trees implicitly.
+        self.git("-C", self.main, "config", "dotfiles.worktreeDir", "../other-trees")
+        self.shell("gwm old-name renamed", cwd=self.main / "app1")
+        renamed = tree.parent / "renamed"
+        self.assertTrue(renamed.is_dir())
+        destination = self.container / "moves/relative-name"
+        destination.parent.mkdir()
+        cwd = self.main / "app1"
+        result = self.shell('gwm "$1" ../../moves/relative-name && printf "CWD:%s\\n" "$PWD"', renamed, cwd=cwd)
+        self.assert_cwd(result, cwd)
+        self.assertTrue(destination.is_dir())
+        absolute = self.home / "absolute parent/new-name"
+        absolute.parent.mkdir()
+        self.shell('gwm old-name "$1"', absolute, cwd=cwd)
+        self.assertEqual(self.branch(absolute), "old-name")
+        self.assertFalse(destination.exists())
+
+    def test_move_no_cd_refuses_inside_and_stays_put_outside(self):
+        tree = self.add("old-name")
+        code = 'gwm --no-cd old-name new-name; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"'
+        result = self.shell(code, cwd=tree / "app1", success=False)
+        self.assert_cwd(result, tree / "app1")
+        self.assertTrue(tree.is_dir())
+        self.assertFalse((self.container / "new-name").exists())
+        result = self.shell(code, cwd=self.main / "app1")
+        self.assert_cwd(result, self.main / "app1")
+        self.assertEqual(self.branch(self.container / "new-name"), "old-name")
+
+    def test_move_refuses_existing_destinations_including_symlinks(self):
+        tree = self.add("old-name")
+        directory = self.container / "existing directory"
+        directory.mkdir()
+        file = self.container / "existing file"
+        file.write_text("keep me\n")
+        link = self.container / "existing link"
+        link.symlink_to(directory, target_is_directory=True)
+        broken = self.container / "broken link"
+        broken.symlink_to(self.container / "absent")
+        for destination in (directory, file, link, broken, str(broken) + "/", tree, tree / "nested"):
+            with self.subTest(destination=destination):
+                result = self.shell('gwm old-name "$1"; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"',
+                                    destination, cwd=tree / "app1", success=False)
+                self.assert_cwd(result, tree / "app1")
+                self.assertTrue(tree.is_dir())
+        self.assertEqual(list(directory.iterdir()), [])
+        self.assertEqual(file.read_text(), "keep me\n")
+        self.assertTrue(link.is_symlink())
+        self.assertTrue(broken.is_symlink())
+        self.assertFalse((self.container / "absent").exists())
+
+    def test_move_validation_and_git_failure_restore_cwd(self):
+        for flag in ("-h", "--help"):
+            self.assertIn("Usage: gwm", self.shell('gwm "$1"', flag, cwd=self.home).stdout)
+        tree = self.add("old-name", "feature/story")
+        for args in ((), ("old-name",), ("old-name", "new", "extra"), ("missing", "new"),
+                     ("main", "new"), ("--force", "new"), ("old-name", ""),
+                     ("old-name", "--force"), ("old-name", "."), ("old-name", "..")):
+            with self.subTest(args=args):
+                result = self.shell('gwm "$@"; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"',
+                                    *args, cwd=tree / "app1", success=False)
+                self.assert_cwd(result, tree / "app1")
+                self.assertTrue(tree.is_dir())
+                self.assertFalse((self.container / "new").exists())
+        self.git("-C", self.main, "worktree", "lock", tree)
+        result = self.shell('gwm old-name new; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"',
+                            cwd=tree / "app1", success=False)
+        self.assert_cwd(result, tree / "app1")
+        self.assertTrue(tree.is_dir())
+        self.assertFalse((self.container / "new").exists())
+        self.git("-C", self.main, "worktree", "unlock", tree)
+        self.add("second-tree", "old-name")
+        self.assertIn("ambiguous", self.shell("gwm old-name new", success=False).stderr)
+
     def test_remove_no_cd_refuses_inside_and_stays_put_outside(self):
         tree = self.add("theme1")
         result = self.shell('gwr --no-cd theme1; result=$?; printf "CWD:%s\\n" "$PWD"; exit "$result"',

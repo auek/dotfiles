@@ -157,6 +157,76 @@ Location:
   return 0
 }
 
+gwm() {
+  local -i no_cd=0 inside=0 result
+  if [[ "$1" == --no-cd ]]; then
+    no_cd=1
+    shift
+  fi
+  if [[ "$1" == -h || "$1" == --help ]]; then
+    print -r -- 'Usage: gwm [--no-cd] <directory-name|branch|path> <new-name|path>
+
+Move or rename a linked worktree, keeping its branch and all local files.
+A bare new name stays beside the source; paths resolve from the current cwd.
+The destination must not exist. Never forces a move or renames the branch.
+
+When inside the source, follow the move and keep the relative subdirectory.
+Otherwise, stay in the current directory. --no-cd refuses from inside.
+Git cannot move the original checkout or worktrees containing submodules.
+Other shells/editors are not relocated; path-dependent caches may need rebuilding.
+
+Examples:
+  gwm old-name new-name
+  gwm feature/story ../worktrees/story'
+    return 0
+  fi
+  if (( $# != 2 )) || [[ -z "$1" || "$1" == -* || -z "$2" || "$2" == -* || "$2" == . || "$2" == .. ]]; then
+    print -u2 -r -- 'Usage: gwm [--no-cd] <directory-name|branch|path> <new-name|path>'
+    return 1
+  fi
+  local gwt_main gwt_parent gwt_target target_real destination=$2
+  local old_dir=$PWD current=${PWD:A} suffix
+  local -a gwt_dirs gwt_branches
+  _gwt_load && _gwt_find "$1" || return
+  if [[ "$gwt_target" == "$gwt_main" ]]; then
+    print -u2 -r -- 'gwm: refusing to move the original checkout.'
+    return 1
+  fi
+  target_real=${gwt_target:A}
+  [[ "$destination" == */* ]] || destination=${gwt_target:h}/$destination
+  destination=${destination:a}
+  # Git treats an existing directory as a container; require an exact new path.
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    print -u2 -r -- "gwm: destination already exists: $destination"
+    return 1
+  fi
+  destination=${destination:A}
+  if [[ "$destination" == "$target_real/"* ]]; then
+    print -u2 -r -- 'gwm: destination cannot be inside the source worktree.'
+    return 1
+  fi
+  if [[ "$current" == "$target_real" || "$current" == "$target_real/"* ]]; then
+    if (( no_cd )); then
+      print -u2 -r -- 'gwm: leave the source worktree before using --no-cd.'
+      return 1
+    fi
+    suffix=${current#"$target_real"}
+    # Run outside the moved tree so neither Git nor this shell retains a stale cwd.
+    builtin cd -- "$gwt_main" || return
+    inside=1
+  fi
+  command git -C "$gwt_main" worktree move -- "$gwt_target" "$destination"
+  result=$?
+  if (( inside )); then
+    if (( result )); then
+      builtin cd -- "$old_dir" || return
+    else
+      builtin cd -- "$destination$suffix" || return
+    fi
+  fi
+  return "$result"
+}
+
 gwr() {
   local -i no_cd=0 moved=0 result
   if [[ "$1" == --no-cd ]]; then
@@ -203,6 +273,15 @@ _gwt_complete() {
   _gwt_load 2>/dev/null || return
   compadd -- "${gwt_dirs[@]:t}" "${gwt_branches[@]}"
 }
+
+_gwm_complete() {
+  _arguments \
+    '--no-cd[Refuse moving the current worktree]' \
+    '1:worktree:_gwt_complete' \
+    '2:new name or path:_files -/'
+}
+
 if (( $+functions[compdef] )); then
   compdef _gwt_complete gwc gwr
+  compdef _gwm_complete gwm
 fi

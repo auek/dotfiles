@@ -65,8 +65,13 @@ ln -s "$theme_dir" "$tmp_link"
 mv -T "$tmp_link" "$current"
 
 if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
-  tmux source-file "$theme_dir/tmux.conf" \
-    || printf 'warning: could not reload tmux\n' >&2
+  if tmux source-file "$theme_dir/tmux.conf"; then
+    # Local plugins may append status-line jobs (for example, periodic saves).
+    tmux source-file -q "$HOME/.tmux.conf.local" \
+      || printf 'warning: could not reload local tmux config\n' >&2
+  else
+    printf 'warning: could not reload tmux\n' >&2
+  fi
 fi
 
 if command -v pkill >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then

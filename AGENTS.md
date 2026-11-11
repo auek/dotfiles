@@ -175,6 +175,11 @@ The server Bash `tmx` follows the same behavior with an ordinary, untracked
 sources an ordinary `~/.bashrc.private` at the end for machine-local overrides.
 Never Stow or commit either file. Server Git aliases cover status, navigation,
 and pulling, not commit/push shortcuts.
+Workstation tmux sources an ordinary, untracked `~/.tmux.conf.local` after its
+theme; `theme-set` reapplies it after a successful tmux theme reload. Keep local
+settings idempotent and never Stow the file. Optional per-machine Resurrect and
+Continuum setup is documented in `docs/setup_wsl.md`; shared config does not
+install/load these plugins or enable automatic saves/restores by itself.
 Neovim is managed through mise, not Bob. It uses one `nvim` Stow package;
 machine-local options live in an ordinary untracked `~/.config/nvim/local.lua` (respecting
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and

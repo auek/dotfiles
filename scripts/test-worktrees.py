@@ -85,10 +85,12 @@ sys.stdout.buffer.write(target + b"\\0")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
 
-    def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, **env):
+    def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, legacy_gcb=False, **env):
         source = ROOT / ("packages/zshrc/.zshrc" if shell == "zsh" else "packages/bashrc-server/.bashrc")
         runner = [ZSH, "-f", "-c"] if shell == "zsh" else [BASH, "--noprofile", "--norc", "-c"]
         loader = 'source "$1"; shift; test_code=$1; shift; eval "$test_code"'
+        if legacy_gcb:
+            loader = 'alias gcb="git checkout -b"; ' + loader
         if legacy_gcm:
             loader = 'alias gcm="git checkout main || git checkout master"; ' + loader
             if shell == "bash":
@@ -344,6 +346,57 @@ sys.stdout.buffer.write(target + b"\\0")
                 self.assertEqual((tree / filename).read_text(), "preserve me\n")
                 if filename == "app1/file.txt":
                     self.git("-C", tree, "restore", filename)
+
+    def test_gcb_uses_cached_trunk_instead_of_current_branch_without_tracking(self):
+        self.publish_master()
+        self.git("-C", self.main, "config", "branch.autoSetupMerge", "always")
+        self.git("-C", self.main, "switch", "-c", "unrelated-feature")
+        (self.main / "feature-only.txt").write_text("do not inherit\n")
+        self.git("-C", self.main, "add", ".")
+        self.git("-C", self.main, "commit", "-m", "Unrelated work")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for trunk in ("main", "master"):
+            with self.subTest(trunk=trunk):
+                self.git("-C", self.main, "remote", "set-head", "origin", trunk)
+                branch = "feature/from-" + trunk
+                self.shell('if alias gcb >/dev/null 2>&1; then exit 99; fi; gcb "$1"',
+                           branch, cwd=self.main / "app1", legacy_gcb=True)
+                self.assertEqual(self.branch(self.main), branch)
+                self.assertEqual(self.git("-C", self.main, "rev-parse", "HEAD").stdout,
+                                 self.git("-C", self.main, "rev-parse", "origin/" + trunk).stdout)
+                self.assertFalse((self.main / "feature-only.txt").exists())
+                self.assertNotEqual(self.git("-C", self.main, "rev-parse", "@{upstream}", success=False).returncode, 0)
+
+    def test_gcb_falls_back_to_sole_fetched_master_with_missing_or_stale_head(self):
+        self.publish_master()
+        self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/main")
+        for hint in (None, "main"):
+            with self.subTest(hint=hint):
+                if hint is None:
+                    self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+                else:
+                    self.git("-C", self.main, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+                self.shell('gcb "$1"', "from-master-" + str(hint))
+                self.assertEqual(self.git("-C", self.main, "rev-parse", "HEAD").stdout,
+                                 self.git("-C", self.main, "rev-parse", "origin/master").stdout)
+
+    def test_gcb_refuses_ambiguous_missing_existing_and_invalid_branches(self):
+        for args in ((), ("main",), ("bad name",), ("--force",), ("one", "two"), ("@{-1}",)):
+            with self.subTest(args=args):
+                before = self.git("-C", self.main, "show-ref", "--heads").stdout
+                self.shell('gcb "$@"', *args, success=False)
+                self.assertEqual(self.branch(self.main), "main")
+                self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
+        self.publish_master()
+        self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+        for scenario in ("ambiguous", "missing"):
+            if scenario == "missing":
+                for trunk in ("main", "master"):
+                    self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/" + trunk)
+            before = self.git("-C", self.main, "show-ref", "--heads").stdout
+            result = self.shell("gcb new-topic", success=False)
+            self.assertIn("both main and master" if scenario == "ambiguous" else "run git fetch origin first", result.stderr)
+            self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
 
     def test_gmm_fetches_and_merges_remote_main_not_stale_local_main(self):
         tree = self.add("theme1")

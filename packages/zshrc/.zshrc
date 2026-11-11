@@ -90,27 +90,6 @@ npm() {
   command npm "$@"
 }
 
-# Retained for occasional commands that need a scoped secrets environment.
-# No current aliases or functions depend on it.
-with_secrets() {
-  local secrets_file=~/.secrets/secrets_general
-
-  if [ "$1" = "--opencode" ]; then
-    secrets_file=~/.secrets/secrets_opencode
-    shift
-  fi
-
-  if [[ -f "$secrets_file" ]]; then
-    (
-      source "$secrets_file"
-      "$@"
-    )
-  else
-    echo "Error: $secrets_file file not found."
-    return 1
-  fi
-}
-
 # ddcutil brightness helpers: no arguments reads current/max brightness.
 if command -v ddcutil >/dev/null 2>&1; then
   br() {

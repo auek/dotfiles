@@ -345,8 +345,8 @@ sys.stdout.buffer.write(target + b"\\0")
         editor.write_text('#!/bin/sh\nprintf "%s\\n" "$BRANCH_HINT" > "$1"\n')
         editor.chmod(0o755)
         code = ('alias gbd="git branch --delete"; source "$1/git.zsh"; '
-                'if alias gbd >/dev/null 2>&1; then exit 99; fi; '
-                'shift; gbd "$@"')
+                '[[ ${aliases[gbd]} == "git branch --delete" ]] || exit 99; '
+                'shift; gbdesc "$@"')
         source = ROOT / "packages/zshrc/.config/zsh"
         for args, target, hint in (((), "main", "Current branch hint"),
                                    ((branch,), branch, "Add export button")):
@@ -356,7 +356,7 @@ sys.stdout.buffer.write(target + b"\\0")
                                  hint)
                 self.assertEqual(self.branch(self.main), "main")
         self.git("-C", self.main, "switch", "--detach")
-        self.shell("gbd", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
+        self.shell("gbdesc", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
 
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")

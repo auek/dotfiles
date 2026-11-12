@@ -90,9 +90,8 @@ gmm() {
   esac
 }
 
-# Replace Oh My Zsh's branch-delete alias with a local description editor.
-unalias gbd 2>/dev/null || true
-gbd() {
+# Edit a local branch description without changing its name.
+gbdesc() {
   command git branch --edit-description "$@"
 }
 

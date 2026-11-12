@@ -227,7 +227,7 @@ local function press(keys)
 end
 assert(vim.g.mapleader == " " and vim.o.clipboard == "")
 local settings = require("config.settings")
-assert(settings.servers.ts_ls and settings.servers.yamlls and settings.servers.bashls)
+assert(settings.servers.ts_ls and settings.servers.yamlls and settings.servers.bashls and settings.servers.lua_ls)
 assert(not settings.features.markdown_preview)
 if vim.env.SCENARIO == "local" then
   assert(not settings.servers.cssls and settings.servers.pyright)
@@ -368,7 +368,11 @@ if vim.env.SCENARIO == "native-plugins" then
   local pins = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lazy-lock.json"), "\n"))
   for name, plugin in pairs(config.plugins) do assert(plugin.commit == pins[name].commit, name) end
   assert(vim.lsp.config.bashls.settings.bashIde.shfmt.path == "")
-  assert(not vim.lsp.is_enabled("pyright") and not vim.lsp.is_enabled("lua_ls"))
+  assert(not vim.lsp.is_enabled("pyright"))
+  assert(vim.lsp.is_enabled("lua_ls") == (vim.fn.executable("lua-language-server") == 1))
+  local lua = vim.lsp.config.lua_ls.settings.Lua
+  assert(lua.runtime.version == "LuaJIT" and vim.tbl_contains(lua.workspace.library, vim.env.VIMRUNTIME))
+  assert(lua.workspace.checkThirdParty == false and lua.telemetry.enable == false and lua.format.enable == false)
   vim.system = _G.real_system
   vim.uv.spawn = _G.real_spawn
   vim.fn.jobstart = _G.real_jobstart

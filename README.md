@@ -153,7 +153,7 @@ theme-set                   # show current selection
 ### Neovim
 
 Requires Neovim 0.12+. Plugins install on first launch with Git/network access.
-TypeScript/JavaScript, CSS, YAML, and Bash LSP support is configured; install
+TypeScript/JavaScript, CSS, YAML, Bash, and Lua LSP support is configured; install
 the language servers and parsers you want explicitly:
 
 ```vim

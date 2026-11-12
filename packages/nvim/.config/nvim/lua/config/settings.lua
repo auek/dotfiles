@@ -1,5 +1,5 @@
 local defaults = {
-  servers = { ts_ls = true, cssls = true, yamlls = true, bashls = true },
+  servers = { ts_ls = true, cssls = true, yamlls = true, bashls = true, lua_ls = true },
   parsers = { "bash", "css", "javascript", "json", "lua", "tsx", "typescript", "yaml" },
   server_options = {},
   format_timeout_ms = 3000,

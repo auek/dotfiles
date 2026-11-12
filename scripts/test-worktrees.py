@@ -390,7 +390,7 @@ print(row)
                 self.shell("gbf", BRANCH_PREVIEW_SELECT=branch)
                 self.assertEqual(self.branch(self.main), branch)
                 lines = (self.home / "branch-preview.txt").read_text().splitlines()
-                header = ["DESCRIPTION", *(hint or "No branch description").splitlines(), "", "RECENT COMMITS"]
+                header = ["DESCRIPTION", *(hint or "N/A").splitlines(), "", "RECENT COMMITS"]
                 self.assertEqual(lines[:len(header)], header)
                 commits = lines[len(header):]
                 self.assertEqual(len(commits), 5)

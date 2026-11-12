@@ -118,7 +118,7 @@ if command -v fzf >/dev/null 2>&1; then
       --preview '
         branch={1}
         description=$(git config --get "branch.$branch.description" 2>/dev/null) || description=
-        printf "DESCRIPTION\n%s\n\nRECENT COMMITS\n" "${description:-No branch description}"
+        printf "DESCRIPTION\n%s\n\nRECENT COMMITS\n" "${description:-N/A}"
         git --no-pager log -5 --format="%h  %s" "refs/heads/$branch" --
       ' \
       --preview-window='right:60%:wrap' |

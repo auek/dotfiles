@@ -228,7 +228,7 @@ class RuntimeTests(RuntimeHome):
                     code += ('[[ "$DOTFILES_LOCAL" == loaded ]] || exit 1; '
                              '(( $+functions[compdef] && $+functions[_zsh_autosuggest_start] )) || exit 2; '
                              '[[ $(bindkey "\\ek") == *clear-screen ]] || exit 3; '
-                             'for name in npm open br tmx gcb gcm gmm gwc gwa gwm gwr gsuggest gbf; do '
+                             'for name in npm open br tmx gcb gcm gmm gbdesc gbclean gwc gwa gwm gwr gsuggest gbf; do '
                              '(( $+functions[$name] )) || { print -u2 "Missing shell function: $name"; exit 4; }; done; '
                              '[[ ${_comps[gwm]} == _gwm_complete ]] || exit 7; '
                              '[[ $(bindkey "[D") != *backward-word && $(bindkey "[C") != *forward-word ]] || exit 5; '

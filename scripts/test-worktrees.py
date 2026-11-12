@@ -315,6 +315,106 @@ sys.stdout.buffer.write(target + b"\\0")
         result = self.shell('FZF_DEFAULT_OPTS="--filter=missing-branch" gbf', success=False)
         self.assertEqual(self.git("-C", self.main, "branch", "--show-current").stdout.strip(), "feature/story")
 
+    def test_branch_descriptions_are_searchable_and_stay_on_one_row(self):
+        branch = "feature/JIRA-123"
+        self.git("-C", self.main, "branch", branch)
+        # A matching tag must not change the branch name used for config lookup.
+        self.git("-C", self.main, "tag", branch)
+        description = "Configure\tauthentication timeouts å\r\nHidden second line"
+        self.git("-C", self.main, "config", f"branch.{branch}.description", description)
+        original = self.git("-C", self.main, "config", "--get", f"branch.{branch}.description").stdout
+        (self.bin / "fzf").write_text(
+            f'#!/bin/sh\ntee "$HOME/branch-picker.tsv" | {shlex.quote(FZF)} "$@"\n')
+        result = self.shell('FZF_DEFAULT_OPTS="--filter=authentication" gbf && git branch --show-current')
+        self.assertEqual(result.stdout.strip(), branch)
+        rows = [row.split("\t") for row in (self.home / "branch-picker.tsv").read_text().splitlines()]
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(len(row) == 3 and row[1] for row in rows))
+        descriptions = {row[0]: row[2] for row in rows}
+        self.assertEqual(descriptions[branch], "Configure authentication timeouts å ")
+        self.assertEqual(descriptions["main"], "")
+        self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description").stdout,
+                         original)
+        self.shell('FZF_DEFAULT_OPTS="--filter=Hidden" gbf', success=False)
+        self.assertEqual(self.branch(self.main), branch)
+
+    def test_description_helper_edits_current_or_named_branch_without_switching(self):
+        branch = "feature/JIRA-323"
+        self.git("-C", self.main, "branch", branch)
+        editor = self.bin / "description-editor"
+        editor.write_text('#!/bin/sh\nprintf "%s\\n" "$BRANCH_HINT" > "$1"\n')
+        editor.chmod(0o755)
+        code = ('alias gbd="git branch --delete"; source "$1/git.zsh"; '
+                '[[ ${aliases[gbd]} == "git branch --delete" ]] || exit 99; '
+                'shift; gbdesc "$@"')
+        source = ROOT / "packages/zshrc/.config/zsh"
+        for args, target, hint in (((), "main", "Current branch hint"),
+                                   ((branch,), branch, "Add export button")):
+            with self.subTest(branch=target):
+                self.shell(code, source, *args, GIT_EDITOR=str(editor), BRANCH_HINT=hint)
+                self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{target}.description").stdout.strip(),
+                                 hint)
+                self.assertEqual(self.branch(self.main), "main")
+        self.git("-C", self.main, "switch", "--detach")
+        self.shell("gbdesc", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
+
+    def test_branch_preview_shows_full_description_before_five_recent_commits(self):
+        branch = "feature/JIRA-123-'quoted"
+        self.git("-C", self.main, "switch", "-c", branch)
+        self.git("-C", self.main, "tag", branch)
+        for number in range(1, 7):
+            self.git("-C", self.main, "commit", "--allow-empty", "-m", f"Preview change {number}")
+        self.git("-C", self.main, "switch", "main")
+        # Execute the actual preview command; only fzf's interactive UI is mocked.
+        (self.bin / "fzf").write_text(f"#!{sys.executable}\n" + '''
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+args = sys.argv[1:]
+branch = os.environ["BRANCH_PREVIEW_SELECT"]
+row = next(line for line in sys.stdin.read().splitlines() if line.split("\\t", 1)[0] == branch)
+preview = args[args.index("--preview") + 1].replace("{1}", shlex.quote(branch))
+result = subprocess.run(["/bin/sh", "-c", preview], capture_output=True, text=True, check=True)
+(Path.home() / "branch-preview.txt").write_text(result.stdout)
+print(row)
+''')
+        description = "Configure authentication timeouts å\nKeep $(touch preview-command-ran) and 100% literal"
+        for hint in (description, "", None):
+            with self.subTest(description=hint):
+                if hint is None:
+                    self.git("-C", self.main, "config", "--unset", f"branch.{branch}.description")
+                else:
+                    self.git("-C", self.main, "config", f"branch.{branch}.description", hint)
+                self.shell("gbf", BRANCH_PREVIEW_SELECT=branch)
+                self.assertEqual(self.branch(self.main), branch)
+                lines = (self.home / "branch-preview.txt").read_text().splitlines()
+                header = ["DESCRIPTION", *(hint or "N/A").splitlines(), "", "RECENT COMMITS"]
+                self.assertEqual(lines[:len(header)], header)
+                commits = lines[len(header):]
+                self.assertEqual(len(commits), 5)
+                self.assertEqual([line.split("  ", 1)[1].rstrip() for line in commits],
+                                 [f"Preview change {number}" for number in range(6, 1, -1)])
+                self.assertFalse((self.main / "preview-command-ran").exists())
+
+        subject = "Configure authentication timeouts and deployment defaults " * 4
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", subject)
+        self.git("-C", self.main, "config", f"branch.{branch}.description", description)
+        for width in (32, 80, 512):
+            with self.subTest(preview_width=width):
+                self.shell("gbf", BRANCH_PREVIEW_SELECT=branch, FZF_PREVIEW_COLUMNS=str(width))
+                preview = (self.home / "branch-preview.txt").read_text()
+                header = f"DESCRIPTION\n{description}\n\nRECENT COMMITS\n"
+                self.assertTrue(preview.startswith(header))
+                commits = preview.removeprefix(header).splitlines()
+                self.assertEqual(len(commits), 5)
+                self.assertTrue(all(len(line) <= width for line in commits))
+                if width < len(subject):
+                    self.assertTrue(commits[0].endswith(".."))
+                else:
+                    self.assertTrue(commits[0].rstrip().endswith(subject.rstrip()))
+
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")
         # Exercise the candidate generation without needing an interactive ZLE.
@@ -500,6 +600,47 @@ sys.stdout.buffer.write(target + b"\\0")
                                  self.git("-C", self.main, "rev-parse", "origin/" + trunk).stdout)
                 self.assertFalse((self.main / "feature-only.txt").exists())
                 self.assertNotEqual(self.git("-C", self.main, "rev-parse", "@{upstream}", success=False).returncode, 0)
+                self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                             success=False).returncode, 0)
+
+    def test_gcb_saves_optional_description_locally_and_picker_finds_it(self):
+        hints = ("Configure authentication timeouts å", "--literal $(touch unexpected)\nSecond line", "")
+        for number, hint in enumerate(hints):
+            with self.subTest(description=hint):
+                branch = f"feature/JIRA-{number}"
+                self.shell('gcb "$@"', branch, hint, cwd=self.main / "app1")
+                self.assertEqual(self.branch(self.main), branch)
+                self.assertEqual(self.git("-C", self.main, "config", "--local", "--get",
+                                          f"branch.{branch}.description").stdout, hint + "\n")
+                self.assertNotEqual(self.git("-C", self.main, "rev-parse", "@{upstream}", success=False).returncode, 0)
+        self.assertFalse((self.main / "app1/unexpected").exists())
+        (self.bin / "fzf").write_text(f'#!/bin/sh\nexec {shlex.quote(FZF)} "$@"\n')
+        self.shell('FZF_DEFAULT_OPTS="--filter=authentication" gbf')
+        self.assertEqual(self.branch(self.main), "feature/JIRA-0")
+
+    def test_gcb_failed_checkout_does_not_save_description(self):
+        self.git("-C", self.main, "switch", "-c", "unrelated-feature")
+        file = self.main / "app1/file.txt"
+        file.write_text("committed feature change\n")
+        self.git("-C", self.main, "commit", "-am", "Unrelated work")
+        file.write_text("preserve unsaved edits\n")
+        branch = "feature/blocked"
+        self.shell('gcb "$@"', branch, "Do not save this description", success=False)
+        self.assertEqual(self.branch(self.main), "unrelated-feature")
+        self.assertEqual(file.read_text(), "preserve unsaved edits\n")
+        self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}",
+                                     success=False).returncode, 0)
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                     success=False).returncode, 0)
+
+    def test_gcb_description_write_failure_keeps_created_branch_and_reports_error(self):
+        (self.main / ".git/config.lock").touch()
+        branch = "feature/config-blocked"
+        result = self.shell('gcb "$@"', branch, "Cannot save while config is locked", success=False)
+        self.assertEqual(self.branch(self.main), branch)
+        self.assertIn("could not save its description; use gbdesc to retry", result.stderr)
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                     success=False).returncode, 0)
 
     def test_gcb_falls_back_to_sole_fetched_master_with_missing_or_stale_head(self):
         self.publish_master()
@@ -515,12 +656,15 @@ sys.stdout.buffer.write(target + b"\\0")
                                  self.git("-C", self.main, "rev-parse", "origin/master").stdout)
 
     def test_gcb_refuses_ambiguous_missing_existing_and_invalid_branches(self):
-        for args in ((), ("main",), ("bad name",), ("--force",), ("one", "two"), ("@{-1}",)):
+        for args in ((), ("main",), ("main", "Do not overwrite"), ("bad name", "Do not save"),
+                     ("--force",), ("one", "two", "three"), ("@{-1}",)):
             with self.subTest(args=args):
                 before = self.git("-C", self.main, "show-ref", "--heads").stdout
+                config = self.git("-C", self.main, "config", "--local", "--list").stdout
                 self.shell('gcb "$@"', *args, success=False)
                 self.assertEqual(self.branch(self.main), "main")
                 self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
+                self.assertEqual(self.git("-C", self.main, "config", "--local", "--list").stdout, config)
         self.publish_master()
         self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
         for scenario in ("ambiguous", "missing"):
@@ -531,6 +675,96 @@ sys.stdout.buffer.write(target + b"\\0")
             result = self.shell("gcb new-topic", success=False)
             self.assertIn("both main and master" if scenario == "ambiguous" else "run git fetch origin first", result.stderr)
             self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
+
+    def test_gbclean_previews_then_deletes_only_merged_unused_local_branches(self):
+        self.git("-C", self.main, "switch", "-c", "feature/merged")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Merged feature")
+        self.git("-C", self.main, "push", "-u", "origin", "feature/merged")
+        self.git("-C", self.main, "config", "branch.feature/merged.description", "Finished feature")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "merge", "--no-ff", "feature/merged", "-m", "Merge feature")
+        self.git("-C", self.main, "switch", "-c", "feature/squashed")
+        (self.main / "squashed.txt").write_text("squashed change\n")
+        self.git("-C", self.main, "add", "squashed.txt")
+        self.git("-C", self.main, "commit", "-m", "Squashed feature")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "merge", "--squash", "feature/squashed")
+        self.git("-C", self.main, "commit", "-m", "Squash feature")
+        self.git("-C", self.main, "push", "origin", "main")
+        self.git("-C", self.main, "switch", "-c", "feature/unmerged")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Unmerged feature")
+        self.git("-C", self.main, "switch", "main")
+        unusual = "feature/'å;literal"
+        for branch in ("master", "develop", unusual):
+            self.git("-C", self.main, "branch", branch)
+        tree = self.add("active", "feature/active")
+        # A path containing a newline must not create fake branch-list records.
+        self.git("-C", self.main, "worktree", "move", tree, tree.with_name("active\nworktree"))
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        file = self.main / "app1/file.txt"
+        file.write_text("preserve local edits\n")
+        refs = self.git("-C", self.main, "show-ref").stdout
+        config = self.git("-C", self.main, "config", "--local", "--list").stdout
+        result = self.shell("gbclean", cwd=self.main / "app1")
+        self.assertIn("cached origin/main", result.stdout)
+        self.assertIn("feature/merged", result.stdout.splitlines())
+        self.assertIn(unusual, result.stdout.splitlines())
+        for protected in ("main", "master", "develop", "feature/active", "feature/unmerged", "feature/squashed"):
+            self.assertNotIn(protected, result.stdout.splitlines())
+        self.assertEqual(self.git("-C", self.main, "show-ref").stdout, refs)
+        self.assertEqual(self.git("-C", self.main, "config", "--local", "--list").stdout, config)
+        self.shell("gbclean --delete", cwd=self.main / "app1")
+        for branch in ("feature/merged", unusual):
+            self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}",
+                                         success=False).returncode, 0)
+        for branch in ("main", "master", "develop", "feature/active", "feature/unmerged", "feature/squashed"):
+            self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}")
+        self.git("--git-dir", self.remote, "show-ref", "--verify", "--quiet", "refs/heads/feature/merged")
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", "branch.feature/merged.description",
+                                     success=False).returncode, 0)
+        self.assertEqual(self.branch(self.main), "main")
+        self.assertEqual(file.read_text(), "preserve local edits\n")
+        self.assertIn("no removable branches", self.shell("gbclean --delete").stdout)
+
+    def test_gbclean_prefers_cached_default_and_falls_back_to_sole_master(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-head", "origin", "master")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for name in ("cached-default", "sole-master"):
+            self.git("-C", self.main, "branch", "--track", name, "origin/master")
+            result = self.shell("gbclean --delete")
+            self.assertIn("cached origin/master", result.stdout)
+            self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{name}",
+                                         success=False).returncode, 0)
+            if name == "cached-default":
+                self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+                self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/main")
+
+    def test_gbclean_refuses_invalid_arguments_and_ambiguous_or_missing_trunks(self):
+        self.git("-C", self.main, "branch", "eligible")
+        for args in (("--force",), ("--delete", "extra")):
+            self.shell('gbclean "$@"', *args, success=False)
+        self.publish_master()
+        self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+        for scenario in ("ambiguous", "missing"):
+            if scenario == "missing":
+                for name in ("main", "master"):
+                    self.git("-C", self.main, "update-ref", "-d", f"refs/remotes/origin/{name}")
+            refs = self.git("-C", self.main, "show-ref").stdout
+            result = self.shell("gbclean --delete", success=False)
+            self.assertIn("both main and master" if scenario == "ambiguous" else "no fetched origin/main or origin/master",
+                          result.stderr)
+            self.assertEqual(self.git("-C", self.main, "show-ref").stdout, refs)
+        self.assertIn("Squash merges are not detected", self.shell("gbclean --help", cwd=self.home).stdout)
+
+    def test_gbclean_never_forces_past_gits_additional_deletion_checks(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-head", "origin", "master")
+        self.git("-C", self.main, "branch", "--no-track", "ahead-of-head", "origin/master")
+        result = self.shell("gbclean --delete", success=False)
+        self.assertIn("stopped without forcing deletion", result.stderr)
+        self.git("-C", self.main, "show-ref", "--verify", "--quiet", "refs/heads/ahead-of-head")
+        self.assertEqual(self.branch(self.main), "main")
 
     def test_gmm_fetches_and_merges_remote_main_not_stale_local_main(self):
         tree = self.add("theme1")

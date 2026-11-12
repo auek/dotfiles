@@ -164,9 +164,19 @@ cached main/master `origin/HEAD`, otherwise the sole local/origin main/master
 branch. They check out the local branch or create its origin-tracking branch,
 without contacting the remote. Ambiguity fails before checkout; checkout errors
 never trigger a fallback to another branch. Re-sourcing replaces the old alias.
-Zsh's `gcb <branch-name>` creates and switches to a new branch from the cached
-`origin/main` or `origin/master`, preferring a valid cached `origin/HEAD` hint.
+Zsh's `gcb <branch-name> [description]` creates and switches to a new branch from
+the cached `origin/main` or `origin/master`, preferring a valid cached
+`origin/HEAD` hint.
 It uses `--no-track`, never fetches, and refuses ambiguous or missing trunks.
+An optional description is saved to local Git config only after creation succeeds;
+write failures report an error without removing the new branch. `gbdesc [branch]`
+edits descriptions later, and `gbf` searches them and previews them above recent
+commits.
+`gbclean [--delete]` previews local branches merged into cached origin/main or
+origin/master, using the same cached-default selection as `gcb`. It never fetches
+or detects squash merges. It skips main/master/develop and all checked-out
+worktree branches. Deletion uses `git branch -d`, never forces, and stops if Git's
+additional upstream/HEAD safety check refuses a candidate.
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are

@@ -195,6 +195,7 @@ local function configure()
     require("plugins.treesitter"),
     require("plugins.misc"),
     require("plugins.ui"),
+    require("plugins.sessions"),
     (require("plugins.formatting")),
   }
   require("lazy").setup(pin(spec), {

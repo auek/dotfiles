@@ -13,8 +13,8 @@ alias gc-="git checkout -"
 # Start a new branch from origin's cached trunk, without tracking the trunk.
 unalias gcb 2>/dev/null || true
 gcb() {
-  if (( $# != 1 )) || [[ -z "$1" || "$1" == -* ]]; then
-    print -u2 -r -- 'Usage: gcb <branch-name>'
+  if (( $# < 1 || $# > 2 )) || [[ -z "$1" || "$1" == -* ]]; then
+    print -u2 -r -- 'Usage: gcb <branch-name> [description]'
     return 1
   fi
   local branch=$1 trunk candidate
@@ -38,7 +38,13 @@ gcb() {
     print -u2 -r -- 'gcb: no fetched origin/main or origin/master; run git fetch origin first.'
     return 1
   fi
-  command git switch --no-track -c "$branch" "$trunk"
+  command git switch --no-track -c "$branch" "$trunk" || return
+  if (( $# == 2 )); then
+    if ! command git config --local "branch.$branch.description" "$2"; then
+      print -u2 -r -- "gcb: created '$branch', but could not save its description; use gbdesc to retry."
+      return 1
+    fi
+  fi
 }
 
 # Remove the old alias too when re-sourcing an existing shell.

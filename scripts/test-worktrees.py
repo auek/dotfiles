@@ -583,6 +583,47 @@ print(row)
                                  self.git("-C", self.main, "rev-parse", "origin/" + trunk).stdout)
                 self.assertFalse((self.main / "feature-only.txt").exists())
                 self.assertNotEqual(self.git("-C", self.main, "rev-parse", "@{upstream}", success=False).returncode, 0)
+                self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                             success=False).returncode, 0)
+
+    def test_gcb_saves_optional_description_locally_and_picker_finds_it(self):
+        hints = ("Configure authentication timeouts å", "--literal $(touch unexpected)\nSecond line", "")
+        for number, hint in enumerate(hints):
+            with self.subTest(description=hint):
+                branch = f"feature/JIRA-{number}"
+                self.shell('gcb "$@"', branch, hint, cwd=self.main / "app1")
+                self.assertEqual(self.branch(self.main), branch)
+                self.assertEqual(self.git("-C", self.main, "config", "--local", "--get",
+                                          f"branch.{branch}.description").stdout, hint + "\n")
+                self.assertNotEqual(self.git("-C", self.main, "rev-parse", "@{upstream}", success=False).returncode, 0)
+        self.assertFalse((self.main / "app1/unexpected").exists())
+        (self.bin / "fzf").write_text(f'#!/bin/sh\nexec {shlex.quote(FZF)} "$@"\n')
+        self.shell('FZF_DEFAULT_OPTS="--filter=authentication" gbf')
+        self.assertEqual(self.branch(self.main), "feature/JIRA-0")
+
+    def test_gcb_failed_checkout_does_not_save_description(self):
+        self.git("-C", self.main, "switch", "-c", "unrelated-feature")
+        file = self.main / "app1/file.txt"
+        file.write_text("committed feature change\n")
+        self.git("-C", self.main, "commit", "-am", "Unrelated work")
+        file.write_text("preserve unsaved edits\n")
+        branch = "feature/blocked"
+        self.shell('gcb "$@"', branch, "Do not save this description", success=False)
+        self.assertEqual(self.branch(self.main), "unrelated-feature")
+        self.assertEqual(file.read_text(), "preserve unsaved edits\n")
+        self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}",
+                                     success=False).returncode, 0)
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                     success=False).returncode, 0)
+
+    def test_gcb_description_write_failure_keeps_created_branch_and_reports_error(self):
+        (self.main / ".git/config.lock").touch()
+        branch = "feature/config-blocked"
+        result = self.shell('gcb "$@"', branch, "Cannot save while config is locked", success=False)
+        self.assertEqual(self.branch(self.main), branch)
+        self.assertIn("could not save its description; use gbdesc to retry", result.stderr)
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description",
+                                     success=False).returncode, 0)
 
     def test_gcb_falls_back_to_sole_fetched_master_with_missing_or_stale_head(self):
         self.publish_master()
@@ -598,12 +639,15 @@ print(row)
                                  self.git("-C", self.main, "rev-parse", "origin/master").stdout)
 
     def test_gcb_refuses_ambiguous_missing_existing_and_invalid_branches(self):
-        for args in ((), ("main",), ("bad name",), ("--force",), ("one", "two"), ("@{-1}",)):
+        for args in ((), ("main",), ("main", "Do not overwrite"), ("bad name", "Do not save"),
+                     ("--force",), ("one", "two", "three"), ("@{-1}",)):
             with self.subTest(args=args):
                 before = self.git("-C", self.main, "show-ref", "--heads").stdout
+                config = self.git("-C", self.main, "config", "--local", "--list").stdout
                 self.shell('gcb "$@"', *args, success=False)
                 self.assertEqual(self.branch(self.main), "main")
                 self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
+                self.assertEqual(self.git("-C", self.main, "config", "--local", "--list").stdout, config)
         self.publish_master()
         self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
         for scenario in ("ambiguous", "missing"):

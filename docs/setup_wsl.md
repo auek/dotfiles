@@ -201,3 +201,49 @@ Override shared defaults in the ordinary, untracked `~/.tmux.conf.local`; do not
 Stow it. For example, `set -g @continuum-save-interval '0'` disables autosaving.
 To stop autosaving immediately without closing sessions, also run
 `tmux set -g @continuum-save-interval 0` in the running server.
+
+### Neovim recovery
+
+To also recover Neovim's open files, tabs, splits and cursor positions after an
+unclean restart, merge this into the ordinary, untracked
+`~/.config/nvim/local.lua` (respecting `XDG_CONFIG_HOME`):
+
+```lua
+return {
+  features = { session_recovery = true },
+  session_save_interval = 60,
+}
+```
+
+Preserve any other local settings. Restart Neovim after updating/restowing the
+configuration; Lazy installs the pinned `resession.nvim` plugin on enabled
+machines. Recovery saves every minute and on clean exit. It retains one latest
+snapshot per tmux socket/session name/window index/pane index, so separate panes
+in the same directory do not overwrite each other. Outside tmux, snapshots are
+per startup directory; a second simultaneous editor in that directory skips
+recovery rather than sharing its snapshot. Renaming a tmux session or moving a
+pane changes its identity on the next Neovim launch.
+
+After restoring tmux, a bare `nvim` resumes its matching snapshot automatically.
+Resurrect normally replays the original command, including file arguments. On
+an opted-in machine, add this idempotent rule to `~/.tmux.conf.local`, then reload
+the tmux config, so a restored `nvim some-file` starts as bare `nvim` instead:
+
+```tmux
+set -g @resurrect-processes '"nvim->nvim"'
+```
+
+Preserve any other entries if you already customize `@resurrect-processes`.
+Upstream's default process allowlist remains in effect. This rule matches the
+plain `nvim` command; if you launch it by an absolute executable path, include a
+matching inline rule for that path as described in Resurrect's documentation.
+
+Starting with explicit file/directory arguments keeps that requested view; use
+`:SessionRestore` to deliberately restore the pane's previous view instead.
+`:SessionSave` saves immediately and `:SessionStop` pauses saves for this editor
+instance, including its exit save. Headless jobs, piped stdin and explicit `-S`
+sessions do not participate. Snapshots are private local data under
+`stdpath("data")/dotfiles/recovery`, not project files. They preserve editor
+structure, not unsaved text, terminal jobs, or process memory; use swap recovery
+for unsaved file changes. Do not enable Resurrect's separate Neovim `session`
+strategy for this setup: Resession handles loading inside Neovim.

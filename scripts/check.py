@@ -63,6 +63,7 @@ def main():
             script(name)
     if "editor" in suites:
         script("test-nvim.py", fixtures / "bin/nvim", fixtures / "plugins", fixtures / "mason", fixtures / "parsers")
+        script("test-nvim-sessions.py", fixtures / "bin/nvim", fixtures / "plugins")
         script("test-nvim-project-tools.py", fixtures / "bin/nvim", fixtures / "plugins/lazy.nvim",
                fixtures / "plugins/conform.nvim", fixtures / "plugins/nvim-lint",
                *(fixtures / name for name in ("prettier-2", "prettier-3", "eslint-8", "eslint-9")))

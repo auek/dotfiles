@@ -3,7 +3,8 @@ local defaults = {
   parsers = { "bash", "css", "javascript", "json", "lua", "tsx", "typescript", "yaml" },
   server_options = {},
   format_timeout_ms = 3000,
-  features = { format_on_save = false, eslint = false, markdown_preview = false },
+  session_save_interval = 60,
+  features = { format_on_save = false, eslint = false, markdown_preview = false, session_recovery = false },
 }
 
 -- This is trusted machine-local code, not a project-discovered configuration.
@@ -18,6 +19,9 @@ if vim.fn.filereadable(path) == 1 then
     local timeout = value.format_timeout_ms
     assert(timeout == nil or (type(timeout) == "number" and timeout % 1 == 0 and timeout > 0 and timeout <= 60000),
       "format_timeout_ms must be an integer between 1 and 60000")
+    local interval = value.session_save_interval
+    assert(interval == nil or (type(interval) == "number" and interval % 1 == 0 and interval >= 1 and interval <= 3600),
+      "session_save_interval must be an integer between 1 and 3600 seconds")
     for name, enabled in pairs(value.servers or {}) do
       assert(type(name) == "string" and name:match("^[%w_]+$") and type(enabled) == "boolean",
         "servers must map LSP names to booleans")

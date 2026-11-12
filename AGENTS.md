@@ -47,6 +47,7 @@ dotfiles/
 │   ├── test-server.py        # Server Bash, private overrides, Stow, and tmux runtime checks
 │   ├── test-br.py            # Isolated Zsh brightness read/set checks with mocked ddcutil
 │   ├── test-nvim.py          # Shared editor, local settings, clipboard, plugins, and LSP fixtures
+│   ├── test-nvim-sessions.py # Periodic editor snapshots and abrupt restart recovery
 │   ├── test-nvim-project-tools.py # Real project-local Prettier/ESLint and forbidden-fallback checks
 │   ├── palettes/             # One JSON palette per theme
 │   └── templates/            # One template per fragment (per-theme overrides supported)
@@ -114,6 +115,18 @@ the tree remain available.
 `features.format_on_save` enables project-local Prettier through Conform;
 `features.eslint` enables project-local ESLint CLI diagnostics through pinned
 nvim-lint on open/save. Both default off. Diagnostics never apply fixes.
+`features.session_recovery` opts a machine into Resession snapshots every
+`session_save_interval` seconds (default 60, valid range 1–3600). Bare interactive
+Neovim resumes its snapshot; explicit file/directory arguments, stdin, headless
+jobs and `-S` sessions are not automatically restored. Snapshots use stable tmux
+socket/session-name/window-index/pane-index identities, or the startup directory
+outside tmux. An exclusive owner lock prevents concurrent writers; dead-process
+and previous-boot locks are reclaimed. State stays under
+`stdpath("data")/dotfiles/recovery`, outside the checkout. Writes use an fsynced
+temporary file and atomic replacement. `:SessionSave`, `:SessionRestore` and
+`:SessionStop` control recovery without adding mappings. Empty/special-only
+sessions do not overwrite useful snapshots. Restore errors stop automatic saves;
+unsaved buffer text is still the responsibility of swap recovery.
 Executable discovery stops at the repository root (or nearest package outside
 Git) and supports hoisted dependencies. Missing tools skip the integration.
 Never add global/PATH, Mason, mise, `npx` auto-download, or LSP fallbacks for

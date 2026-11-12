@@ -22,6 +22,16 @@ function M.setup()
   -- ShellCheck is discovered on PATH by bash-language-server. Formatting is
   -- deliberately disabled even when a machine happens to have shfmt installed.
   vim.lsp.config("bashls", { settings = { bashIde = { shfmt = { path = "" } } } })
+  vim.lsp.config("lua_ls", {
+    settings = {
+      Lua = {
+        runtime = { version = "LuaJIT" },
+        workspace = { library = { vim.env.VIMRUNTIME }, checkThirdParty = false },
+        telemetry = { enable = false },
+        format = { enable = false },
+      },
+    },
+  })
   for name, options in pairs(settings.server_options) do vim.lsp.config(name, options) end
   -- Some upstream configs use callable commands to prefer project-local tools.
   -- Check their executable without replacing those upstream launch functions.

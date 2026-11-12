@@ -233,8 +233,9 @@ machine-local options live in an ordinary untracked `~/.config/nvim/local.lua` (
 `XDG_CONFIG_HOME`). Server maps merge, parser lists replace defaults, and
 `server_options` supplies per-server overrides. Never Stow the local file.
 The shared editor targets Neovim 0.12+. The baseline selects available `ts_ls`,
-`cssls`, `yamlls`, and `bashls` servers
-with Azure Pipelines YAML schemas. Mason installs servers/ShellCheck only on
+`cssls`, `yamlls`, `bashls`, and `lua_ls` servers, with Azure Pipelines YAML
+schemas and Neovim runtime types for LuaJIT. LuaLS formatting and telemetry are
+disabled. Mason installs servers/ShellCheck only on
 explicit request; `:InstallParsers` installs explicitly selected parsers.
 Treesitter uses the supported main-branch API, eager loading, native highlighting,
 and the separate `stdpath("data")/treesitter-v2` parser/query root. Plugin updates
@@ -466,7 +467,7 @@ the plugin repositories in `lazy-lock.json` (fzf-native already built) to check
 real completion, Git indicators, parser configuration, Telescope search
 (requires `rg`), tree/directory startup, theme reloads, optional features and
 offline startup with plugins installed. An optional third argument supplies a
-Mason fixture with the four baseline servers, ShellCheck, and a local
+Mason fixture with the TypeScript/CSS/YAML/Bash servers, ShellCheck, and a local
 `azure-schema.json` for real language-server and diagnostic checks without
 network access. The tests never install into the real home; real Windows
 clipboard and interactive terminal behavior remain manual checks.

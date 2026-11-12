@@ -115,7 +115,12 @@ if command -v fzf >/dev/null 2>&1; then
       fzf \
       --with-nth=1,2,3 \
       --delimiter="$delim" \
-      --preview 'git log -1 --format="%s%n%n%b" refs/heads/{1} --' \
+      --preview '
+        branch={1}
+        description=$(git config --get "branch.$branch.description" 2>/dev/null) || description=
+        printf "DESCRIPTION\n%s\n\nRECENT COMMITS\n" "${description:-No branch description}"
+        git --no-pager log -5 --format="%h  %s" "refs/heads/$branch" --
+      ' \
       --preview-window='right:60%:wrap' |
       cut -f1) || return
 

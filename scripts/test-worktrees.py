@@ -358,6 +358,46 @@ sys.stdout.buffer.write(target + b"\\0")
         self.git("-C", self.main, "switch", "--detach")
         self.shell("gbdesc", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
 
+    def test_branch_preview_shows_full_description_before_five_recent_commits(self):
+        branch = "feature/JIRA-123-'quoted"
+        self.git("-C", self.main, "switch", "-c", branch)
+        self.git("-C", self.main, "tag", branch)
+        for number in range(1, 7):
+            self.git("-C", self.main, "commit", "--allow-empty", "-m", f"Preview change {number}")
+        self.git("-C", self.main, "switch", "main")
+        # Execute the actual preview command; only fzf's interactive UI is mocked.
+        (self.bin / "fzf").write_text(f"#!{sys.executable}\n" + '''
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+args = sys.argv[1:]
+branch = os.environ["BRANCH_PREVIEW_SELECT"]
+row = next(line for line in sys.stdin.read().splitlines() if line.split("\\t", 1)[0] == branch)
+preview = args[args.index("--preview") + 1].replace("{1}", shlex.quote(branch))
+result = subprocess.run(["/bin/sh", "-c", preview], capture_output=True, text=True, check=True)
+(Path.home() / "branch-preview.txt").write_text(result.stdout)
+print(row)
+''')
+        description = "Configure authentication timeouts å\nKeep $(touch preview-command-ran) and 100% literal"
+        for hint in (description, "", None):
+            with self.subTest(description=hint):
+                if hint is None:
+                    self.git("-C", self.main, "config", "--unset", f"branch.{branch}.description")
+                else:
+                    self.git("-C", self.main, "config", f"branch.{branch}.description", hint)
+                self.shell("gbf", BRANCH_PREVIEW_SELECT=branch)
+                self.assertEqual(self.branch(self.main), branch)
+                lines = (self.home / "branch-preview.txt").read_text().splitlines()
+                header = ["DESCRIPTION", *(hint or "No branch description").splitlines(), "", "RECENT COMMITS"]
+                self.assertEqual(lines[:len(header)], header)
+                commits = lines[len(header):]
+                self.assertEqual(len(commits), 5)
+                self.assertEqual([line.split("  ", 1)[1] for line in commits],
+                                 [f"Preview change {number}" for number in range(6, 1, -1)])
+                self.assertFalse((self.main / "preview-command-ran").exists())
+
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")
         # Exercise the candidate generation without needing an interactive ZLE.

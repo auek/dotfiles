@@ -676,6 +676,96 @@ print(row)
             self.assertIn("both main and master" if scenario == "ambiguous" else "run git fetch origin first", result.stderr)
             self.assertEqual(self.git("-C", self.main, "show-ref", "--heads").stdout, before)
 
+    def test_gbclean_previews_then_deletes_only_merged_unused_local_branches(self):
+        self.git("-C", self.main, "switch", "-c", "feature/merged")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Merged feature")
+        self.git("-C", self.main, "push", "-u", "origin", "feature/merged")
+        self.git("-C", self.main, "config", "branch.feature/merged.description", "Finished feature")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "merge", "--no-ff", "feature/merged", "-m", "Merge feature")
+        self.git("-C", self.main, "switch", "-c", "feature/squashed")
+        (self.main / "squashed.txt").write_text("squashed change\n")
+        self.git("-C", self.main, "add", "squashed.txt")
+        self.git("-C", self.main, "commit", "-m", "Squashed feature")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "merge", "--squash", "feature/squashed")
+        self.git("-C", self.main, "commit", "-m", "Squash feature")
+        self.git("-C", self.main, "push", "origin", "main")
+        self.git("-C", self.main, "switch", "-c", "feature/unmerged")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Unmerged feature")
+        self.git("-C", self.main, "switch", "main")
+        unusual = "feature/'å;literal"
+        for branch in ("master", "develop", unusual):
+            self.git("-C", self.main, "branch", branch)
+        tree = self.add("active", "feature/active")
+        # A path containing a newline must not create fake branch-list records.
+        self.git("-C", self.main, "worktree", "move", tree, tree.with_name("active\nworktree"))
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        file = self.main / "app1/file.txt"
+        file.write_text("preserve local edits\n")
+        refs = self.git("-C", self.main, "show-ref").stdout
+        config = self.git("-C", self.main, "config", "--local", "--list").stdout
+        result = self.shell("gbclean", cwd=self.main / "app1")
+        self.assertIn("cached origin/main", result.stdout)
+        self.assertIn("feature/merged", result.stdout.splitlines())
+        self.assertIn(unusual, result.stdout.splitlines())
+        for protected in ("main", "master", "develop", "feature/active", "feature/unmerged", "feature/squashed"):
+            self.assertNotIn(protected, result.stdout.splitlines())
+        self.assertEqual(self.git("-C", self.main, "show-ref").stdout, refs)
+        self.assertEqual(self.git("-C", self.main, "config", "--local", "--list").stdout, config)
+        self.shell("gbclean --delete", cwd=self.main / "app1")
+        for branch in ("feature/merged", unusual):
+            self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}",
+                                         success=False).returncode, 0)
+        for branch in ("main", "master", "develop", "feature/active", "feature/unmerged", "feature/squashed"):
+            self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}")
+        self.git("--git-dir", self.remote, "show-ref", "--verify", "--quiet", "refs/heads/feature/merged")
+        self.assertNotEqual(self.git("-C", self.main, "config", "--get", "branch.feature/merged.description",
+                                     success=False).returncode, 0)
+        self.assertEqual(self.branch(self.main), "main")
+        self.assertEqual(file.read_text(), "preserve local edits\n")
+        self.assertIn("no removable branches", self.shell("gbclean --delete").stdout)
+
+    def test_gbclean_prefers_cached_default_and_falls_back_to_sole_master(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-head", "origin", "master")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        for name in ("cached-default", "sole-master"):
+            self.git("-C", self.main, "branch", "--track", name, "origin/master")
+            result = self.shell("gbclean --delete")
+            self.assertIn("cached origin/master", result.stdout)
+            self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "--quiet", f"refs/heads/{name}",
+                                         success=False).returncode, 0)
+            if name == "cached-default":
+                self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+                self.git("-C", self.main, "update-ref", "-d", "refs/remotes/origin/main")
+
+    def test_gbclean_refuses_invalid_arguments_and_ambiguous_or_missing_trunks(self):
+        self.git("-C", self.main, "branch", "eligible")
+        for args in (("--force",), ("--delete", "extra")):
+            self.shell('gbclean "$@"', *args, success=False)
+        self.publish_master()
+        self.git("-C", self.main, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+        for scenario in ("ambiguous", "missing"):
+            if scenario == "missing":
+                for name in ("main", "master"):
+                    self.git("-C", self.main, "update-ref", "-d", f"refs/remotes/origin/{name}")
+            refs = self.git("-C", self.main, "show-ref").stdout
+            result = self.shell("gbclean --delete", success=False)
+            self.assertIn("both main and master" if scenario == "ambiguous" else "no fetched origin/main or origin/master",
+                          result.stderr)
+            self.assertEqual(self.git("-C", self.main, "show-ref").stdout, refs)
+        self.assertIn("Squash merges are not detected", self.shell("gbclean --help", cwd=self.home).stdout)
+
+    def test_gbclean_never_forces_past_gits_additional_deletion_checks(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-head", "origin", "master")
+        self.git("-C", self.main, "branch", "--no-track", "ahead-of-head", "origin/master")
+        result = self.shell("gbclean --delete", success=False)
+        self.assertIn("stopped without forcing deletion", result.stderr)
+        self.git("-C", self.main, "show-ref", "--verify", "--quiet", "refs/heads/ahead-of-head")
+        self.assertEqual(self.branch(self.main), "main")
+
     def test_gmm_fetches_and_merges_remote_main_not_stale_local_main(self):
         tree = self.add("theme1")
         old_main = self.git("-C", self.main, "rev-parse", "main").stdout

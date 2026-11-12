@@ -101,6 +101,68 @@ gbdesc() {
   command git branch --edit-description "$@"
 }
 
+# Preview by default; deletion retains Git's upstream/HEAD and worktree safeguards.
+gbclean() {
+  emulate -L zsh
+  if (( $# > 1 )) || { (( $# == 1 )) && [[ "$1" != --delete && "$1" != -h && "$1" != --help ]]; }; then
+    print -u2 -r -- 'Usage: gbclean [--delete]'
+    return 1
+  fi
+  if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then
+    print -r -- 'Usage: gbclean [--delete]
+Preview local branches merged into cached origin/main or origin/master.
+Use --delete to remove them with git branch -d; never forces or fetches.
+Skips main, master, develop, and branches checked out in any worktree.
+Squash merges are not detected. Run git fetch origin first to refresh.
+Git may retain candidates not merged into their upstream or current HEAD.'
+    return 0
+  fi
+  local trunk candidate refs branch checked_out
+  local -a branches=()
+  command git rev-parse --git-dir >/dev/null || return
+  trunk=$(command git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null) || trunk=
+  if [[ "$trunk" != origin/main && "$trunk" != origin/master ]] ||
+      ! command git show-ref --verify --quiet "refs/remotes/$trunk"; then
+    trunk=
+    for candidate in main master; do
+      if command git show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+        if [[ -n "$trunk" ]]; then
+          print -u2 -r -- 'gbclean: both main and master exist; refresh the default with git remote set-head origin --auto.'
+          return 1
+        fi
+        trunk="origin/$candidate"
+      fi
+    done
+  fi
+  if [[ -z "$trunk" ]]; then
+    print -u2 -r -- 'gbclean: no fetched origin/main or origin/master; run git fetch origin first.'
+    return 1
+  fi
+  refs=$(command git for-each-ref refs/heads --merged="refs/remotes/$trunk" \
+    --format='%(refname:lstrip=2)%09%(if)%(worktreepath)%(then)checked-out%(end)') || return
+  while IFS=$'\t' read -r branch checked_out; do
+    [[ -n "$branch" && -z "$checked_out" ]] || continue
+    case "$branch" in main|master|develop) continue ;; esac
+    branches+=("$branch")
+  done <<< "$refs"
+  if (( ${#branches} == 0 )); then
+    print -r -- "gbclean: no removable branches merged into cached $trunk."
+    return 0
+  fi
+  print -r -- "gbclean: merged into cached $trunk (no fetch):"
+  if [[ "${1:-}" != --delete ]]; then
+    print -rl -- "${branches[@]}"
+    print -r -- 'Preview only. Run gbclean --delete to attempt safe deletion.'
+    return 0
+  fi
+  for branch in "${branches[@]}"; do
+    if ! command git branch -d -- "$branch"; then
+      print -u2 -r -- "gbclean: Git refused '$branch'; stopped without forcing deletion."
+      return 1
+    fi
+  done
+}
+
 # Branch picking needs fzf, not fd (which is used by the file/directory widgets).
 if command -v fzf >/dev/null 2>&1; then
   gbf() {

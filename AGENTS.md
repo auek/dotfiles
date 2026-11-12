@@ -172,6 +172,11 @@ An optional description is saved to local Git config only after creation succeed
 write failures report an error without removing the new branch. `gbdesc [branch]`
 edits descriptions later, and `gbf` searches them and previews them above recent
 commits.
+`gbclean [--delete]` previews local branches merged into cached origin/main or
+origin/master, using the same cached-default selection as `gcb`. It never fetches
+or detects squash merges. It skips main/master/develop and all checked-out
+worktree branches. Deletion uses `git branch -d`, never forces, and stops if Git's
+additional upstream/HEAD safety check refuses a candidate.
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are

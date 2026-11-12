@@ -394,9 +394,26 @@ print(row)
                 self.assertEqual(lines[:len(header)], header)
                 commits = lines[len(header):]
                 self.assertEqual(len(commits), 5)
-                self.assertEqual([line.split("  ", 1)[1] for line in commits],
+                self.assertEqual([line.split("  ", 1)[1].rstrip() for line in commits],
                                  [f"Preview change {number}" for number in range(6, 1, -1)])
                 self.assertFalse((self.main / "preview-command-ran").exists())
+
+        subject = "Configure authentication timeouts and deployment defaults " * 4
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", subject)
+        self.git("-C", self.main, "config", f"branch.{branch}.description", description)
+        for width in (32, 80, 512):
+            with self.subTest(preview_width=width):
+                self.shell("gbf", BRANCH_PREVIEW_SELECT=branch, FZF_PREVIEW_COLUMNS=str(width))
+                preview = (self.home / "branch-preview.txt").read_text()
+                header = f"DESCRIPTION\n{description}\n\nRECENT COMMITS\n"
+                self.assertTrue(preview.startswith(header))
+                commits = preview.removeprefix(header).splitlines()
+                self.assertEqual(len(commits), 5)
+                self.assertTrue(all(len(line) <= width for line in commits))
+                if width < len(subject):
+                    self.assertTrue(commits[0].endswith(".."))
+                else:
+                    self.assertTrue(commits[0].rstrip().endswith(subject.rstrip()))
 
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")

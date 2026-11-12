@@ -125,7 +125,8 @@ if command -v fzf >/dev/null 2>&1; then
         branch={1}
         description=$(git config --get "branch.$branch.description" 2>/dev/null) || description=
         printf "DESCRIPTION\n%s\n\nRECENT COMMITS\n" "${description:-N/A}"
-        git --no-pager log -5 --format="%h  %s" "refs/heads/$branch" --
+        # Clip commit subjects to the pane width while allowing descriptions to wrap.
+        git --no-pager log -5 --format="%h  %<|(${FZF_PREVIEW_COLUMNS:-80},trunc)%s" "refs/heads/$branch" --
       ' \
       --preview-window='right:60%:wrap' |
       cut -f1) || return

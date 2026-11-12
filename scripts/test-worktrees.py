@@ -315,6 +315,49 @@ sys.stdout.buffer.write(target + b"\\0")
         result = self.shell('FZF_DEFAULT_OPTS="--filter=missing-branch" gbf', success=False)
         self.assertEqual(self.git("-C", self.main, "branch", "--show-current").stdout.strip(), "feature/story")
 
+    def test_branch_descriptions_are_searchable_and_stay_on_one_row(self):
+        branch = "feature/JIRA-123"
+        self.git("-C", self.main, "branch", branch)
+        # A matching tag must not change the branch name used for config lookup.
+        self.git("-C", self.main, "tag", branch)
+        description = "Configure\tauthentication timeouts å\r\nHidden second line"
+        self.git("-C", self.main, "config", f"branch.{branch}.description", description)
+        original = self.git("-C", self.main, "config", "--get", f"branch.{branch}.description").stdout
+        (self.bin / "fzf").write_text(
+            f'#!/bin/sh\ntee "$HOME/branch-picker.tsv" | {shlex.quote(FZF)} "$@"\n')
+        result = self.shell('FZF_DEFAULT_OPTS="--filter=authentication" gbf && git branch --show-current')
+        self.assertEqual(result.stdout.strip(), branch)
+        rows = [row.split("\t") for row in (self.home / "branch-picker.tsv").read_text().splitlines()]
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(len(row) == 3 and row[1] for row in rows))
+        descriptions = {row[0]: row[2] for row in rows}
+        self.assertEqual(descriptions[branch], "Configure authentication timeouts å ")
+        self.assertEqual(descriptions["main"], "")
+        self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description").stdout,
+                         original)
+        self.shell('FZF_DEFAULT_OPTS="--filter=Hidden" gbf', success=False)
+        self.assertEqual(self.branch(self.main), branch)
+
+    def test_description_helper_edits_current_or_named_branch_without_switching(self):
+        branch = "feature/JIRA-323"
+        self.git("-C", self.main, "branch", branch)
+        editor = self.bin / "description-editor"
+        editor.write_text('#!/bin/sh\nprintf "%s\\n" "$BRANCH_HINT" > "$1"\n')
+        editor.chmod(0o755)
+        code = ('alias gbd="git branch --delete"; source "$1/git.zsh"; '
+                'if alias gbd >/dev/null 2>&1; then exit 99; fi; '
+                'shift; gbd "$@"')
+        source = ROOT / "packages/zshrc/.config/zsh"
+        for args, target, hint in (((), "main", "Current branch hint"),
+                                   ((branch,), branch, "Add export button")):
+            with self.subTest(branch=target):
+                self.shell(code, source, *args, GIT_EDITOR=str(editor), BRANCH_HINT=hint)
+                self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{target}.description").stdout.strip(),
+                                 hint)
+                self.assertEqual(self.branch(self.main), "main")
+        self.git("-C", self.main, "switch", "--detach")
+        self.shell("gbd", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
+
     def test_completion_offers_directory_and_branch_names(self):
         self.add("theme1", "feature/story")
         # Exercise the candidate generation without needing an interactive ZLE.

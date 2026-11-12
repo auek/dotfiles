@@ -90,19 +90,33 @@ gmm() {
   esac
 }
 
+# Replace Oh My Zsh's branch-delete alias with a local description editor.
+unalias gbd 2>/dev/null || true
+gbd() {
+  command git branch --edit-description "$@"
+}
+
 # Branch picking needs fzf, not fd (which is used by the file/directory widgets).
 if command -v fzf >/dev/null 2>&1; then
   gbf() {
     local delim=$'\t'
-    local branch
+    local branch commit_date description
 
     branch=$(git for-each-ref refs/heads \
       --sort=-committerdate \
-      --format='%(refname:short)	%(committerdate:relative)' |
+      --format='%(refname:lstrip=2)	%(committerdate:relative)' |
+      while IFS="$delim" read -r branch commit_date; do
+        description=$(command git config --get "branch.$branch.description" 2>/dev/null) || description=
+        # Descriptions may be multiline; keep each picker entry on one row.
+        description=${description%%$'\n'*}
+        description=${description//$'\t'/ }
+        description=${description//$'\r'/ }
+        printf '%s\t%s\t%s\n' "$branch" "$commit_date" "$description"
+      done |
       fzf \
-      --with-nth=1,2 \
+      --with-nth=1,2,3 \
       --delimiter="$delim" \
-      --preview 'git log -1 --format="%s%n%n%b" {1}' \
+      --preview 'git log -1 --format="%s%n%n%b" refs/heads/{1} --' \
       --preview-window='right:60%:wrap' |
       cut -f1) || return
 

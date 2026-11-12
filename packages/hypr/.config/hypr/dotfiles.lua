@@ -72,6 +72,14 @@ hl.bind(main_mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "d" }))
 hl.bind(main_mod .. " + SHIFT + K", hl.dsp.window.move({ direction = "u" }))
 hl.bind(main_mod .. " + SHIFT + L", hl.dsp.window.move({ direction = "r" }))
 
+hl.bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
+hl.bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+hl.bind(main_mod .. " + CTRL + Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
+hl.bind(main_mod .. " + CTRL + Right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { repeating = true })
+hl.bind(main_mod .. " + CTRL + Up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { repeating = true })
+hl.bind(main_mod .. " + CTRL + Down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { repeating = true })
+hl.bind(main_mod .. " + CTRL + equal", hl.dsp.layout("splitratio 1 exact"))
+
 for workspace = 1, 4 do
   hl.bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }))
   hl.bind(main_mod .. " + SHIFT + " .. workspace, hl.dsp.window.move({ workspace = workspace }))

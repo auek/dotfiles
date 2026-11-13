@@ -1,5 +1,4 @@
 alias gst="git status --short --branch"
-alias gb="git branch --sort=-committerdate"
 alias glg="git log"
 alias gp="git push"
 alias gpsup="git push -u origin HEAD"
@@ -9,6 +8,50 @@ alias gcam="git commit -am"
 alias gcmsg="git commit -m"
 alias gco="git checkout"
 alias gc-="git checkout -"
+
+# Only bare gb adds descriptions; arguments keep the normal git branch interface.
+unalias gb 2>/dev/null || true
+gb() {
+  emulate -L zsh
+  if (( $# )); then
+    command git branch --sort=-committerdate "$@"
+    return
+  fi
+  local listing line branch description color=never tty=false
+  local -a rows colored
+  local -i width=0 index
+  listing=$(command git branch --sort=-committerdate --no-column --no-color) || return
+  [[ -n "$listing" ]] || return 0
+  rows=("${(@f)listing}")
+  # Resolve auto colors against our output, rather than the command substitution.
+  [[ -t 1 ]] && tty=true
+  if [[ $(command git config --get-colorbool color.branch "$tty") == true ]]; then
+    color=always
+  fi
+  listing=$(command git branch --sort=-committerdate --no-column --color="$color") || return
+  colored=("${(@f)listing}")
+  for line in "${rows[@]}"; do
+    (( ${(m)#line} > width )) && width=${(m)#line}
+  done
+  for (( index=1; index<=${#rows}; index++ )); do
+    line=${rows[index]}
+    branch=${line[3,-1]}
+    description=$(command git config --get "branch.$branch.description" 2>/dev/null) || description=
+    # Keep descriptions on one row, without changing the saved multiline text.
+    description=${description%%$'\n'*}
+    description=${description//$'\t'/ }
+    description=${description//$'\r'/ }
+    if [[ -n "$description" ]]; then
+      printf '%s%*s%s\n' "${colored[index]}" "$(( width - ${(m)#line} + 2 ))" '' "$description"
+    else
+      print -r -- "${colored[index]}"
+    fi
+  done
+}
+
+if (( $+functions[compdef] )); then
+  compdef _git gb=git-branch
+fi
 
 # Start a new branch from origin's cached trunk, without tracking the trunk.
 unalias gcb 2>/dev/null || true

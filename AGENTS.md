@@ -171,7 +171,9 @@ It uses `--no-track`, never fetches, and refuses ambiguous or missing trunks.
 An optional description is saved to local Git config only after creation succeeds;
 write failures report an error without removing the new branch. `gbdesc [branch]`
 edits descriptions later, and `gbf` searches them and previews them above recent
-commits.
+commits. Bare Zsh `gb` lists branches with aligned first-line descriptions,
+preserving Git's markers, colors and latest-commit ordering. With arguments it
+delegates to the existing sorted `git branch` interface unchanged.
 `gbclean [--delete]` previews local branches merged into cached origin/main or
 origin/master, using the same cached-default selection as `gcb`. It never fetches
 or detects squash merges. It skips main/master/develop and all checked-out

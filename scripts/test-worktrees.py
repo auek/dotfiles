@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unicodedata
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -134,6 +135,65 @@ sys.stdout.buffer.write(target + b"\\0")
         result = self.shell('gst\ngwl')
         self.assertIn("## main...origin/main", result.stdout)
         self.assertIn("[theme1]", result.stdout)
+
+    def test_gb_aligns_first_line_descriptions_with_native_order_and_markers(self):
+        tree = self.add("linked", "feature/linked")
+        branch = "feature/å界-100%-'quoted'"
+        self.git("-C", self.main, "branch", branch)
+        descriptions = {
+            "main": "Primary branch",
+            "feature/linked": "Linked worktree",
+            branch: "Improve\tlogging 100% $(literal)\r\nHidden second line",
+        }
+        originals = {}
+        for name, description in descriptions.items():
+            self.git("-C", self.main, "config", f"branch.{name}.description", description)
+            originals[name] = self.git("-C", self.main, "config", "--get", f"branch.{name}.description").stdout
+        self.env["GIT_COMMITTER_DATE"] = "2030-01-01T12:00:00Z"
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Newest branch")
+        native = self.git("-C", self.main, "branch", "--sort=-committerdate", "--no-color", "--no-column").stdout.splitlines()
+        rows = self.shell("gb").stdout.splitlines()
+        self.assertEqual(len(rows), len(native))
+        def cells(text):
+            return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+
+        width = max(map(cells, native)) + 2
+        for original, row in zip(native, rows):
+            name = original[2:]
+            hint = descriptions[name].split("\n", 1)[0].replace("\t", " ").replace("\r", " ")
+            self.assertEqual(row, original + " " * (width - cells(original)) + hint)
+            self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{name}.description").stdout,
+                             originals[name])
+        self.assertTrue(rows[0].startswith("* main"))
+        self.assertTrue(any(row.startswith("+ feature/linked") for row in rows))
+        self.assertTrue(tree.exists())
+
+    def test_gb_keeps_native_colors_and_detached_head_without_descriptions(self):
+        self.git("-C", self.main, "config", "color.branch", "always")
+        self.git("-C", self.main, "config", "color.branch.current", "bold red")
+        native_args = ("branch", "--sort=-committerdate", "--no-column", "--color=always")
+        self.assertEqual(self.shell("gb").stdout, self.git("-C", self.main, *native_args).stdout)
+        self.git("-C", self.main, "config", "branch.main.description", "Color description")
+        self.assertEqual(self.shell("gb").stdout,
+                         self.git("-C", self.main, *native_args).stdout.rstrip("\n") + "  Color description\n")
+        self.git("-C", self.main, "config", "--unset", "branch.main.description")
+        self.git("-C", self.main, "switch", "--detach")
+        self.assertEqual(self.shell("gb").stdout, self.git("-C", self.main, *native_args).stdout)
+        self.git("-C", self.main, "config", "color.branch", "auto")
+        self.assertNotIn("\x1b[", self.shell("gb").stdout)
+
+    def test_gb_arguments_and_replacing_legacy_alias(self):
+        source = ROOT / "packages/zshrc/.config/zsh"
+        self.shell('alias gb="git branch --sort=-committerdate"; source "$1/git.zsh"; '
+                   'if alias gb >/dev/null 2>&1; then exit 99; fi; gb new-topic', source)
+        self.git("-C", self.main, "config", "branch.main.description", "Do not add to explicit listings")
+        for args in (("-a",), ("-vv",), ("--list",), ("--format=%(refname:short)",)):
+            with self.subTest(args=args):
+                self.assertEqual(self.shell('gb "$@"', *args).stdout,
+                                 self.git("-C", self.main, "branch", "--sort=-committerdate", *args).stdout)
+        self.shell("gb -d new-topic")
+        self.assertNotEqual(self.git("-C", self.main, "show-ref", "--verify", "refs/heads/new-topic", success=False).returncode, 0)
+        self.shell("gb", cwd=self.home, success=False)
 
     def test_add_help_is_readable_and_available_outside_a_repository(self):
         for flag in ("-h", "--help"):

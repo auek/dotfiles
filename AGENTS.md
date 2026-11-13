@@ -179,13 +179,15 @@ origin/master, using the same cached-default selection as `gcb`. It never fetche
 or detects squash merges. It skips main/master/develop and all checked-out
 worktree branches. Deletion uses `git branch -d`, never forces, and stops if Git's
 additional upstream/HEAD safety check refuses a candidate.
-`gbclean --interactive [--delete]` separately reviews Jira-ID matches between
+`gbclean --interactive` separately reviews Jira-ID matches between
 branch names (including suffixed variants) and cached trunk commit titles,
 case-insensitively with exact ID boundaries. Matches are only hints, never proof
 of merging. Review defaults to keep; inspect shows a labeled trunk-to-branch tip
-diff. Without `--delete`, selections only print what would be deleted. With it,
-each deletion requires the full branch name and explicitly uses force deletion,
-retaining Git's worktree protection and refusing branch tips changed during review.
+diff. Marking branches never deletes during review. The final summary requires an
+explicit `y`/`Y` to force-delete the selected local branches; `--delete` is not
+needed and never bypasses confirmation. Quit/EOF during review cancels everything;
+Enter, no, or EOF at confirmation also deletes nothing. All selected tips and
+worktree checkouts are rechecked before deleting; Git's worktree protection remains.
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are

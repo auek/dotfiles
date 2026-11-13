@@ -147,7 +147,7 @@ gbdesc() {
 # Jira IDs identify review candidates, never proof that a branch was merged.
 _gbclean_interactive() {
   emulate -L zsh
-  local trunk=$1 delete=$2 trunk_oid refs branch oid checked_out ticket
+  local trunk=$1 trunk_oid refs branch oid checked_out ticket
   local pattern='(^|[^[:alnum:]])(JIRA-[0-9]+)($|[^[:alnum:]])'
   local history line matches description reply confirmation current_oid
   local -i stop=0
@@ -166,11 +166,7 @@ _gbclean_interactive() {
     fi
   done <<< "$refs"
   print -r -- "gbclean: Jira review against cached $trunk (no fetch)."
-  if [[ $delete == 1 ]]; then
-    print -r -- 'Deletion enabled: confirmed branches are force-deleted, including unmerged commits.'
-  else
-    print -r -- 'Preview only: nothing will be deleted. Add --delete to enable deletion.'
-  fi
+  print -r -- 'Mark branches for deletion, then confirm the full list at the end. Nothing is deleted during review.'
   for ticket in "${(@ok)groups}"; do
     pattern="(^|[^[:alnum:]])$ticket($|[^[:alnum:]])"
     # Git grep also searches bodies; filter subjects to require the ID in the title.
@@ -197,7 +193,7 @@ Recent commits:"
       command git --no-pager log -5 --no-color --format='%h %s' "$oid" -- || return
       print -r -- 'Jira match only; this branch may contain additional work.'
       while true; do
-        print -n -r -- '[k]eep / [i]nspect / [d]elete / [q]uit (default: keep): '
+        print -n -r -- '[k]eep / [i]nspect / mark for [d]eletion / [q]uit (default: keep): '
         IFS= read -r reply || { stop=1; break; }
         case "$reply" in
           ''|k|K) break ;;
@@ -207,24 +203,8 @@ Recent commits:"
             command git --no-pager diff --no-ext-diff --no-textconv "$trunk_oid" "$oid" -- || return
             ;;
           d|D)
-            if [[ $delete == 0 ]]; then
-              print -r -- "Would delete: $branch"
-            else
-              print -n -r -- 'Force deletion discards the branch, including any follow-up work. Type the full branch name to confirm: '
-              IFS= read -r confirmation || { stop=1; break; }
-              if [[ "$confirmation" != "$branch" ]]; then
-                print -r -- 'Not confirmed; kept.'
-                break
-              fi
-              current_oid=$(command git rev-parse --verify "refs/heads/$branch") || return
-              if [[ "$current_oid" != "$oid" ]]; then
-                print -u2 -r -- "gbclean: '$branch' changed during review; stopped without deleting it."
-                return 1
-              fi
-              # Keep Git's checked-out/worktree protections, even for force deletion.
-              command git branch -D -- "$branch" || return
-            fi
             selected+=("$branch")
+            print -r -- "Marked for deletion: $branch"
             break
             ;;
           *) print -r -- 'Choose k, i, d, or q.' ;;
@@ -234,14 +214,40 @@ Recent commits:"
     done
     (( stop )) && break
   done
-  if [[ $delete == 0 ]]; then
-    print -r -- "
-Preview complete: ${#selected} branch(es) would be deleted."
-  else
-    print -r -- "
-Review complete: ${#selected} branch(es) deleted."
+  if (( stop )); then
+    print -r -- 'Review cancelled; nothing deleted.'
+    return 0
   fi
-  (( ${#selected} )) && print -rl -- "${selected[@]}"
+  if (( ${#selected} == 0 )); then
+    print -r -- 'No branches selected; nothing deleted.'
+    return 0
+  fi
+  print -r -- '
+Selected for deletion:'
+  print -rl -- "${selected[@]}"
+  print -r -- 'Warning: these branches may contain unmerged work.'
+  print -n -r -- "Force-delete ${#selected} local branch(es)? [y/N]: "
+  IFS= read -r confirmation || confirmation=
+  if [[ "$confirmation" != y && "$confirmation" != Y ]]; then
+    print -r -- 'Cancelled; nothing deleted.'
+    return 0
+  fi
+  # Revalidate the entire selection before deleting any branch.
+  for branch in "${selected[@]}"; do
+    current_oid=$(command git rev-parse --verify "refs/heads/$branch") || return
+    if [[ "$current_oid" != "${tips[$branch]}" ]]; then
+      print -u2 -r -- "gbclean: '$branch' changed during review; stopped without deleting anything."
+      return 1
+    fi
+    checked_out=$(command git for-each-ref --format='%(worktreepath)' "refs/heads/$branch") || return
+    if [[ -n "$checked_out" ]]; then
+      print -u2 -r -- "gbclean: '$branch' is now checked out; stopped without deleting anything."
+      return 1
+    fi
+  done
+  # Git also checks worktree protections at deletion time.
+  command git branch -D -- "${selected[@]}" || return
+  print -r -- "Review complete: ${#selected} branch(es) deleted."
   return 0
 }
 
@@ -262,9 +268,10 @@ Skips main, master, develop, and branches checked out in any worktree.
 Squash merges are not detected by ordinary cleanup. Run git fetch origin first to refresh.
 Git may retain candidates not merged into their upstream or current HEAD.
 --interactive reviews branches whose JIRA-<number> appears in a trunk commit title.
-This is a heuristic, not proof of merging. Keep is the default; i shows a tip diff; q quits.
-Without --delete, d only prints Would delete; selections are not saved.
-With --delete, d requires the full branch name and FORCE-deletes that branch.'
+This is a heuristic, not proof of merging. Keep is the default; i shows a tip diff.
+d marks a branch; q or EOF during review cancels everything.
+Interactive mode shows the selected list and requires a final y to FORCE-delete it.
+No --delete is needed for interactive mode; supplying it never bypasses confirmation.'
         return 0
         ;;
       *) print -u2 -r -- 'Usage: gbclean [--interactive] [--delete]'; return 1 ;;
@@ -292,7 +299,7 @@ With --delete, d requires the full branch name and FORCE-deletes that branch.'
     return 1
   fi
   if (( interactive )); then
-    _gbclean_interactive "$trunk" "$delete"
+    _gbclean_interactive "$trunk"
     return
   fi
   refs=$(command git for-each-ref refs/heads --merged="refs/remotes/$trunk" \

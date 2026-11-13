@@ -84,7 +84,8 @@ sys.stdout.buffer.write(target + b"\\0")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
 
-    def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, legacy_gcb=False, **env):
+    def shell(self, code, *args, cwd=None, success=True, shell="zsh", legacy_gcm=False, legacy_gcb=False,
+              input_text=None, **env):
         source = ROOT / ("packages/zshrc/.config/zsh" if shell == "zsh" else "packages/bashrc-server/.bashrc")
         runner = [ZSH, "-f", "-c"] if shell == "zsh" else [BASH, "--noprofile", "--norc", "-c"]
         load = 'source "$1/git.zsh"; source "$1/worktrees.zsh"' if shell == "zsh" else 'source "$1"'
@@ -99,7 +100,7 @@ sys.stdout.buffer.write(target + b"\\0")
         result = subprocess.run([*runner, loader,
                                  "worktree-check", str(source), code, *map(str, args)],
                                 cwd=cwd or self.main, env={**self.env, **env},
-                                capture_output=True, text=True, timeout=15)
+                                capture_output=True, text=True, input=input_text, timeout=15)
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         else:
@@ -825,6 +826,116 @@ print(row)
         self.assertIn("stopped without forcing deletion", result.stderr)
         self.git("-C", self.main, "show-ref", "--verify", "--quiet", "refs/heads/ahead-of-head")
         self.assertEqual(self.branch(self.main), "main")
+
+    def squash_review_branches(self):
+        branch = "feature/JIRA-123"
+        self.git("-C", self.main, "switch", "-c", branch)
+        (self.main / "feature.txt").write_text("original feature\n")
+        self.git("-C", self.main, "add", ".")
+        self.git("-C", self.main, "commit", "-m", "Implement feature")
+        self.git("-C", self.main, "branch", branch + "-alt")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "merge", "--squash", branch)
+        self.git("-C", self.main, "commit", "-m", "feat(auth) Jira-123: Improve authentication")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "Unrelated title\n\nJIRA-456 in body only")
+        self.git("-C", self.main, "push", "origin", "main")
+        followup = "feature/jira-123-second-attempt"
+        self.git("-C", self.main, "switch", "-c", followup, branch)
+        (self.main / "feature.txt").write_text("follow-up work after squash\n")
+        self.git("-C", self.main, "commit", "-am", "Follow-up timeout changes")
+        self.git("-C", self.main, "switch", "main")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        return branch, branch + "-alt", followup
+
+    def test_gbclean_interactive_groups_exact_ticket_matches_and_preview_never_deletes(self):
+        branches = self.squash_review_branches()
+        for name in ("feature/JIRA-12", "feature/JIRA-1234", "feature/JIRA-456", "feature/no-ticket"):
+            self.git("-C", self.main, "branch", name)
+        tree = self.add("active", "feature/JIRA-123-active")
+        self.git("-C", self.main, "worktree", "move", tree, tree.with_name("active\nworktree"))
+        self.git("-C", self.main, "config", f"branch.{branches[0]}.description", "Authentication changes")
+        (self.main / "app1/file.txt").write_text("preserve dirty work\n")
+        before = self.git("-C", self.main, "show-ref").stdout
+        config = self.git("-C", self.main, "config", "--local", "--list").stdout
+        result = self.shell("gbclean --interactive", input_text="i\nd\nd\ni\nd\n", cwd=self.main / "app1")
+        output = result.stdout
+        self.assertEqual(output.count("JIRA-123 — matching commits on origin/main:"), 1)
+        self.assertIn("Jira-123: Improve authentication", output)
+        self.assertIn("Authentication changes", output)
+        self.assertIn("not proof of unmerged work", output)
+        self.assertIn("+follow-up work after squash", output)
+        self.assertIn("Preview complete: 3 branch(es) would be deleted", output)
+        self.assertNotIn("Type the full branch name", output)
+        for name in branches:
+            self.assertIn(f"Branch: {name}\n", output)
+            self.assertIn(f"Would delete: {name}", output)
+        for name in ("feature/JIRA-12", "feature/JIRA-1234", "feature/JIRA-456", "feature/no-ticket",
+                     "feature/JIRA-123-active", "main"):
+            self.assertNotIn(f"Branch: {name}\n", output)
+        self.assertEqual(self.git("-C", self.main, "show-ref").stdout, before)
+        self.assertEqual(self.git("-C", self.main, "config", "--local", "--list").stdout, config)
+        self.assertEqual((self.main / "app1/file.txt").read_text(), "preserve dirty work\n")
+
+    def test_gbclean_interactive_deletion_requires_confirmation_for_each_branch(self):
+        original, alternate, followup = self.squash_review_branches()
+        result = self.shell("gbclean --delete --interactive",
+                            input_text=f"d\nwrong-name\nd\n{alternate}\n\n")
+        self.assertIn("Not confirmed; kept.", result.stdout)
+        self.assertIn("FORCE", self.shell("gbclean --help").stdout)
+        self.assertIn("Review complete: 1 branch(es) deleted.", result.stdout)
+        self.git("-C", self.main, "show-ref", "--verify", f"refs/heads/{original}")
+        self.git("-C", self.main, "show-ref", "--verify", f"refs/heads/{followup}")
+        self.git("-C", self.main, "show-ref", "--verify", f"refs/heads/{alternate}", success=False)
+        self.assertEqual(self.branch(self.main), "main")
+
+    def test_gbclean_interactive_keep_quit_and_eof_do_not_delete(self):
+        self.squash_review_branches()
+        before = self.git("-C", self.main, "show-ref").stdout
+        for responses in ("\nq\n", "k\nq\n", "", "d\n", "invalid\nq\n"):
+            with self.subTest(input=responses):
+                result = self.shell("gbclean --interactive --delete", input_text=responses)
+                self.assertIn("0 branch(es) deleted", result.stdout)
+                self.assertEqual(self.git("-C", self.main, "show-ref").stdout, before)
+        # Currently checked-out Jira branches must not appear either.
+        self.git("-C", self.main, "switch", "feature/JIRA-123")
+        result = self.shell("gbclean --interactive", input_text="\n\n")
+        self.assertNotIn("Branch: feature/JIRA-123\n", result.stdout)
+        self.assertEqual(self.git("-C", self.main, "show-ref").stdout, before)
+
+    def test_gbclean_interactive_refuses_tips_changed_during_review(self):
+        original, _, _ = self.squash_review_branches()
+        # Change the ref between displaying its commits and checking confirmation.
+        # The wrapper only supplies concurrency; real Git still changes the ref.
+        wrapper = self.bin / "git"
+        wrapper.write_text(f"#!{sys.executable}\n" + f'''
+import os
+import subprocess
+import sys
+args = sys.argv[1:]
+if args == ["rev-parse", "--verify", "refs/heads/{original}"]:
+    subprocess.run([{GIT!r}, "update-ref", "refs/heads/{original}", "refs/heads/main"], check=True)
+os.execv({GIT!r}, [{GIT!r}, *args])
+''')
+        wrapper.chmod(0o755)
+        result = self.shell("gbclean --interactive --delete", input_text=f"d\n{original}\n", success=False)
+        self.assertIn("changed during review", result.stderr)
+        self.git("-C", self.main, "show-ref", "--verify", f"refs/heads/{original}")
+
+    def test_gbclean_interactive_uses_cached_master_and_handles_no_matches(self):
+        self.publish_master()
+        self.git("-C", self.main, "remote", "set-head", "origin", "master")
+        self.git("-C", self.main, "switch", "master")
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "fix JIRA-99: Resolve issue")
+        self.git("-C", self.main, "push", "origin", "master")
+        self.git("-C", self.main, "branch", "feature/JIRA-99")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        result = self.shell("gbclean --interactive", input_text="d\n")
+        self.assertIn("JIRA-99 — matching commits on origin/master:", result.stdout)
+        self.assertIn("Would delete: feature/JIRA-99", result.stdout)
+        self.git("-C", self.main, "remote", "set-head", "origin", "main")
+        result = self.shell("gbclean --interactive", input_text="d\n")
+        self.assertIn("0 branch(es) would be deleted", result.stdout)
+        self.assertNotIn("[k]eep", result.stdout)
 
     def test_gmm_fetches_and_merges_remote_main_not_stale_local_main(self):
         tree = self.add("theme1")

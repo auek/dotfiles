@@ -27,6 +27,10 @@
       "Bash(git push *)"
     ]
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "model": "sonnet",
   "hooks": {
     "PreToolUse": [
@@ -49,7 +53,7 @@
   },
   "effortLevel": "medium",
   "tui": "fullscreen",
-  "theme": "dark-ansi",
+  "theme": "dark",
   "agentPushNotifEnabled": true,
   "mcpServers": {
     "context7": {

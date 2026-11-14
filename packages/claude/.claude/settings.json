@@ -3,12 +3,12 @@
     "allow": [
       "Bash(*)",
       "WebFetch(*)",
-      "Edit(*)",
-      "Write(*)",
-      "Read(*)",
-      "Glob(*)",
-      "Grep(*)",
-      "NotebookEdit(*)"
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "NotebookEdit"
     ],
     "deny": [
       "Bash(git push --force*)",

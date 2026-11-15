@@ -8,7 +8,9 @@
       "Read",
       "Glob",
       "Grep",
-      "NotebookEdit"
+      "NotebookEdit",
+      "mcp__playwright",
+      "mcp__playwright-headed"
     ],
     "deny": [
       "Bash(git push --force*)",
@@ -24,7 +26,13 @@
       "Bash(rm -rf *)",
       "Bash(rm -fr *)",
       "Bash(dd *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_file_upload",
+      "mcp__playwright-headed__browser_evaluate",
+      "mcp__playwright-headed__browser_run_code",
+      "mcp__playwright-headed__browser_file_upload"
     ]
   },
   "attribution": {
@@ -61,6 +69,20 @@
       "args": [
         "-y",
         "@upstash/context7-mcp@latest"
+      ]
+    },
+    "playwright": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\" --headless"
+      ]
+    },
+    "playwright-headed": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\""
       ]
     }
   }

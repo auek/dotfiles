@@ -12,6 +12,14 @@
     ]
   },
   "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["sh", "-c", "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\" --headless"]
+    },
+    "playwright-headed": {
+      "type": "local",
+      "command": ["sh", "-c", "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\""]
+    },
     "servers": {
       "context7": {
         "type": "remote",
@@ -24,6 +32,14 @@
     }
   },
   "permission": {
+    "playwright_*": "allow",
+    "playwright-headed_*": "allow",
+    "playwright_browser_evaluate": "ask",
+    "playwright_browser_run_code": "ask",
+    "playwright_browser_file_upload": "ask",
+    "playwright-headed_browser_evaluate": "ask",
+    "playwright-headed_browser_run_code": "ask",
+    "playwright-headed_browser_file_upload": "ask",
     "external_directory": {
       "~/code/**": "allow",
       "~/vaults/main/**": "allow"

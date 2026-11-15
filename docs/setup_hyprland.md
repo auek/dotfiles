@@ -304,6 +304,38 @@ current Hyprland session. Run `cliphist wipe` to clear it immediately.
 In OpenCode, use `Ctrl+V` to attach the image. `Ctrl+Shift+V` is Foot's text
 paste shortcut and cannot attach a PNG to a terminal application.
 
+## Optional: Claude usage in Waybar (ai-usagebar)
+
+The Waybar config includes a `custom/aibar` module that shows Claude plan usage
+and time to reset, using [ai-usagebar](https://github.com/akitaonrails/ai-usagebar).
+Setup does not install it. Without the `ai-usagebar` binary on `PATH` the pill is
+empty, and the rest of the bar works normally.
+
+The module runs it through the `waybar-aibar` wrapper (from the `waybar` package,
+needs `python3`), which removes the "Extra usage" block from the tooltip because
+ai-usagebar has no option to hide it.
+
+The tool reads your Claude Code OAuth token from `~/.claude/.credentials.json`
+(log in with `claude` once), calls only Anthropic's usage and token endpoints for
+Claude, and refreshes the token itself. Review the source before installing it.
+
+Build and install it into `~/.local` with a temporary Rust toolchain from mise,
+which leaves the global mise configuration unchanged:
+
+```bash
+git clone --depth 1 https://github.com/akitaonrails/ai-usagebar /tmp/ai-usagebar
+cd /tmp/ai-usagebar
+mise exec rust@stable -- make install PREFIX="$HOME/.local"
+pkill -SIGUSR2 waybar
+```
+
+The widget's tooltip and the `ai-usagebar-tui` dashboard take their colors from
+the `colors.toml` fragment of the selected theme, and the pill's Claude logo from
+its `claude.svg` fragment. `theme-set` links
+`~/.local/state/omarchy/current/theme` to the selected theme so the tool finds
+them. If a real directory already exists at that path, `theme-set` leaves it
+unchanged and warns.
+
 ## Tmux across compositor changes
 
 When a tmux server survives a switch between GNOME and Hyprland, it can retain

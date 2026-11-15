@@ -1,0 +1,6 @@
+accent = "#$regular4"
+foreground = "#$foreground_soft"
+background = "#$background"
+red = "#$urgent"
+green = "#$accent"
+yellow = "#$warning"

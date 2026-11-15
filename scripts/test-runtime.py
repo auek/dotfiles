@@ -374,6 +374,9 @@ class RuntimeTests(RuntimeHome):
                                 capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.current.resolve().name, "gruvbox")
+        omarchy = self.home / ".local/state/omarchy/current/theme"
+        self.assertEqual(omarchy.resolve().name, "gruvbox")
+        self.assertTrue((omarchy / "colors.toml").is_file())
         self.assertIn("warning:", result.stderr)
         self.assertEqual(self.run_checked("bash", str(command)), "gruvbox")
         (self.home / ".local/share/dotfiles/themes/everforest/tmux.conf").unlink()

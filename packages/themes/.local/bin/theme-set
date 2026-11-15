@@ -16,6 +16,8 @@ required_fragments=(
   mako.conf
   swaybg-color
   wallpaper-name
+  colors.toml
+  claude.svg
 )
 
 missing_fragments() {
@@ -63,6 +65,18 @@ fi
 tmp_link="$state_dir/.current.tmp.$$"
 ln -s "$theme_dir" "$tmp_link"
 mv -T "$tmp_link" "$current"
+
+# ai-usagebar reads its palette from this Omarchy-style location. Point it at
+# the selected theme (its `colors.toml` fragment), unless a real directory is
+# already there, such as an actual Omarchy theme.
+omarchy_theme="$HOME/.local/state/omarchy/current/theme"
+if [[ ! -e "$omarchy_theme" || -L "$omarchy_theme" ]]; then
+  mkdir -p "${omarchy_theme%/*}"
+  ln -sfn "$current" "$omarchy_theme" \
+    || printf 'warning: could not link %s\n' "$omarchy_theme" >&2
+else
+  printf 'warning: %s is not a symlink; leaving it unchanged\n' "$omarchy_theme" >&2
+fi
 
 if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
   if tmux source-file "$theme_dir/tmux.conf"; then

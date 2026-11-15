@@ -32,6 +32,8 @@ FRAGMENTS = (
     "mako.conf",
     "swaybg-color",
     "wallpaper-name",
+    "colors.toml",
+    "claude.svg",
 )
 
 

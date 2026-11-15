@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# waybar-aibar — ai-usagebar for Waybar, without the "Extra usage" tooltip block.
+#
+# ai-usagebar has no option to hide that section, so this runs it and removes
+# the block (its divider through the line before the next divider) from the
+# tooltip of the JSON it prints. All other output passes through unchanged, and
+# any failure falls back to the original output.
+
+set -uo pipefail
+
+output="$(ai-usagebar "$@")" || exit $?
+
+printf '%s' "$output" | python3 -I -c '
+import json, re, sys
+
+raw = sys.stdin.read()
+try:
+    data = json.loads(raw)
+    lines = data["tooltip"].split("\n")
+except (ValueError, KeyError, TypeError, AttributeError):
+    sys.stdout.write(raw + "\n")
+    raise SystemExit(0)
+
+plain = [re.sub(r"<[^>]+>", "", line) for line in lines]
+divider = lambda i: "────" in plain[i]
+start = next((i for i, p in enumerate(plain) if "Extra usage" in p), None)
+if start is not None:
+    before = next((i for i in range(start, -1, -1) if divider(i)), None)
+    after = next((i for i in range(start, len(lines)) if divider(i)), None)
+    if before is not None and after is not None:
+        data["tooltip"] = "\n".join(lines[:before] + lines[after:])
+print(json.dumps(data, ensure_ascii=False))
+'

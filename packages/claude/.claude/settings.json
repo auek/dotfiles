@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(*)",
@@ -35,10 +39,6 @@
       "mcp__playwright-headed__browser_file_upload"
     ]
   },
-  "attribution": {
-    "commit": "",
-    "pr": ""
-  },
   "model": "sonnet",
   "hooks": {
     "PreToolUse": [
@@ -62,5 +62,10 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "modelSettings": {
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
+    }
+  }
 }

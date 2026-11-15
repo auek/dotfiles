@@ -14,3 +14,8 @@ For normal coding work, prefer short-lived feature branches over long-lived shar
 - Default to portable Markdown that renders on GitHub and `markdown-preview.nvim`.
 - Prefer GFM, Mermaid, and LaTeX math.
 - Avoid preview-only diagram syntaxes unless explicitly requested.
+
+## Browser (Playwright MCP)
+
+- Use `playwright` (headless) by default for browsing and search. If a site returns 403 or a bot challenge, retry once with `playwright-headed`. Both share one profile, so do not run them at the same time.
+- The browser profile is dedicated and must stay anonymous: never log in to any account, never enter personal or payment details, and never complete purchases, sign-ups, or subscriptions.

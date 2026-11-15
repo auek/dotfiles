@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(*)",
@@ -8,32 +12,32 @@
       "Read",
       "Glob",
       "Grep",
-      "NotebookEdit"
+      "NotebookEdit",
+      "mcp__playwright",
+      "mcp__playwright-headed"
     ],
     "ask": [
       "Bash(sudo *)",
       "Bash(chmod *)",
       "Bash(chown *)",
       "Bash(dd *)",
-      "Bash(git push --force*)"
+      "Bash(git push --force*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_file_upload",
+      "mcp__playwright-headed__browser_evaluate",
+      "mcp__playwright-headed__browser_run_code",
+      "mcp__playwright-headed__browser_file_upload"
     ]
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   },
   "model": "sonnet",
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark",
   "agentPushNotifEnabled": true,
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp@latest"
-      ]
+  "modelSettings": {
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
     }
   }
 }

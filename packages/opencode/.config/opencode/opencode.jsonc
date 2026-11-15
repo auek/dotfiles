@@ -13,6 +13,14 @@
   },
   "mcp": {
     "servers": {
+      "playwright": {
+        "type": "local",
+        "command": ["sh", "-c", "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\" --headless"]
+      },
+      "playwright-headed": {
+        "type": "local",
+        "command": ["sh", "-c", "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\""]
+      },
       "context7": {
         "type": "remote",
         "url": "https://mcp.context7.com/mcp",
@@ -23,6 +31,16 @@
       }
     }
   },
+  "permissions": [
+    { "action": "playwright_*", "resource": "*", "effect": "allow" },
+    { "action": "playwright-headed_*", "resource": "*", "effect": "allow" },
+    { "action": "playwright_browser_evaluate", "resource": "*", "effect": "ask" },
+    { "action": "playwright_browser_run_code", "resource": "*", "effect": "ask" },
+    { "action": "playwright_browser_file_upload", "resource": "*", "effect": "ask" },
+    { "action": "playwright-headed_browser_evaluate", "resource": "*", "effect": "ask" },
+    { "action": "playwright-headed_browser_run_code", "resource": "*", "effect": "ask" },
+    { "action": "playwright-headed_browser_file_upload", "resource": "*", "effect": "ask" }
+  ],
   "permission": {
     "external_directory": {
       "~/code/**": "allow",

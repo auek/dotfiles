@@ -62,28 +62,5 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark",
-  "agentPushNotifEnabled": true,
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp@latest"
-      ]
-    },
-    "playwright": {
-      "command": "sh",
-      "args": [
-        "-c",
-        "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\" --headless"
-      ]
-    },
-    "playwright-headed": {
-      "command": "sh",
-      "args": [
-        "-c",
-        "exec npx -y @playwright/mcp@latest --executable-path /usr/bin/chromium --user-data-dir \"$HOME/.local/share/playwright-mcp/profile\" --user-agent \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36\""
-      ]
-    }
-  }
+  "agentPushNotifEnabled": true
 }

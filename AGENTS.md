@@ -289,11 +289,14 @@ The `themes` package installs static assets under
 `~/.local/share/dotfiles/themes` and the `theme-set` command under
 `~/.local/bin`. Each theme pack holds one native fragment per supported
 component (`foot.ini`, `tmux.conf`, `nvim.lua`, `waybar.css`, `hyprland.lua`,
-`wofi.css`, `mako.conf`, `swaybg-color`, `wallpaper-name`); application base
-configs keep layout
+`wofi.css`, `mako.conf`, `swaybg-color`, `wallpaper-name`, `colors.toml`,
+`claude.svg`, the themed Claude logo used by the ai-usagebar Waybar pill);
+application base configs keep layout
 and behavior and import only their fragment through the runtime `current` path.
 `theme-set` validates a pack completely before switching and swaps the symlink
-atomically. Theme selection is runtime state at
+atomically. It also links `~/.local/state/omarchy/current/theme` to `current`
+(skipped with a warning if a real directory is there), because the optional
+ai-usagebar Waybar widget reads its palette from `colors.toml` at that path. Theme selection is runtime state at
 `~/.local/state/dotfiles/theme/current`; it must not be stored in the worktree.
 
 The `scripts/` directory is a repo-only utility — it is NOT stowed. Theme

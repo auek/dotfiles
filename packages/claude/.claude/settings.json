@@ -16,21 +16,12 @@
       "mcp__playwright",
       "mcp__playwright-headed"
     ],
-    "deny": [
-      "Bash(git push --force*)",
-      "Bash(git reset --hard*)",
-      "Bash(git clean *)",
-      "Bash(git branch -D *)",
-      "Bash(git branch -d *)"
-    ],
     "ask": [
       "Bash(sudo *)",
       "Bash(chmod *)",
       "Bash(chown *)",
-      "Bash(rm -rf *)",
-      "Bash(rm -fr *)",
       "Bash(dd *)",
-      "Bash(git push *)",
+      "Bash(git push --force*)",
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_run_code",
       "mcp__playwright__browser_file_upload",
@@ -40,25 +31,6 @@
     ]
   },
   "model": "sonnet",
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/safe-rm-rf.sh",
-            "shell": "bash"
-          },
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/safe-push.sh",
-            "shell": "bash"
-          }
-        ]
-      }
-    ]
-  },
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "dark",

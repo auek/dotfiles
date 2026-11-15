@@ -3,12 +3,12 @@
     "allow": [
       "Bash(*)",
       "WebFetch(*)",
-      "Edit(*)",
-      "Write(*)",
-      "Read(*)",
-      "Glob(*)",
-      "Grep(*)",
-      "NotebookEdit(*)"
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "NotebookEdit"
     ],
     "deny": [
       "Bash(git push --force*)",
@@ -26,6 +26,10 @@
       "Bash(dd *)",
       "Bash(git push *)"
     ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
   },
   "model": "sonnet",
   "hooks": {
@@ -49,7 +53,7 @@
   },
   "effortLevel": "medium",
   "tui": "fullscreen",
-  "theme": "dark-ansi",
+  "theme": "dark",
   "agentPushNotifEnabled": true,
   "mcpServers": {
     "context7": {

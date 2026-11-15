@@ -79,7 +79,7 @@ case "$ID" in
     PKG_MANAGER="dnf"
     PKG_INSTALL="sudo dnf install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic make pipx python3-pip stow tmux unzip zsh"
+    PKG_COMMON="curl gh git gcc jq libatomic make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="htop openssh-clients sqlite"
     info "Detected: Fedora $VERSION_ID"
     ;;
@@ -87,7 +87,7 @@ case "$ID" in
     PKG_MANAGER="apt"
     PKG_INSTALL="sudo apt-get install -y"
     PKG_SERVER="curl git make stow tmux vim"
-    PKG_COMMON="curl gh git gcc libatomic1 make pipx python3-pip stow tmux unzip zsh"
+    PKG_COMMON="curl gh git gcc jq libatomic1 make pipx python3-pip stow tmux unzip zsh"
     PKG_OPTIONAL="htop openssh-client sqlite3"
     info "Detected: $PRETTY_NAME"
     ;;
@@ -95,7 +95,7 @@ case "$ID" in
     PKG_MANAGER="pacman"
     PKG_INSTALL="sudo pacman -S --needed --noconfirm"
     PKG_SERVER="curl git less make man-db man-pages stow tmux vim which"
-    PKG_COMMON="curl github-cli git gcc libatomic less make man-db man-pages openssh python-pipx python-pip stow tmux unzip which zsh"
+    PKG_COMMON="curl github-cli git gcc jq libatomic less make man-db man-pages openssh python-pipx python-pip stow tmux unzip which zsh"
     PKG_OPTIONAL="htop sqlite"
     info "Detected: $PRETTY_NAME"
     ;;

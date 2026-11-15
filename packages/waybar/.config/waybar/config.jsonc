@@ -6,11 +6,33 @@
 
   "modules-left": ["hyprland/workspaces"],
   "modules-center": [],
-  "modules-right": ["pulseaudio", "network", "clock"],
+  "modules-right": ["network", "pulseaudio", "group/aibar", "clock"],
 
   "hyprland/workspaces": {
     "format": "{name}",
     "on-click": "activate"
+  },
+
+  "group/aibar": {
+    "orientation": "horizontal",
+    "modules": ["image#aibar", "custom/aibar"]
+  },
+
+  "image#aibar": {
+    "exec": "echo \"$HOME/.local/state/dotfiles/theme/current/claude.svg\"",
+    "size": 14,
+    "interval": "once"
+  },
+
+  "custom/aibar": {
+    "exec": "ai-usagebar --format '{session_pct}% · {session_reset}'",
+    "return-type": "json",
+    "interval": 300,
+    "signal": 13,
+    "tooltip": true,
+    "on-click": "ai-usagebar-tui",
+    "on-scroll-up": "ai-usagebar --cycle-next",
+    "on-scroll-down": "ai-usagebar --cycle-prev"
   },
 
   "pulseaudio": {
@@ -24,7 +46,7 @@
   },
 
   "network": {
-    "format-wifi": "󰖩 {signalStrength}%",
+    "format-wifi": "󰖩",
     "format-ethernet": "󰈀 {ifname}",
     "format-disconnected": "󰖪",
     "tooltip-format-wifi": "{essid}\n{ipaddr} ({signalStrength}%)",

@@ -25,7 +25,7 @@
   },
 
   "custom/aibar": {
-    "exec": "ai-usagebar --format '{session_pct}% · {session_reset}'",
+    "exec": "waybar-aibar --format '{session_pct}% · {session_reset}'",
     "return-type": "json",
     "interval": 300,
     "signal": 13,

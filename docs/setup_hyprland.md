@@ -311,6 +311,10 @@ and time to reset, using [ai-usagebar](https://github.com/akitaonrails/ai-usageb
 Setup does not install it. Without the `ai-usagebar` binary on `PATH` the pill is
 empty, and the rest of the bar works normally.
 
+The module runs it through the `waybar-aibar` wrapper (from the `waybar` package,
+needs `python3`), which removes the "Extra usage" block from the tooltip because
+ai-usagebar has no option to hide it.
+
 The tool reads your Claude Code OAuth token from `~/.claude/.credentials.json`
 (log in with `claude` once), calls only Anthropic's usage and token endpoints for
 Claude, and refreshes the token itself. Review the source before installing it.

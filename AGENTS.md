@@ -173,8 +173,9 @@ the cached `origin/main` or `origin/master`, preferring a valid cached
 It uses `--no-track`, never fetches, and refuses ambiguous or missing trunks.
 An optional description is saved to local Git config only after creation succeeds;
 write failures report an error without removing the new branch. `gbdesc [branch]`
-edits descriptions later, and `gbf` searches them and previews them above recent
-commits. Bare Zsh `gb` lists branches with aligned first-line descriptions,
+prints a description (current branch by default) and `gbdesc -e [branch]` edits
+it. `gbf` searches descriptions (hidden from the list, which right-aligns the
+last-edited time) and previews them above recent commits. Bare Zsh `gb` lists branches with aligned first-line descriptions,
 preserving Git's markers, colors and latest-commit ordering. With arguments it
 delegates to the existing sorted `git branch` interface unchanged.
 `gbclean [--delete]` previews local branches merged into cached origin/main or
@@ -194,7 +195,7 @@ worktree checkouts are rechecked before deleting; Git's worktree protection rema
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are
-rejected. `gwl` lists worktrees; `gwc [name|branch|path]`
+rejected. `gwl` lists worktrees with each branch's first description line; `gwc [name|branch|path]`
 enters a registered worktree root (fzf picker without arguments).
 `gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
 origin branch, or creates from already-fetched `origin/main` or `origin/master`

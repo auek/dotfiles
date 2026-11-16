@@ -390,10 +390,12 @@ sys.stdout.buffer.write(target + b"\\0")
         self.assertEqual(result.stdout.strip(), branch)
         rows = [row.split("\t") for row in (self.home / "branch-picker.tsv").read_text().splitlines()]
         self.assertEqual(len(rows), 2)
-        self.assertTrue(all(len(row) == 3 and row[1] for row in rows))
-        descriptions = {row[0]: row[2] for row in rows}
-        self.assertEqual(descriptions[branch], "Configure authentication timeouts å ")
-        self.assertEqual(descriptions["main"], "")
+        self.assertTrue(all(len(row) == 2 and row[1] for row in rows))
+        displays = {row[0]: row[1] for row in rows}
+        self.assertTrue(displays[branch].endswith(f"{branch} Configure authentication timeouts å "))
+        self.assertTrue(displays["main"].endswith("main "))
+        # Left pane: description is hidden past the pane width, relative time is last visible.
+        self.assertNotIn("authentication", displays[branch][:27])
         self.assertEqual(self.git("-C", self.main, "config", "--get", f"branch.{branch}.description").stdout,
                          original)
         self.shell('FZF_DEFAULT_OPTS="--filter=Hidden" gbf', success=False)
@@ -407,7 +409,7 @@ sys.stdout.buffer.write(target + b"\\0")
         editor.chmod(0o755)
         code = ('alias gbd="git branch --delete"; source "$1/git.zsh"; '
                 '[[ ${aliases[gbd]} == "git branch --delete" ]] || exit 99; '
-                'shift; gbdesc "$@"')
+                'shift; gbdesc -e "$@"')
         source = ROOT / "packages/zshrc/.config/zsh"
         for args, target, hint in (((), "main", "Current branch hint"),
                                    ((branch,), branch, "Add export button")):
@@ -417,7 +419,22 @@ sys.stdout.buffer.write(target + b"\\0")
                                  hint)
                 self.assertEqual(self.branch(self.main), "main")
         self.git("-C", self.main, "switch", "--detach")
-        self.shell("gbdesc", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
+        self.shell("gbdesc -e", GIT_EDITOR=str(editor), BRANCH_HINT="Do not store", success=False)
+
+    def test_description_helper_prints_description_without_editing(self):
+        self.git("-C", self.main, "config", "branch.main.description", "Main hint\nSecond line")
+        self.assertEqual(self.shell("gbdesc").stdout, "Main hint\nSecond line\n")
+        self.git("-C", self.main, "config", "--unset", "branch.main.description")
+        self.assertEqual(self.shell("gbdesc").stdout, "")
+        self.git("-C", self.main, "switch", "--detach")
+        self.shell("gbdesc", success=False)
+
+    def test_gwl_appends_first_description_line_per_worktree(self):
+        self.add("theme1", "feature/theme1")
+        self.git("-C", self.main, "config", "branch.feature/theme1.description", "Retheme\nHidden")
+        lines = self.shell("gwl").stdout.splitlines()
+        self.assertTrue(any(l.endswith("[feature/theme1]  — Retheme") for l in lines))
+        self.assertTrue(any(l.endswith("[main]") for l in lines))
 
     def test_branch_preview_shows_full_description_before_five_recent_commits(self):
         branch = "feature/JIRA-123-'quoted"

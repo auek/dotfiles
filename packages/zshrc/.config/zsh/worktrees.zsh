@@ -1,4 +1,24 @@
-alias gwl="git worktree list"
+# List worktrees; with no arguments, append each checked-out branch's first
+# description line so the overview shows what every worktree is for.
+unalias gwl 2>/dev/null || true
+gwl() {
+  if (( $# )); then
+    command git worktree list "$@"
+    return
+  fi
+  local listing line branch description
+  local -a match mbegin mend
+  listing=$(command git worktree list) || return
+  for line in "${(@f)listing}"; do
+    description=
+    if [[ "$line" =~ '\[(.+)\]$' ]]; then
+      branch=$match[1]
+      description=$(command git config --get "branch.$branch.description" 2>/dev/null) || description=
+      description=${description%%$'\n'*}
+    fi
+    print -r -- "$line${description:+  — $description}"
+  done
+}
 
 # Worktree helpers use Git's registry, not a machine-specific repository path.
 # Relative dotfiles.worktreeDir values are based on the original checkout:

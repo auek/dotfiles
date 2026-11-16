@@ -30,7 +30,7 @@ stow restow:
 		HOME="$(STOW_TARGET)" "$(STOW_TARGET)/.local/bin/theme-set" everforest; \
 	fi
 	@case " $(STOW_SELECTED_PACKAGES) " in *" claude "*) \
-		HOME="$(STOW_TARGET)" scripts/setup-claude-settings.sh ;; \
+		HOME="$(STOW_TARGET)" scripts/setup-claude-settings.py ;; \
 	esac
 
 unstow:

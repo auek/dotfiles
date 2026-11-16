@@ -1,3 +1,3 @@
-# Merged into ~/.claude/settings.json by scripts/setup-claude-settings.sh, not linked.
+# Merged into ~/.claude/settings.json by scripts/setup-claude-settings.py, not linked.
 ^/settings\.base\.json$
 ^/\.stow-local-ignore$

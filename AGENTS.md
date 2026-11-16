@@ -94,7 +94,7 @@ Optional `opencode`, `claude`, and `espanso` configuration can be added with
 for `make stow`, `make restow`, and `make unstow`; removing an include does not
 remove existing links. Never Stow or commit the local file. The `claude` package
 does not link `settings.json`: Claude Code rewrites it whenever a setting changes,
-so `make stow`/`restow` run `scripts/setup-claude-settings.sh`, which merges the
+so `make stow`/`restow` run `scripts/setup-claude-settings.py`, which merges the
 tracked baseline `packages/claude/settings.base.json` into a real, machine-local
 `~/.claude/settings.json` (baseline keys win; keys the app wrote, such as `theme`,
 are kept; an old link into the repo is replaced). Edit shared settings in the

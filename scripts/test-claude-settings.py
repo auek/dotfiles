@@ -4,13 +4,14 @@
 import json
 from pathlib import Path
 import os
+import sys
 import subprocess
 import tempfile
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts/setup-claude-settings.sh"
+SCRIPT = ROOT / "scripts/setup-claude-settings.py"
 BASE = json.loads((ROOT / "packages/claude/settings.base.json").read_text())
 
 
@@ -22,7 +23,7 @@ class ClaudeSettingsTests(unittest.TestCase):
         self.dest = self.home / ".claude/settings.json"
 
     def merge(self):
-        subprocess.run(["bash", str(SCRIPT)], env={**os.environ, "HOME": str(self.home)}, check=True)
+        subprocess.run([sys.executable, str(SCRIPT)], env={**os.environ, "HOME": str(self.home)}, check=True)
         return json.loads(self.dest.read_text())
 
     def test_baseline_wins_and_local_keys_survive_reruns(self):

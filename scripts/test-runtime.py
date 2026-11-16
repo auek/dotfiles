@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Daily Stow/shell/tmux/theme workflows using tracked configs and real Oh My Zsh."""
 
+import json
 import os
 from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -24,12 +26,14 @@ class MakeStowTests(unittest.TestCase):
         self.repo, self.home = base / "repo", base / "home"
         shutil.copytree(ROOT / "packages", self.repo / "packages")
         shutil.copy2(ROOT / "Makefile", self.repo / "Makefile")
+        (self.repo / "scripts").mkdir()
+        shutil.copy2(ROOT / "scripts/setup-claude-settings.py", self.repo / "scripts")
         self.home.mkdir()
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith(("XDG_", "MAKE", "MFLAGS", "STOW_"))}
         for key in ("INPUTRC", "BASH_ENV", "ENV"):
             self.env.pop(key, None)
-        self.env.update(HOME=str(self.home), PATH="/usr/bin:/bin")
+        self.env.update(HOME=str(self.home), PATH="/usr/bin:/bin:" + str(Path(sys.executable).parent))
         self.current = self.home / ".local/state/dotfiles/theme/current"
         self.current.parent.mkdir(parents=True)
         self.selection = self.repo / "packages/themes/.local/share/dotfiles/themes/gruvbox"
@@ -111,13 +115,15 @@ class MakeStowTests(unittest.TestCase):
     def test_optional_includes_default_and_xdg_local_preferences(self):
         optional = {
             "opencode": ".config/opencode/opencode.jsonc",
-            "claude": ".claude/settings.json",
+            "claude": ".claude/commands/pr.md",
             "espanso": ".config/espanso/config/default.yml",
         }
         for target in ("stow", "restow"):
             self.make(target)
             for name in optional.values():
                 self.assertFalse(os.path.lexists(self.home / name), name)
+        settings = self.home / ".claude/settings.json"
+        self.assertFalse(os.path.lexists(settings))
         config = self.home / ".config/dotfiles/local.mk"
         config.parent.mkdir()
         contents = "STOW_INCLUDE = opencode claude espanso\n"
@@ -127,6 +133,9 @@ class MakeStowTests(unittest.TestCase):
             for package, name in optional.items():
                 self.assertTrue((self.home / name).is_symlink(), name)
                 self.assertEqual((self.home / name).resolve(), self.repo / "packages" / package / name)
+            # Claude rewrites settings.json, so it is a merged local file, never a link.
+            self.assertTrue(settings.is_file() and not settings.is_symlink())
+            self.assertIn("permissions", json.loads(settings.read_text()))
         # The local preference stays ordinary and follows XDG_CONFIG_HOME.
         xdg = self.home / "custom-config"
         self.env["XDG_CONFIG_HOME"] = str(xdg)
@@ -136,6 +145,7 @@ class MakeStowTests(unittest.TestCase):
         self.make("unstow")
         for name in optional.values():
             self.assertFalse(os.path.lexists(self.home / name), name)
+        self.assertTrue(settings.is_file(), "unstow must keep the machine-local settings")
         self.make("restow")
         moved.write_text("STOW_INCLUDE =\n")
         self.make("restow")

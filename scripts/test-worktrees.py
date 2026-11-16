@@ -148,7 +148,7 @@ sys.stdout.buffer.write(target + b"\\0")
         width = max(map(len, native)) + 2
         for original, row in zip(native, rows):
             if "[feature/linked]" in original:
-                self.assertEqual(row, original + " " * (width - len(original)) + "Linked worktree")
+                self.assertEqual(row, original + " " * (width - len(original)) + "Linked worktree ")
             else:
                 self.assertEqual(row, original)
         self.assertEqual(self.shell("gwl --porcelain").stdout,

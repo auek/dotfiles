@@ -139,9 +139,31 @@ gmm() {
   esac
 }
 
-# Edit a local branch description without changing its name.
+# Show a local branch description (current branch by default); -e edits it.
 gbdesc() {
-  command git branch --edit-description "$@"
+  local edit=0 branch
+  case "$1" in
+    -e|--edit) edit=1; shift ;;
+    -h|--help)
+      print -r -- 'Usage: gbdesc [<branch>]       show a branch description (default: current)'
+      print -r -- '       gbdesc -e [<branch>]   edit it'
+      return 0
+      ;;
+  esac
+  if (( $# > 1 )); then
+    print -u2 -r -- 'Usage: gbdesc [-e] [<branch>]'
+    return 1
+  fi
+  if (( edit )); then
+    command git branch --edit-description "$@"
+    return
+  fi
+  branch=${1:-$(command git branch --show-current)} || return
+  if [[ -z "$branch" ]]; then
+    print -u2 -r -- 'gbdesc: no branch checked out; pass a branch name.'
+    return 1
+  fi
+  command git config --get "branch.$branch.description" || return 0
 }
 
 # Jira IDs identify review candidates, never proof that a branch was merged.
@@ -329,11 +351,16 @@ No --delete is needed for interactive mode; supplying it never bypasses confirma
 
 # Branch picking needs fzf, not fd (which is used by the file/directory widgets).
 if command -v fzf >/dev/null 2>&1; then
-  gbf() {
-    local delim=$'\t'
-    local branch commit_date description
-
-    branch=$(git for-each-ref refs/heads \
+  # Rows are "<branch>\t<display>". The display shows the branch with its
+  # relative commit time right-aligned to the list pane (40% of fzf's width,
+  # from $FZF_COLUMNS, which fzf sets inside tmux popups too). The description
+  # and full branch name follow past the pane edge so they stay searchable
+  # without being shown (the preview already shows the description).
+  _gbf_rows() {
+    emulate -L zsh
+    local delim=$'\t' branch commit_date description row
+    local -i width=$(( ${${FZF_COLUMNS:#0}:-${COLUMNS:-80}} * 40 / 100 - 5 )) room
+    command git for-each-ref refs/heads \
       --sort=-committerdate \
       --format='%(refname:lstrip=2)	%(committerdate:relative)' |
       while IFS="$delim" read -r branch commit_date; do
@@ -342,10 +369,28 @@ if command -v fzf >/dev/null 2>&1; then
         description=${description%%$'\n'*}
         description=${description//$'\t'/ }
         description=${description//$'\r'/ }
-        printf '%s\t%s\t%s\n' "$branch" "$commit_date" "$description"
-      done |
+        room=$(( width - ${#commit_date} - 1 ))
+        (( room >= 4 )) || room=4
+        row=$branch
+        (( ${#branch} <= room )) || row=${branch[1,room-2]}..
+        printf '%s\t%s\n' "$branch" "${(r:room:)row} $commit_date${(l:40:)}$branch $description"
+      done
+  }
+
+  gbf() {
+    local delim=$'\t'
+    local branch script
+    # fzf can re-run a command at startup/resize with its real list width, but
+    # only as a shell command line, so hand it the row builder as a script file.
+    script=$(mktemp "${TMPDIR:-/tmp}/gbf.XXXXXX") || return
+    { functions _gbf_rows; print -r -- _gbf_rows; } >| "$script"
+
+    branch=$(_gbf_rows |
       fzf \
-      --with-nth=1,2,3 \
+      --with-nth=2.. \
+      --no-hscroll --ellipsis="" \
+      --bind "start:transform:echo \"reload(FZF_COLUMNS=\$FZF_COLUMNS zsh -f $script)\"" \
+      --bind "resize:transform:echo \"reload(FZF_COLUMNS=\$FZF_COLUMNS zsh -f $script)\"" \
       --delimiter="$delim" \
       --preview '
         branch={1}
@@ -355,7 +400,10 @@ if command -v fzf >/dev/null 2>&1; then
         git --no-pager log -5 --format="%h  %<|(${FZF_PREVIEW_COLUMNS:-80},trunc)%s" "refs/heads/$branch" --
       ' \
       --preview-window='right:60%:wrap' |
-      cut -f1) || return
+      cut -f1)
+    local -i rc=$?
+    command rm -f -- "$script"
+    (( rc == 0 )) || return $rc
 
     [[ -n "$branch" ]] || return
     git switch "$branch"

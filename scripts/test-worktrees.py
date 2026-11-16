@@ -137,6 +137,23 @@ sys.stdout.buffer.write(target + b"\\0")
         self.assertIn("## main...origin/main", result.stdout)
         self.assertIn("[theme1]", result.stdout)
 
+    def test_gwl_appends_first_line_descriptions_and_keeps_arguments_native(self):
+        self.add("linked", "feature/linked")
+        self.add("plain", "feature/plain")
+        self.git("-C", self.main, "config", "branch.feature/linked.description",
+                 "Linked\tworktree\r\nHidden second line")
+        native = self.git("-C", self.main, "worktree", "list").stdout.splitlines()
+        rows = self.shell("gwl").stdout.splitlines()
+        self.assertEqual(len(rows), len(native))
+        width = max(map(len, native)) + 2
+        for original, row in zip(native, rows):
+            if "[feature/linked]" in original:
+                self.assertEqual(row, original + " " * (width - len(original)) + "Linked worktree")
+            else:
+                self.assertEqual(row, original)
+        self.assertEqual(self.shell("gwl --porcelain").stdout,
+                         self.git("-C", self.main, "worktree", "list", "--porcelain").stdout)
+
     def test_gb_aligns_first_line_descriptions_with_native_order_and_markers(self):
         tree = self.add("linked", "feature/linked")
         branch = "feature/å界-100%-'quoted'"

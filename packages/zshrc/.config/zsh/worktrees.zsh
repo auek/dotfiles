@@ -1,4 +1,44 @@
-alias gwl="git worktree list"
+# Bare gwl appends each checked-out branch's first-line description, if any;
+# arguments keep the normal git worktree list interface.
+unalias gwl 2>/dev/null || true
+gwl() {
+  emulate -L zsh
+  if (( $# )); then
+    command git worktree list "$@"
+    return
+  fi
+  local listing porcelain record description
+  local -a rows branches
+  local -i width=0 index
+  listing=$(command git worktree list) || return
+  porcelain=$(command git worktree list --porcelain -z) || return
+  rows=("${(@f)listing}")
+  # Porcelain records follow the same order as the human-readable rows.
+  for record in "${(@0)porcelain}"; do
+    case "$record" in
+      'worktree '*) branches+=('') ;;
+      'branch '*) branches[-1]=${record#branch refs/heads/} ;;
+    esac
+  done
+  for record in "${rows[@]}"; do
+    (( ${(m)#record} > width )) && width=${(m)#record}
+  done
+  for (( index=1; index<=${#rows}; index++ )); do
+    description=
+    if [[ -n "${branches[index]}" ]]; then
+      description=$(command git config --get "branch.${branches[index]}.description" 2>/dev/null) || description=
+    fi
+    # Keep descriptions on one row, without changing the saved multiline text.
+    description=${description%%$'\n'*}
+    description=${description//$'\t'/ }
+    description=${description//$'\r'/ }
+    if [[ -n "$description" ]]; then
+      printf '%s%*s%s\n' "${rows[index]}" "$(( width - ${(m)#rows[index]} + 2 ))" '' "$description"
+    else
+      print -r -- "${rows[index]}"
+    fi
+  done
+}
 
 # Worktree helpers use Git's registry, not a machine-specific repository path.
 # Relative dotfiles.worktreeDir values are based on the original checkout:

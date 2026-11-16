@@ -194,7 +194,8 @@ worktree checkouts are rechecked before deleting; Git's worktree protection rema
 `gmm` fetches origin, refreshes its HEAD
 reference from the remote, and merges that default branch when named `main` or
 `master`. Fetch/default-branch lookup failures stop the merge; other names are
-rejected. `gwl` lists worktrees; `gwc [name|branch|path]`
+rejected. Bare `gwl` lists worktrees with aligned first-line branch descriptions
+when set; with arguments it delegates to `git worktree list` unchanged. `gwc [name|branch|path]`
 enters a registered worktree root (fzf picker without arguments).
 `gwa [--no-cd] <directory-name> [branch]` reuses a local branch, tracks its matching
 origin branch, or creates from already-fetched `origin/main` or `origin/master`

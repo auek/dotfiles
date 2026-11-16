@@ -92,7 +92,13 @@ Optional `opencode`, `claude`, and `espanso` configuration can be added with
 `STOW_INCLUDE = opencode claude espanso` in an ordinary, untracked
 `${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local.mk`. Includes are additive
 for `make stow`, `make restow`, and `make unstow`; removing an include does not
-remove existing links. Never Stow or commit the local file. Claude Code reads
+remove existing links. Never Stow or commit the local file. The `claude` package
+does not link `settings.json`: Claude Code rewrites it whenever a setting changes,
+so `make stow`/`restow` run `scripts/setup-claude-settings.sh`, which merges the
+tracked baseline `packages/claude/settings.base.json` into a real, machine-local
+`~/.claude/settings.json` (baseline keys win; keys the app wrote, such as `theme`,
+are kept; an old link into the repo is replaced). Edit shared settings in the
+baseline and re-run `make restow`. Claude Code reads
 user MCP servers from `~/.claude.json`, not `settings.json`, so run
 `scripts/setup-claude-mcp.sh` to register the Playwright servers (opencode reads
 its servers from the stowed `opencode.jsonc`). Desktop and server

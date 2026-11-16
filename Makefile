@@ -29,6 +29,9 @@ stow restow:
 	@if [ ! -e "$(STOW_TARGET)/.local/state/dotfiles/theme/current" ]; then \
 		HOME="$(STOW_TARGET)" "$(STOW_TARGET)/.local/bin/theme-set" everforest; \
 	fi
+	@case " $(STOW_SELECTED_PACKAGES) " in *" claude "*) \
+		HOME="$(STOW_TARGET)" scripts/setup-claude-settings.sh ;; \
+	esac
 
 unstow:
 	$(STOW) --delete $(STOW_SELECTED_PACKAGES)

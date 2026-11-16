@@ -32,9 +32,6 @@
   },
   "model": "sonnet",
   "effortLevel": "medium",
-  "tui": "fullscreen",
-  "theme": "dark",
-  "agentPushNotifEnabled": true,
   "modelSettings": {
     "claude-sonnet-5-5": {
       "effortLevel": "high"

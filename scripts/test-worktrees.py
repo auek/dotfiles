@@ -996,6 +996,15 @@ os.execv({GIT!r}, [{GIT!r}, *args])
         self.assertIn("No branches selected; nothing deleted.", result.stdout)
         self.assertNotIn("[k]eep", result.stdout)
 
+    def test_gbclean_interactive_accepts_any_letter_prefix(self):
+        self.git("-C", self.main, "commit", "--allow-empty", "-m", "feat(api) ABC-42: Add endpoint")
+        self.git("-C", self.main, "push", "origin", "main")
+        self.git("-C", self.main, "branch", "feature/abc-42-endpoint")
+        self.git("-C", self.main, "remote", "set-url", "origin", self.home / "offline-remote")
+        result = self.shell("gbclean --interactive", input_text="d\nn\n")
+        self.assertIn("ABC-42 — matching commits on origin/main:", result.stdout)
+        self.assertIn("Marked for deletion: feature/abc-42-endpoint", result.stdout)
+
     def test_gmm_fetches_and_merges_remote_main_not_stale_local_main(self):
         tree = self.add("theme1")
         old_main = self.git("-C", self.main, "rev-parse", "main").stdout

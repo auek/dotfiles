@@ -189,7 +189,7 @@ origin/master, using the same cached-default selection as `gcb`. It never fetche
 or detects squash merges. It skips main/master/develop and all checked-out
 worktree branches. Deletion uses `git branch -d`, never forces, and stops if Git's
 additional upstream/HEAD safety check refuses a candidate.
-`gbclean --interactive` separately reviews Jira-ID matches between
+`gbclean --interactive` separately reviews ticket-ID matches (`[A-Z]+-[0-9]+`, any prefix such as a SAFe train) between
 branch names (including suffixed variants) and cached trunk commit titles,
 case-insensitively with exact ID boundaries. Matches are only hints, never proof
 of merging. Review defaults to keep; inspect shows a labeled trunk-to-branch tip

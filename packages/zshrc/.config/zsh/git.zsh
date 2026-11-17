@@ -166,11 +166,11 @@ gbdesc() {
   command git config --get "branch.$branch.description" || return 0
 }
 
-# Jira IDs identify review candidates, never proof that a branch was merged.
+# Ticket IDs (e.g. a SAFe train prefix like ABC-123) identify review candidates, never proof that a branch was merged.
 _gbclean_interactive() {
   emulate -L zsh
   local trunk=$1 trunk_oid refs branch oid checked_out ticket
-  local pattern='(^|[^[:alnum:]])(JIRA-[0-9]+)($|[^[:alnum:]])'
+  local pattern='(^|[^[:alnum:]])([A-Z]+-[0-9]+)($|[^[:alnum:]])'
   local history line matches description reply confirmation current_oid
   local -i stop=0
   local -a match mbegin mend selected=()
@@ -187,7 +187,7 @@ _gbclean_interactive() {
       tips[$branch]=$oid
     fi
   done <<< "$refs"
-  print -r -- "gbclean: Jira review against cached $trunk (no fetch)."
+  print -r -- "gbclean: ticket-ID review against cached $trunk (no fetch)."
   print -r -- 'Mark branches for deletion, then confirm the full list at the end. Nothing is deleted during review.'
   for ticket in "${(@ok)groups}"; do
     pattern="(^|[^[:alnum:]])$ticket($|[^[:alnum:]])"
@@ -213,7 +213,7 @@ Branch: $branch
 Description: ${description:-N/A}
 Recent commits:"
       command git --no-pager log -5 --no-color --format='%h %s' "$oid" -- || return
-      print -r -- 'Jira match only; this branch may contain additional work.'
+      print -r -- 'Ticket-ID match only; this branch may contain additional work.'
       while true; do
         print -n -r -- '[k]eep / [i]nspect / mark for [d]eletion / [q]uit (default: keep): '
         IFS= read -r reply || { stop=1; break; }
@@ -289,7 +289,7 @@ Use --delete to remove them with git branch -d; never fetches.
 Skips main, master, develop, and branches checked out in any worktree.
 Squash merges are not detected by ordinary cleanup. Run git fetch origin first to refresh.
 Git may retain candidates not merged into their upstream or current HEAD.
---interactive reviews branches whose JIRA-<number> appears in a trunk commit title.
+--interactive reviews branches whose <LETTERS>-<number> ticket ID appears in a trunk commit title.
 This is a heuristic, not proof of merging. Keep is the default; i shows a tip diff.
 d marks a branch; q or EOF during review cancels everything.
 Interactive mode shows the selected list and requires a final y to FORCE-delete it.

@@ -102,7 +102,9 @@ baseline and re-run `make restow`. Claude Code reads
 user MCP servers from `~/.claude.json`, not `settings.json`, so run
 `scripts/setup-claude-mcp.sh` to register the Playwright servers (pass
 `--headless-only` on servers; without a display it skips the headed one anyway) (opencode reads
-its servers from the stowed `opencode.jsonc`). Desktop and server
+its servers from the stowed `opencode.jsonc`). On Ubuntu 24.04+ servers, Playwright's
+Chromium needs an AppArmor profile for its sandbox; run
+`scripts/install-playwright-apparmor.sh` as the login user (it calls `sudo`). Desktop and server
 targets retain their separate package groups. Both groups include `readline`:
 its `.inputrc` retains system Readline settings and binds Alt+K to clear-screen
 in Bash, including occasional workstation Bash shells. Zsh binds it separately.

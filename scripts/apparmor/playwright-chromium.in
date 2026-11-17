@@ -1,0 +1,10 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+# Ubuntu 24.04 sets kernel.apparmor_restrict_unprivileged_userns=1, which stops
+# Chromium's sandbox from starting ("No usable sandbox!"). Allow user namespaces
+# for Playwright's managed Chromium only, so the sandbox stays on. @HOME@ is
+# replaced by scripts/install-playwright-apparmor.sh.
+profile playwright-chromium @HOME@/.cache/ms-playwright/chromium*/chrome-linux*/chrome flags=(unconfined) {
+  userns,
+}

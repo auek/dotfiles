@@ -100,7 +100,8 @@ tracked baseline `packages/claude/settings.base.json` into a real, machine-local
 are kept; an old link into the repo is replaced). Edit shared settings in the
 baseline and re-run `make restow`. Claude Code reads
 user MCP servers from `~/.claude.json`, not `settings.json`, so run
-`scripts/setup-claude-mcp.sh` to register the Playwright servers (opencode reads
+`scripts/setup-claude-mcp.sh` to register the Playwright servers (pass
+`--headless-only` on servers; without a display it skips the headed one anyway) (opencode reads
 its servers from the stowed `opencode.jsonc`). Desktop and server
 targets retain their separate package groups. Both groups include `readline`:
 its `.inputrc` retains system Readline settings and binds Alt+K to clear-screen

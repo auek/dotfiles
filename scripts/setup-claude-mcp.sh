@@ -20,10 +20,14 @@ done
 
 UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
 BASE="exec npx -y @playwright/mcp@latest"
-# Use the system Chromium when present; otherwise Playwright falls back to its
-# own managed browser (npx playwright install chromium).
+# Use the system Chromium when present. Otherwise point at Playwright's managed
+# Chromium (npx playwright install --with-deps chromium); the MCP defaults to
+# the Google Chrome channel, which servers do not have. The versioned path is
+# resolved when the server starts, so browser updates keep working.
 if [ -x /usr/bin/chromium ]; then
   BASE="$BASE --executable-path /usr/bin/chromium"
+else
+  BASE="$BASE --executable-path \"\$(ls -d \"\$HOME\"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome 2>/dev/null | sort -V | tail -1)\""
 fi
 BASE="$BASE --user-data-dir \"\$HOME/.local/share/playwright-mcp/profile\" --user-agent \"$UA\""
 

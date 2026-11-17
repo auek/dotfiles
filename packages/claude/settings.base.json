@@ -22,11 +22,11 @@
       "Bash(chown *)",
       "Bash(dd *)",
       "Bash(git push --force*)",
-      "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_run_code_unsafe",
       "mcp__playwright__browser_file_upload",
-      "mcp__playwright-headed__browser_evaluate",
       "mcp__playwright-headed__browser_run_code",
+      "mcp__playwright-headed__browser_run_code_unsafe",
       "mcp__playwright-headed__browser_file_upload"
     ]
   },

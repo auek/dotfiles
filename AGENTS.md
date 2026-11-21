@@ -69,7 +69,7 @@ dotfiles/
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
-    ├── opencode/.config/opencode/  # Opt-in commands (/pr), agents, MCP, permissions, watcher
+    ├── opencode/.config/opencode/  # Opt-in commands (/pr, /commit), agents, MCP, permissions, watcher
     ├── claude/.claude/            # Opt-in assistant configuration
     └── espanso/.config/espanso/   # Opt-in text expansion
 ```

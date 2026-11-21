@@ -308,7 +308,7 @@ class RuntimeTests(RuntimeHome):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stderr, "")
                 self.assertEqual((self.home / "clipboard").read_text(), "fix: update fixture å\n")
-                self.assertIn("body: 3-5 sentences", (self.home / "llm-args").read_text())
+                self.assertIn("body: 1-4 sentences", (self.home / "llm-args").read_text())
                 (self.bin / "wl-copy").unlink()
 
                 result = suggest("-a")

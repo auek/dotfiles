@@ -53,12 +53,15 @@ gsuggest() {
   if (( long_mode )); then
     prompt="You write git commit messages.
 
-Produce a conventional commit message:
-- first line: type(scope?): subject
+Produce a commit message:
+- first line: type(scope?): subject, unless the example commit subjects clearly follow a different convention (for example a ticket ID prefix); then follow that convention
 - blank line
-- body: 3-5 sentences
+- body: 1-4 sentences, as many as the change needs, wrapped at 72 columns
 
 Rules:
+- types: feat, fix, docs, refactor, test, chore, perf, build, ci, style
+- scope: the module, package or area the change touches; reuse scopes from the example subjects when they fit, omit it when unsure
+- subject in imperative mood, no trailing period, max 72 characters
 - lowercase unless a proper noun requires otherwise
 - no quotes, code fences, bullets, numbering, or commentary
 - use the example commit subjects only as style reference, never as content
@@ -70,8 +73,11 @@ Rules:
   else
     prompt="You write git commit messages.
 
-Produce only a commit title in the format type(scope?): subject.
+Produce only a commit title in the format type(scope?): subject, unless the example commit subjects clearly follow a different convention (for example a ticket ID prefix); then follow that convention.
 Rules:
+- types: feat, fix, docs, refactor, test, chore, perf, build, ci, style
+- scope: the module, package or area the change touches; reuse scopes from the example subjects when they fit, omit it when unsure
+- imperative mood, no trailing period
 - lowercase unless a proper noun requires otherwise
 - max 72 characters
 - no quotes, code fences, bullets, numbering, or commentary

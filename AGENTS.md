@@ -293,6 +293,8 @@ player. The `hypr` package also supplies a Swedish (US) keymap with
 `Right Alt + E` for é and `Right Alt + Shift + E` for É. `SUPER+S` opens a
 wofi picker that types the chosen snippet from the untracked
 `~/.secrets/snippets` (`key=value` lines) via `snippet-type` and `wtype`.
+`SUPER+F1` lists every bind that has a `description` in `dotfiles.lua` through the
+`keybinds` script, so give new binds one. Apps use the `SUPER+SHIFT` layer.
 Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.

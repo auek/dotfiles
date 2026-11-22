@@ -9,14 +9,6 @@ file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
 grim -g "$(slurp -d)" "$file" &&
 wl-copy --type image/png < "$file"
 ]]
-local toggle_color_scheme = [[
-current="$(gsettings get org.gnome.desktop.interface color-scheme)"
-if [ "$current" = "'prefer-dark'" ]; then
-  gsettings set org.gnome.desktop.interface color-scheme prefer-light
-else
-  gsettings set org.gnome.desktop.interface color-scheme prefer-dark
-fi
-]]
 local confirm_exit = [[
 choice="$(printf 'Cancel\nExit Hyprland' | wofi --dmenu --prompt 'Exit Hyprland?')"
 [ "$choice" = "Exit Hyprland" ] && hyprctl dispatch exit
@@ -48,49 +40,57 @@ hl.on("hyprland.shutdown", function()
   os.execute("systemctl --user stop hyprland-session.target && sleep 0.1")
 end)
 
-hl.bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal))
-hl.bind(main_mod .. " + D", hl.dsp.exec_cmd(menu))
-hl.bind(main_mod .. " + Q", hl.dsp.window.close())
-hl.bind(main_mod .. " + SHIFT + M", hl.dsp.exec_cmd(confirm_exit))
-hl.bind(main_mod .. " + SHIFT + F", hl.dsp.exec_cmd("nautilus --new-window"))
-hl.bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
-hl.bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(main_mod .. " + E", hl.dsp.workspace.toggle_special("music"))
-hl.bind(main_mod .. " + SHIFT + T", hl.dsp.exec_cmd(toggle_color_scheme))
-hl.bind(main_mod .. " + V", hl.dsp.exec_cmd(clipboard_history))
-hl.bind("Print", hl.dsp.exec_cmd(screenshot))
-
--- Fuzzy-pick a personal snippet and type it into the focused window.
-hl.bind(main_mod .. " + S", hl.dsp.exec_cmd("snippet-type"))
-
-hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"))
-hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"))
-hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"))
-
-hl.bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }))
-hl.bind(main_mod .. " + J", hl.dsp.focus({ direction = "d" }))
-hl.bind(main_mod .. " + K", hl.dsp.focus({ direction = "u" }))
-hl.bind(main_mod .. " + L", hl.dsp.focus({ direction = "r" }))
-hl.bind(main_mod .. " + SHIFT + H", hl.dsp.window.move({ direction = "l" }))
-hl.bind(main_mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "d" }))
-hl.bind(main_mod .. " + SHIFT + K", hl.dsp.window.move({ direction = "u" }))
-hl.bind(main_mod .. " + SHIFT + L", hl.dsp.window.move({ direction = "r" }))
-
-hl.bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
-hl.bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
-hl.bind(main_mod .. " + CTRL + Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
-hl.bind(main_mod .. " + CTRL + Right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { repeating = true })
-hl.bind(main_mod .. " + CTRL + Up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { repeating = true })
-hl.bind(main_mod .. " + CTRL + Down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { repeating = true })
-hl.bind(main_mod .. " + CTRL + equal", hl.dsp.layout("splitratio 1 exact"))
-
-for workspace = 1, 4 do
-  hl.bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }))
-  hl.bind(main_mod .. " + SHIFT + " .. workspace, hl.dsp.window.move({ workspace = workspace }))
+-- Every bind carries a description; `keybinds` (SUPER+F1) lists them.
+local function bind(keys, action, description, opts)
+  opts = opts or {}
+  opts.description = description
+  hl.bind(keys, action, opts)
 end
 
-hl.bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }))
-hl.bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }))
+bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Terminal")
+bind(main_mod .. " + D", hl.dsp.exec_cmd(menu), "App launcher")
+bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
+bind(main_mod .. " + CTRL + Q", hl.dsp.exec_cmd(confirm_exit), "Exit Hyprland")
+bind(main_mod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }), "Fullscreen")
+bind(main_mod .. " + SPACE", hl.dsp.window.float({ action = "toggle" }), "Toggle floating")
+bind(main_mod .. " + V", hl.dsp.exec_cmd(clipboard_history), "Clipboard history")
+bind(main_mod .. " + S", hl.dsp.exec_cmd("snippet-type"), "Snippet picker")
+bind(main_mod .. " + F1", hl.dsp.exec_cmd("keybinds"), "Show keybinds")
+bind("Print", hl.dsp.exec_cmd(screenshot), "Screenshot to clipboard")
+
+-- Apps live on the SUPER+SHIFT layer.
+bind(main_mod .. " + SHIFT + B", hl.dsp.exec_cmd("firefox --new-window"), "Firefox")
+bind(main_mod .. " + SHIFT + F", hl.dsp.exec_cmd("nautilus --new-window"), "Files")
+bind(main_mod .. " + SHIFT + M", hl.dsp.workspace.toggle_special("music"), "Music")
+
+bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), "Play/pause")
+bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), "Next track")
+bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), "Previous track")
+
+bind(main_mod .. " + H", hl.dsp.focus({ direction = "l" }), "Focus left")
+bind(main_mod .. " + J", hl.dsp.focus({ direction = "d" }), "Focus down")
+bind(main_mod .. " + K", hl.dsp.focus({ direction = "u" }), "Focus up")
+bind(main_mod .. " + L", hl.dsp.focus({ direction = "r" }), "Focus right")
+bind(main_mod .. " + SHIFT + H", hl.dsp.window.move({ direction = "l" }), "Move window left")
+bind(main_mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "d" }), "Move window down")
+bind(main_mod .. " + SHIFT + K", hl.dsp.window.move({ direction = "u" }), "Move window up")
+bind(main_mod .. " + SHIFT + L", hl.dsp.window.move({ direction = "r" }), "Move window right")
+
+bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
+bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
+bind(main_mod .. " + CTRL + Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), "Resize left", { repeating = true })
+bind(main_mod .. " + CTRL + Right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), "Resize right", { repeating = true })
+bind(main_mod .. " + CTRL + Up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), "Resize up", { repeating = true })
+bind(main_mod .. " + CTRL + Down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), "Resize down", { repeating = true })
+bind(main_mod .. " + CTRL + equal", hl.dsp.layout("splitratio 1 exact"), "Reset split ratio")
+
+for workspace = 1, 4 do
+  bind(main_mod .. " + " .. workspace, hl.dsp.focus({ workspace = workspace }), "Workspace " .. workspace)
+  bind(main_mod .. " + SHIFT + " .. workspace, hl.dsp.window.move({ workspace = workspace }), "Move window to workspace " .. workspace)
+end
+
+bind(main_mod .. " + CTRL + H", hl.dsp.workspace.move({ monitor = "l" }), "Move workspace to left monitor")
+bind(main_mod .. " + CTRL + L", hl.dsp.workspace.move({ monitor = "r" }), "Move workspace to right monitor")
 
 hl.window_rule({
   match = { class = [[^(Spotify|com\.spotify\.Client)$]] },

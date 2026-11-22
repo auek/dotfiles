@@ -59,6 +59,22 @@ hl.bind(main_mod .. " + E", hl.dsp.workspace.toggle_special("music"))
 hl.bind(main_mod .. " + SHIFT + T", hl.dsp.exec_cmd(toggle_color_scheme))
 hl.bind(main_mod .. " + V", hl.dsp.exec_cmd(clipboard_history))
 hl.bind("Print", hl.dsp.exec_cmd(screenshot))
+
+-- Snippet submap: SUPER+S, then one letter types a personal snippet.
+local function snippet(key, name)
+  hl.bind(key, function()
+    hl.dispatch(hl.dsp.submap("reset"))
+    hl.dispatch(hl.dsp.exec_cmd("snippet-type " .. name))
+  end)
+end
+
+hl.bind(main_mod .. " + S", hl.dsp.submap("snippets"))
+hl.define_submap("snippets", function()
+  snippet("e", "email")
+  snippet("p", "phone")
+  snippet("space", "") -- no key opens the wofi picker
+  hl.bind("escape", hl.dsp.submap("reset"))
+end)
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"))
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"))
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"))

@@ -40,7 +40,7 @@ Hyprland stack and session utilities used by the configuration:
 sudo pacman -Syu --needed \
   hyprland hypridle xdg-desktop-portal-hyprland \
   foot mako lxqt-policykit waybar wofi swaybg \
-  grim slurp wl-clipboard cliphist nautilus sushi playerctl
+  grim slurp wl-clipboard cliphist nautilus sushi playerctl wtype
 ```
 
 | Package | Purpose |
@@ -56,6 +56,7 @@ sudo pacman -Syu --needed \
 | `swaybg` | Wallpaper renderer |
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
 | `cliphist` | Session-only clipboard history for text and images |
+| `wtype` | Types personal snippets into the focused window (`snippet-type`) |
 | `playerctl` | Media-key controls and the `playerctld` daemon for most-recently-active player selection |
 
 Mako's Stow-managed configuration uses the same Everforest colors, compact

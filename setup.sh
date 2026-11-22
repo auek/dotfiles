@@ -160,7 +160,7 @@ if [ "$INSTALL_HYPRLAND" -eq 1 ]; then
   info "Installing the Arch Hyprland desktop (hardware setup remains user-managed)"
   $PKG_INSTALL hyprland hypridle xdg-desktop-portal-hyprland \
     foot mako lxqt-policykit waybar wofi swaybg \
-    grim slurp wl-clipboard cliphist nautilus sushi playerctl
+    grim slurp wl-clipboard cliphist nautilus sushi playerctl wtype
 fi
 
 # ─── Step 3: Install Fedora container tooling ────────────────────────────────

@@ -50,9 +50,12 @@ Adds `setup.sh --server`, `bashrc-server/.bashrc`, `vim-server/.vimrc`,
 
 Archived plan: [docs/plans/archive/server-profile.md](plans/archive/server-profile.md)
 
-### espanso text expansion (Fedora/Wayland)
+### Snippet submap replaces espanso
 
-Installed via Terra repo (`espanso-wayland`). Config symlinked into dotfiles as a stow package (`espanso/.config/espanso/`). `match/packages/` left untracked (managed by espanso's package manager).
+Espanso was overkill for typing an email and phone number and needed a daemon
+plus input permissions on Wayland. The `hypr` package now provides
+`snippet-type` and a `SUPER+S` submap that types values from the untracked
+`~/.secrets/snippets` with `wtype`. The `espanso` package was removed.
 
 ### Vim `*` register clipboard broken
 

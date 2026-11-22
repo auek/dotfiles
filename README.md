@@ -46,7 +46,7 @@ With `--hyprland`, the desktop starts on the next local tty1 login; see the
 | `tealdeer` | System trust store for tldr downloads |
 | `themes` | Everforest and Gruvbox across terminal, editor, and desktop |
 | `opencode`, `claude` | Optional AI coding-tool configuration |
-| `foot`, `hypr`, `waybar`, `wofi`, `mako` | Optional Hyprland desktop; `SUPER+S` types snippets from the untracked `~/.secrets/snippets` |
+| `foot`, `hypr`, `waybar`, `wofi`, `mako`, `mimeapps` | Optional Hyprland desktop with Firefox as the default browser; `SUPER+S` types snippets from the untracked `~/.secrets/snippets` |
 | `bashrc-server`, `vim-server`, `tmux-server` | Minimal headless configuration |
 | `gtk` | Optional settings for an externally installed GTK theme |
 

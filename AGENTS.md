@@ -68,6 +68,7 @@ dotfiles/
     ├── hypr/                # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, the snippet-type picker, and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
+    ├── mimeapps/.config/mimeapps.list # Default applications (Firefox as browser)
     ├── mako/.config/mako/
     ├── opencode/.config/opencode/  # Opt-in commands (/pr, /commit), agents, MCP, permissions, watcher
     └── claude/.claude/            # Opt-in assistant configuration
@@ -284,7 +285,7 @@ Basic editing survives bootstrap failure. Theme
 selection follows `theme-set` with Everforest/Habamax fallbacks; real Windows
 clipboard behavior still needs manual verification. `make stow-hyprland`
 additionally links the desktop group: `foot`,
-`hypr`, `waybar`, `wofi`, and `mako`. It does not install software or enable
+`hypr`, `waybar`, `wofi`, `mako`, and `mimeapps`. It does not install software or enable
 autostart; `setup.sh --hyprland` handles those steps. General Stow operations
 do not remove existing desktop links. The `themes` package
 also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media

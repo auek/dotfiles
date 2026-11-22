@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""Show the described Hyprland keybinds in a read-only wofi list.
+
+Usage: keybinds [--print]   (--print writes the list to stdout instead)
+"""
+import json
+import subprocess
+import sys
+
+MODIFIERS = ((64, "SUPER"), (4, "CTRL"), (8, "ALT"), (1, "SHIFT"))
+KEY_NAMES = {"mouse:272": "Mouse left", "mouse:273": "Mouse right"}
+SUPER, SHIFT = 64, 1
+
+
+def group(mask):
+    # SUPER first, then the SUPER+SHIFT app layer, then everything else.
+    if mask == SUPER:
+        return 0
+    if mask == SUPER | SHIFT:
+        return 1
+    return 2 if mask else 3
+
+
+def label(bind):
+    mods = [name for bit, name in MODIFIERS if bind["modmask"] & bit]
+    return " + ".join(mods + [KEY_NAMES.get(bind["key"], bind["key"])])
+
+
+def main():
+    binds = json.loads(subprocess.run(["hyprctl", "binds", "-j"], check=True, capture_output=True, text=True).stdout)
+    described = [b for b in binds if b.get("description")]
+    described.sort(key=lambda b: group(b["modmask"]))  # stable: keeps config order
+    lines = [f"{label(b):<24}{b['description']}" for b in described]
+    text = "\n".join(lines) + "\n"
+    if "--print" in sys.argv[1:]:
+        sys.stdout.write(text)
+        return
+    # Read-only: whatever is chosen is ignored. wofi exits 1 on Escape.
+    subprocess.run(
+        ["wofi", "--dmenu", "--prompt", "Keybinds", "--cache-file=/dev/null", "--sort-order=default"],
+        input=text, text=True, stdout=subprocess.DEVNULL, check=False,
+    )
+
+
+if __name__ == "__main__":
+    main()

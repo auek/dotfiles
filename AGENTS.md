@@ -65,13 +65,12 @@ dotfiles/
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
-    ├── hypr/.config/         # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, and session systemd units (cliphist, swaybg)
+    ├── hypr/                # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, snippet-type submap, and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
     ├── opencode/.config/opencode/  # Opt-in commands (/pr, /commit), agents, MCP, permissions, watcher
-    ├── claude/.claude/            # Opt-in assistant configuration
-    └── espanso/.config/espanso/   # Opt-in text expansion
+    └── claude/.claude/            # Opt-in assistant configuration
 ```
 
 ## Stow package convention
@@ -88,8 +87,8 @@ packages/nvim/.config/nvim/     → stowed to ~/.config/nvim/
 
 The default workstation packages are stowed to `$HOME` via `make stow`:
 `zshrc`, `zprofile`, `readline`, `tmux`, `nvim`, `themes`, `mise`, and `tealdeer`.
-Optional `opencode`, `claude`, and `espanso` configuration can be added with
-`STOW_INCLUDE = opencode claude espanso` in an ordinary, untracked
+Optional `opencode` and `claude` configuration can be added with
+`STOW_INCLUDE = opencode claude` in an ordinary, untracked
 `${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local.mk`. Includes are additive
 for `make stow`, `make restow`, and `make unstow`; removing an include does not
 remove existing links. Never Stow or commit the local file. The `claude` package
@@ -291,7 +290,10 @@ do not remove existing desktop links. The `themes` package
 also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media
 bindings use `playerctl` and `playerctld` to control the most recently active
 player. The `hypr` package also supplies a Swedish (US) keymap with
-`Right Alt + E` for é and `Right Alt + Shift + E` for É. Server packages use
+`Right Alt + E` for é and `Right Alt + Shift + E` for É. `SUPER+S` opens a
+snippet submap (`e` email, `p` phone, `Space` picker) that types values from the
+untracked `~/.secrets/snippets` (`key=value` lines) via `snippet-type` and
+`wtype`. Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.
 

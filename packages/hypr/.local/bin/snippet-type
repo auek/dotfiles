@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Type a personal snippet into the focused window with wtype.
+# Usage: snippet-type [key]   (no key opens a wofi picker)
+# Snippets live in an untracked file of key=value lines, never in the repo.
+set -euo pipefail
+
+file="${SNIPPET_FILE:-$HOME/.secrets/snippets}"
+
+fail() {
+  notify-send -u critical "snippet-type" "$1" 2>/dev/null || true
+  echo "snippet-type: $1" >&2
+  exit 1
+}
+
+[ -r "$file" ] || fail "missing $file"
+
+key="${1:-}"
+if [ -z "$key" ]; then
+  key="$(cut -d= -f1 "$file" | wofi --dmenu --prompt 'Snippet' --cache-file=/dev/null)" || exit 0
+  [ -n "$key" ] || exit 0
+  sleep 0.15 # let focus return to the previous window
+fi
+
+value="$(awk -F= -v k="$key" '$1 == k { sub(/^[^=]*=/, ""); print; exit }' "$file")"
+[ -n "$value" ] || fail "no snippet named '$key' in $file"
+
+# stdin keeps the value out of the process list
+printf '%s' "$value" | wtype -

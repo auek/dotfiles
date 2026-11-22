@@ -116,7 +116,6 @@ class MakeStowTests(unittest.TestCase):
         optional = {
             "opencode": ".config/opencode/opencode.jsonc",
             "claude": ".claude/commands/pr.md",
-            "espanso": ".config/espanso/config/default.yml",
         }
         for target in ("stow", "restow"):
             self.make(target)
@@ -126,7 +125,7 @@ class MakeStowTests(unittest.TestCase):
         self.assertFalse(os.path.lexists(settings))
         config = self.home / ".config/dotfiles/local.mk"
         config.parent.mkdir()
-        contents = "STOW_INCLUDE = opencode claude espanso\n"
+        contents = "STOW_INCLUDE = opencode claude\n"
         config.write_text(contents)
         for target in ("stow", "restow"):
             self.make(target)

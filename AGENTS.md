@@ -65,7 +65,7 @@ dotfiles/
     ├── foot/.config/foot/    # Foot terminal config
     ├── themes/.local/        # Theme packs (including tmux modes/menus) plus theme-set, swaybg-current, and foot-reload
     ├── gtk/.config/          # GTK3 and GTK4 theme settings
-    ├── hypr/                # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, snippet-type submap, and session systemd units (cliphist, swaybg)
+    ├── hypr/                # Hyprland Lua config, custom Swedish (US) keymap, activity-based media controls, the snippet-type picker, and session systemd units (cliphist, swaybg)
     ├── waybar/.config/waybar/
     ├── wofi/.config/wofi/
     ├── mako/.config/mako/
@@ -291,9 +291,9 @@ also supplies tmux selector, copy-mode, menu, and popup styles. The `hypr` media
 bindings use `playerctl` and `playerctld` to control the most recently active
 player. The `hypr` package also supplies a Swedish (US) keymap with
 `Right Alt + E` for é and `Right Alt + Shift + E` for É. `SUPER+S` opens a
-snippet submap (`e` email, `p` phone, `Space` picker) that types values from the
-untracked `~/.secrets/snippets` (`key=value` lines) via `snippet-type` and
-`wtype`. Server packages use
+wofi picker that types the chosen snippet from the untracked
+`~/.secrets/snippets` (`key=value` lines) via `snippet-type` and `wtype`.
+Server packages use
 `make stow-server`. The external-theme dependent `gtk` package is opt-in via
 `make stow-gtk`.
 

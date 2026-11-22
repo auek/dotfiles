@@ -50,11 +50,11 @@ Adds `setup.sh --server`, `bashrc-server/.bashrc`, `vim-server/.vimrc`,
 
 Archived plan: [docs/plans/archive/server-profile.md](plans/archive/server-profile.md)
 
-### Snippet submap replaces espanso
+### Snippet picker replaces espanso
 
 Espanso was overkill for typing an email and phone number and needed a daemon
 plus input permissions on Wayland. The `hypr` package now provides
-`snippet-type` and a `SUPER+S` submap that types values from the untracked
+`snippet-type` and a `SUPER+S` wofi picker that types values from the untracked
 `~/.secrets/snippets` with `wtype`. The `espanso` package was removed.
 
 ### Vim `*` register clipboard broken

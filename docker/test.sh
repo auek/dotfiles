@@ -103,7 +103,7 @@ else
 fi
 
 if [ -n "$HYPRLAND" ]; then
-  require_commands Hyprland start-hyprland hypridle foot mako waybar wofi swaybg grim slurp wl-copy cliphist playerctl wtype
+  require_commands Hyprland start-hyprland hypridle foot mako waybar wofi swaybg grim slurp wl-copy cliphist playerctl wtype notify-send
   run 'test -f "$HOME/.config/hypr/hyprland.lua" && test ! -L "$HOME/.config/hypr/hyprland.lua"'
   run 'grep -qx -- "-- local customization" "$HOME/.config/hypr/hyprland.lua"'
   run 'test -f "$HOME/.local/state/dotfiles/hyprland/autostart"'

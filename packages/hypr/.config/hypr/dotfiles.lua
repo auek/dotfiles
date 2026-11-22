@@ -9,6 +9,13 @@ file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
 grim -g "$(slurp -d)" "$file" &&
 wl-copy --type image/png < "$file"
 ]]
+local screenshot_monitor = [[
+mkdir -p "$HOME/Pictures/Screenshots" &&
+file="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d_%H-%M-%S).png" &&
+grim -o "$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')" "$file" &&
+wl-copy --type image/png < "$file" &&
+notify-send -t 2000 "Screenshot saved" "${file##*/}"
+]]
 local confirm_exit = [[
 choice="$(printf 'Cancel\nExit Hyprland' | wofi --dmenu --prompt 'Exit Hyprland?')"
 [ "$choice" = "Exit Hyprland" ] && hyprctl dispatch exit
@@ -57,6 +64,7 @@ bind(main_mod .. " + V", hl.dsp.exec_cmd(clipboard_history), "Clipboard history"
 bind(main_mod .. " + S", hl.dsp.exec_cmd("snippet-type"), "Snippet picker")
 bind(main_mod .. " + F1", hl.dsp.exec_cmd("keybinds"), "Show keybinds")
 bind("Print", hl.dsp.exec_cmd(screenshot), "Screenshot to clipboard")
+bind("SHIFT + Print", hl.dsp.exec_cmd(screenshot_monitor), "Screenshot focused monitor to clipboard")
 
 -- Apps live on the SUPER+SHIFT layer.
 bind(main_mod .. " + SHIFT + B", hl.dsp.exec_cmd("firefox --new-window"), "Firefox")

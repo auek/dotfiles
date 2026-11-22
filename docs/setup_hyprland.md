@@ -40,7 +40,7 @@ Hyprland stack and session utilities used by the configuration:
 sudo pacman -Syu --needed \
   hyprland hypridle xdg-desktop-portal-hyprland \
   foot mako lxqt-policykit waybar wofi swaybg \
-  grim slurp wl-clipboard cliphist nautilus sushi playerctl wtype
+  grim slurp wl-clipboard cliphist nautilus sushi playerctl wtype libnotify
 ```
 
 | Package | Purpose |
@@ -57,6 +57,7 @@ sudo pacman -Syu --needed \
 | `grim`, `slurp`, `wl-clipboard` | Cropped screenshots saved to disk and copied to the clipboard |
 | `cliphist` | Session-only clipboard history for text and images |
 | `wtype` | Types personal snippets into the focused window (`snippet-type`) |
+| `libnotify` | `notify-send`, used for the monitor-screenshot and snippet-error notifications |
 | `playerctl` | Media-key controls and the `playerctld` daemon for most-recently-active player selection |
 
 Mako's Stow-managed configuration uses the same Everforest colors, compact
@@ -289,8 +290,12 @@ command. The Lua configuration starts the unit together with
 `theme-set` restarts the unit to switch the background live. The daemon-reload
 above registers the unit after linking the package.
 
-The screenshot binding is `Print`. Drag to select a region; the resulting PNG
-is saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
+The screenshot bindings are `Print` and `Shift+Print`. `Print` lets you drag to
+select a region; `Shift+Print` captures the whole focused monitor (the monitor
+name comes from `hyprctl monitors -j` via `jq`). Either way the resulting PNG is
+saved to `~/Pictures/Screenshots/` and copied to the Wayland clipboard.
+`Shift+Print` also shows a short notification, since it has no region selector
+to confirm the capture.
 
 `Super+Shift+F` opens Nautilus. It and the Sushi quick previewer are installed
 by the package command above. In Nautilus, select an image or supported document

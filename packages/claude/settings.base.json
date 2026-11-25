@@ -30,6 +30,9 @@
       "mcp__playwright-headed__browser_file_upload"
     ]
   },
+  "env": {
+    "DISABLE_AUTOUPDATER": "1"
+  },
   "model": "sonnet",
   "effortLevel": "medium",
   "modelSettings": {
